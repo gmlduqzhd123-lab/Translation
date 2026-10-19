@@ -27,9 +27,9 @@
   <script src="./ys-install.js" defer></script>
   <script src="./ys-qr.js" defer></script>
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="./styles.css?v=20261020-3" />
+  <link rel="stylesheet" href="./styles.css?v=20261020-4" />
   <script src="./vendor/jszip.min.js" defer></script>
-  <script type="module" src="./app.js?v=20261020-3"></script>
+  <script type="module" src="./app.js?v=20261020-4"></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">본문으로 바로 건너뛰기</a>
@@ -1252,74 +1252,119 @@
       </div>
     </section>
 
-    <!-- ==================== 메인 뷰 4: 알림장 10초 번역기 · 상용구 템플릿 · 교실 회화 카드 (아이디어 #4, #7, #8) ==================== -->
+    <!-- ==================== 메인 뷰 4: 알림장 번역기 & 교실 회화 카드 (단순화 레이아웃) ==================== -->
     <section id="view-toolkit" class="hidden" role="tabpanel" aria-labelledby="tab-view-toolkit">
-      <div class="container main-workspace">
-        <div class="step-panel active">
-          <div class="panel-header">
-            <div>
-              <span class="step-tag">파일 없이 10초 완성 · 학부모 안내 &amp; 교실 소통 도구</span>
-              <h2 class="panel-title">🗣️ 알림장·가정통신 문자 10초 번역기 &amp; 다국어 교실 회화 카드</h2>
-              <p class="panel-desc">문서 파일을 만들지 않고도 <strong>하이톡·클래스팅·문자 알림장</strong>을 즉시 다국어로 번역하고, 교실에서 바로 들려주는 <strong>25개국 음성(TTS) 회화 카드</strong>를 활용할 수 있습니다.</p>
-            </div>
-            <div class="header-actions">
-              <label for="select-toolkit-target-lang" class="quick-convert-select-label">
-                <span>🌐 대상 언어 선택</span>
-                <select id="select-toolkit-target-lang" class="drawer-input quick-convert-select" aria-label="알림장 및 회화 카드 대상 언어 선택"></select>
-              </label>
-            </div>
+      <div class="step1-two-card-stack toolkit-clean-stack">
+        <!-- 1. 상단 통합 바: 서브탭 스위치(알림장 번역 vs 교실 회화 카드) + 번역 언어 선택 -->
+        <div class="step1-card toolkit-top-control-card">
+          <div class="toolkit-subtab-switch" role="tablist" aria-label="알림장 번역 및 교실 회화 전환">
+            <button
+              type="button"
+              id="btn-toolkit-subtab-notice"
+              class="toolkit-subtab-btn active"
+              role="tab"
+              aria-selected="true"
+              aria-controls="toolkit-subview-notice"
+              data-toolkit-subtab="notice"
+            >
+              📋 학부모 알림장 번역
+            </button>
+            <button
+              type="button"
+              id="btn-toolkit-subtab-cards"
+              class="toolkit-subtab-btn"
+              role="tab"
+              aria-selected="false"
+              aria-controls="toolkit-subview-cards"
+              data-toolkit-subtab="cards"
+            >
+              🗣️ 교실 다국어 회화 카드 (음성)
+            </button>
           </div>
 
-          <!-- 아이디어 #7: 학기초·행사별 다국어 학교 상용구 & 가정통신문 템플릿 -->
-          <div class="toolkit-templates-bar">
-            <div class="toolkit-templates-header">
-              <strong>🏫 자주 쓰는 학교 알림장·가정통신문 원클릭 템플릿</strong>
-              <span class="muted-hint">버튼을 누르면 아래 입력창에 표준 문구가 자동으로 채워집니다. 날짜·준비물만 고쳐 쓰세요!</span>
-            </div>
-            <div id="toolkit-template-buttons" class="toolkit-template-btn-group"></div>
+          <div class="step1-lang-controls">
+            <span class="toolkit-lang-bar-label">번역 언어:</span>
+            <div id="toolkit-recent-langs-bar" class="step1-lang-pills" aria-label="자주 쓰는 언어 빠른 선택"></div>
+            <label for="select-toolkit-target-lang" class="sr-only">번역 대상 언어 선택</label>
+            <select id="select-toolkit-target-lang" class="step1-more-lang-select" aria-label="알림장 및 회화 카드 대상 언어 선택"></select>
           </div>
+        </div>
 
-          <!-- 아이디어 #4: 파일 없이 바로 쓰는 알림장·가정통신 문자 10초 번역기 -->
-          <div class="toolkit-translator-grid">
-            <div class="toolkit-pane">
-              <div class="toolkit-pane-header">
-                <label for="textarea-toolkit-source"><strong>🇰🇷 한국어 알림장·안내문 입력</strong></label>
-                <button type="button" id="btn-toolkit-clear" class="btn btn-outline btn-xs">지우기</button>
+        <!-- [서브탭 1] 학부모 알림장 번역 화면 -->
+        <div id="toolkit-subview-notice" role="tabpanel" aria-labelledby="btn-toolkit-subtab-notice">
+          <div class="toolkit-translator-grid toolkit-clean-grid">
+            <!-- 좌측: 1. 한국어 알림장 입력 -->
+            <div class="step1-card toolkit-clean-pane">
+              <div class="toolkit-pane-top">
+                <div class="toolkit-pane-header">
+                  <div class="step1-card-head">
+                    <span class="step1-num-badge" aria-hidden="true">1</span>
+                    <label for="textarea-toolkit-source" class="step1-card-title">한국어 알림장 입력</label>
+                  </div>
+                  <button type="button" id="btn-toolkit-clear" class="step1-footer-link">지우기</button>
+                </div>
+
+                <!-- 입력창 바로 위 한 줄 미니 예문 칩 -->
+                <div class="toolkit-mini-templates-row">
+                  <span class="toolkit-mini-tpl-label">예문 넣기:</span>
+                  <div id="toolkit-template-buttons" class="toolkit-mini-tpl-chips"></div>
+                </div>
+
+                <textarea
+                  id="textarea-toolkit-source"
+                  class="bulk-paste-textarea toolkit-clean-textarea"
+                  rows="6"
+                  placeholder="예: 내일(5월 10일)은 현장체험학습 날입니다. 오전 8시 40분까지 운동장으로 모여 주세요. 준비물은 도시락, 물, 운동화입니다."
+                ></textarea>
               </div>
-              <textarea id="textarea-toolkit-source" class="bulk-paste-textarea" rows="6" placeholder="예: 내일(5월 10일)은 현장체험학습 날입니다. 오전 8시 40분까지 운동장으로 모여 주세요. 준비물은 도시락, 물, 운동화입니다."></textarea>
-              <div class="toolkit-pane-actions">
-                <button type="button" id="btn-toolkit-translate" class="btn btn-primary">🤖 선택한 언어로 즉시 번역 + 역번역 검증</button>
-                <span id="toolkit-feedback-msg" class="drawer-feedback" aria-live="polite"></span>
+
+              <div class="toolkit-pane-bottom">
+                <button type="button" id="btn-toolkit-translate" class="btn btn-primary toolkit-full-btn">
+                  변환하기 ➔
+                </button>
+                <span id="toolkit-feedback-msg" class="drawer-feedback toolkit-status-line" aria-live="polite"></span>
               </div>
             </div>
 
-            <div class="toolkit-pane">
-              <div class="toolkit-pane-header">
-                <label for="textarea-toolkit-target"><strong id="label-toolkit-target-lang">🌏 다국어 번역 결과</strong></label>
-                <div class="inline-actions">
-                  <button type="button" id="btn-toolkit-speak" class="btn btn-outline btn-xs">🔊 외국어 발음 듣기</button>
-                  <button type="button" id="btn-toolkit-copy-target" class="btn btn-outline btn-xs">📋 번역문만 복사</button>
-                  <button type="button" id="btn-toolkit-copy-bilingual" class="btn btn-secondary btn-xs">📋 [한국어+번역문] 학부모 문자용 복사</button>
+            <!-- 우측: 2. 다국어 번역 결과 -->
+            <div class="step1-card toolkit-clean-pane toolkit-result-pane">
+              <div class="toolkit-pane-top">
+                <div class="toolkit-pane-header">
+                  <div class="step1-card-head">
+                    <span class="step1-num-badge" aria-hidden="true">2</span>
+                    <label for="textarea-toolkit-target" id="label-toolkit-target-lang" class="step1-card-title toolkit-result-title">베트남어 번역 결과</label>
+                  </div>
+                  <button type="button" id="btn-toolkit-speak" class="btn btn-surface btn-sm">🔊 발음 듣기</button>
+                </div>
+
+                <textarea
+                  id="textarea-toolkit-target"
+                  class="bulk-paste-textarea toolkit-clean-textarea toolkit-result-textarea"
+                  rows="6"
+                  placeholder="번역된 문장이 여기에 표시됩니다. 직접 수정할 수도 있습니다."
+                ></textarea>
+
+                <div id="toolkit-backtranslate-box" class="toolkit-backtranslate-box hidden">
+                  <strong>🔄 한국어 의미 확인:</strong>
+                  <span id="toolkit-backtranslate-text" class="toolkit-backtranslate-text"></span>
                 </div>
               </div>
-              <textarea id="textarea-toolkit-target" class="bulk-paste-textarea" rows="6" placeholder="번역 버튼을 누르거나 직접 수정할 수 있습니다."></textarea>
-              <div id="toolkit-backtranslate-box" class="toolkit-backtranslate-box hidden">
-                <strong>🔄 한국어 역번역 검증(의미 확인):</strong>
-                <p id="toolkit-backtranslate-text" class="toolkit-backtranslate-text"></p>
-              </div>
-            </div>
-          </div>
 
-          <!-- 아이디어 #8: 교실 소통용 선생님 ↔ 학생 다국어 음성(TTS) 회화 카드 -->
-          <div class="toolkit-classroom-section">
-            <div class="toolkit-section-header">
-              <div>
-                <h3 class="subsection-title">🗣️ 교실 소통용 선생님 ↔ 학생 다국어 회화 카드 (한글 발음 가이드 + 원클릭 음성)</h3>
-                <p class="muted-hint">전입 첫날이나 수업 시간에 학생에게 화면을 보여 주거나 <strong>[🔊 발음 듣기]</strong> 버튼을 눌러 바로 소통해 보세요.</p>
+              <div class="toolkit-pane-bottom toolkit-copy-grid">
+                <button type="button" id="btn-toolkit-copy-bilingual" class="btn btn-primary toolkit-full-btn">
+                  📋 [한국어+번역문] 문자 복사
+                </button>
+                <button type="button" id="btn-toolkit-copy-target" class="btn btn-surface toolkit-full-btn">
+                  📋 번역문만 복사
+                </button>
               </div>
             </div>
-            <div id="classroom-cards-grid" class="classroom-cards-grid"></div>
           </div>
+        </div>
+
+        <!-- [서브탭 2] 교실 다국어 회화 카드 화면 -->
+        <div id="toolkit-subview-cards" class="hidden" role="tabpanel" aria-labelledby="btn-toolkit-subtab-cards">
+          <div id="classroom-cards-grid" class="classroom-cards-grid"></div>
         </div>
       </div>
     </section>

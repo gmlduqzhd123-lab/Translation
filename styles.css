@@ -4191,3 +4191,177 @@ body {
   }
 }
 
+/* ==================== 알림장·회화 탭 (#view-toolkit) 단순화 레이아웃 ==================== */
+.toolkit-clean-stack {
+  max-width: 1060px;
+}
+
+.toolkit-top-control-card {
+  border: 1.5px solid #e2e8f0;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.toolkit-subtab-switch {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+}
+
+.toolkit-subtab-btn {
+  padding: 8px 16px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolkit-subtab-btn:hover {
+  color: #0f172a;
+}
+
+.toolkit-subtab-btn.active {
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.toolkit-lang-bar-label {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #334155;
+  margin-right: 2px;
+}
+
+.toolkit-clean-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 0;
+}
+
+.toolkit-clean-pane {
+  border: 1.5px solid #e2e8f0;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.toolkit-result-pane {
+  border: 2px solid #2563eb;
+}
+
+.toolkit-result-title {
+  color: #1d4ed8;
+}
+
+.toolkit-pane-top {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+}
+
+.toolkit-mini-templates-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.toolkit-mini-tpl-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.toolkit-mini-tpl-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.toolkit-mini-tpl-chip {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  color: #334155;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.toolkit-mini-tpl-chip:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.toolkit-clean-textarea {
+  width: 100%;
+  min-height: 150px;
+  flex: 1 1 auto;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  padding: 12px 14px;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.toolkit-pane-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toolkit-copy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.toolkit-full-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 11px 14px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  border-radius: 10px;
+}
+
+.toolkit-status-line {
+  font-size: 0.82rem;
+  min-height: 1.2em;
+}
+
+@media (max-width: 820px) {
+  .toolkit-clean-grid {
+    grid-template-columns: 1fr;
+  }
+  .toolkit-copy-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+

@@ -321,6 +321,11 @@ function cacheElements() {
   els.studentReaderCardsList = document.getElementById('student-reader-cards-list');
 
   // Teacher Toolkit View (Ideas #4, #7, #8)
+  els.btnToolkitSubtabNotice = document.getElementById('btn-toolkit-subtab-notice');
+  els.btnToolkitSubtabCards = document.getElementById('btn-toolkit-subtab-cards');
+  els.toolkitSubviewNotice = document.getElementById('toolkit-subview-notice');
+  els.toolkitSubviewCards = document.getElementById('toolkit-subview-cards');
+  els.toolkitRecentLangsBar = document.getElementById('toolkit-recent-langs-bar');
   els.selectToolkitTargetLang = document.getElementById('select-toolkit-target-lang');
   els.toolkitTemplateButtons = document.getElementById('toolkit-template-buttons');
   els.textareaToolkitSource = document.getElementById('textarea-toolkit-source');
@@ -510,6 +515,14 @@ function applySelectedLanguageEverywhere(langKey) {
   if (els.selectToolkitTargetLang) {
     els.selectToolkitTargetLang.value = langKey;
   }
+  const langMeta = getTargetLanguageMeta(langKey);
+  if (els.labelToolkitTargetLang) {
+    els.labelToolkitTargetLang.textContent = `${langMeta.label} 번역 결과`;
+  }
+  renderClassroomCards();
+  if (state.activeMainView === 'toolkit' && els.textareaToolkitSource?.value.trim()) {
+    handleToolkitTranslate();
+  }
   document.querySelectorAll('.lang-option-card').forEach((c) => {
     const isMatch = c.getAttribute('data-lang-key') === langKey;
     c.classList.toggle('selected', isMatch);
@@ -522,9 +535,10 @@ function applySelectedLanguageEverywhere(langKey) {
 function renderRecentLanguageBars() {
   const recentKeys = getSavedRecentLanguages();
 
-  // Step 1 Card ①: Clean language pill buttons (시안 2)
-  if (els.step1RecentLangsBar) {
-    els.step1RecentLangsBar.innerHTML = '';
+  // Step 1 Card ① & Toolkit top bar: Clean language pill buttons
+  const pillContainers = [els.step1RecentLangsBar, els.toolkitRecentLangsBar].filter(Boolean);
+  for (const pillContainer of pillContainers) {
+    pillContainer.innerHTML = '';
     for (const key of recentKeys) {
       const meta = getTargetLanguageMeta(key);
       const isSelected = state.selectedLangKey === key;
@@ -537,7 +551,7 @@ function renderRecentLanguageBars() {
         applySelectedLanguageEverywhere(key);
         scheduleAutoSave();
       });
-      els.step1RecentLangsBar.appendChild(btn);
+      pillContainer.appendChild(btn);
     }
   }
 
@@ -1656,9 +1670,10 @@ function renderLanguageCards() {
   }
 
   if (els.selectToolkitTargetLang) {
-    const currentToolkitLang = els.selectToolkitTargetLang.value || 'vi';
-    els.selectToolkitTargetLang.innerHTML = langOptionsHtml;
-    els.selectToolkitTargetLang.value = currentToolkitLang;
+    els.selectToolkitTargetLang.innerHTML = TARGET_LANGUAGES.map(
+      (l) => `<option value="${escapeHtml(l.key)}">🌐 ${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
+    ).join('');
+    els.selectToolkitTargetLang.value = state.selectedLangKey || 'vi';
   }
 
   if (els.multiLangCheckboxGrid && els.multiLangCheckboxGrid.children.length === 0) {
@@ -4162,46 +4177,66 @@ function handleSpeakAllStudentCards() {
 
 /* ==================== IDEAS #4, #7, #8: TEACHER TOOLKIT (10s NOTICE TRANSLATOR, TEMPLATES, CLASSROOM TTS CARDS) ==================== */
 
+function switchToolkitSubtab(subtabName) {
+  const isNotice = subtabName !== 'cards';
+  if (els.btnToolkitSubtabNotice) {
+    els.btnToolkitSubtabNotice.classList.toggle('active', isNotice);
+    els.btnToolkitSubtabNotice.setAttribute('aria-selected', isNotice ? 'true' : 'false');
+  }
+  if (els.btnToolkitSubtabCards) {
+    els.btnToolkitSubtabCards.classList.toggle('active', !isNotice);
+    els.btnToolkitSubtabCards.setAttribute('aria-selected', !isNotice ? 'true' : 'false');
+  }
+  if (els.toolkitSubviewNotice) {
+    els.toolkitSubviewNotice.classList.toggle('hidden', !isNotice);
+  }
+  if (els.toolkitSubviewCards) {
+    els.toolkitSubviewCards.classList.toggle('hidden', isNotice);
+  }
+  if (!isNotice) {
+    renderClassroomCards();
+  }
+}
+
 function initToolkitView() {
+  els.btnToolkitSubtabNotice?.addEventListener('click', () => switchToolkitSubtab('notice'));
+  els.btnToolkitSubtabCards?.addEventListener('click', () => switchToolkitSubtab('cards'));
+
   if (els.toolkitTemplateButtons) {
     els.toolkitTemplateButtons.innerHTML = '';
-    for (const tpl of SCHOOL_NOTICE_TEMPLATES) {
+    const shortLabels = ['📌 준비물 안내', '📌 현장체험학습', '📌 알레르기 조사', '📌 학부모 상담'];
+    SCHOOL_NOTICE_TEMPLATES.forEach((tpl, idx) => {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn btn-surface btn-sm';
-      btn.textContent = `📌 ${tpl.title || tpl.label}`;
+      btn.className = 'toolkit-mini-tpl-chip';
+      btn.textContent = shortLabels[idx] || `📌 ${tpl.title || tpl.label}`;
+      btn.title = tpl.title || tpl.label || '';
       btn.addEventListener('click', () => {
         const ko = tpl.ko || tpl.koText || '';
-        const langKey = els.selectToolkitTargetLang?.value || 'vi';
+        const langKey = els.selectToolkitTargetLang?.value || state.selectedLangKey || 'vi';
         if (els.textareaToolkitSource) {
           els.textareaToolkitSource.value = ko;
         }
         if (tpl.translations?.[langKey] && els.textareaToolkitTarget) {
           els.textareaToolkitTarget.value = tpl.translations[langKey];
           if (els.toolkitBacktranslateText && els.toolkitBacktranslateBox) {
-            els.toolkitBacktranslateText.textContent = `“${ko}” (검증된 학교 표준 템플릿 번역문)`;
+            els.toolkitBacktranslateText.textContent = `“${ko}” (검증된 학교 표준 번역문)`;
             els.toolkitBacktranslateBox.classList.remove('hidden');
           }
           if (els.toolkitFeedbackMsg) {
-            els.toolkitFeedbackMsg.textContent = '✓ 검증된 다국어 가정통신문·알림장 표준 템플릿이 즉시 적용되었습니다!';
+            els.toolkitFeedbackMsg.textContent = '✓ 표준 알림장 번역문이 바로 적용되었습니다.';
           }
         } else {
           handleToolkitTranslate();
         }
       });
       els.toolkitTemplateButtons.appendChild(btn);
-    }
+    });
   }
 
   els.selectToolkitTargetLang?.addEventListener('change', () => {
-    renderClassroomCards();
-    const langMeta = getTargetLanguageMeta(els.selectToolkitTargetLang.value || 'vi');
-    if (els.labelToolkitTargetLang) {
-      els.labelToolkitTargetLang.textContent = `🌏 ${langMeta.label} (${langMeta.nativeLabel}) 번역 결과`;
-    }
-    if (els.textareaToolkitSource?.value.trim()) {
-      handleToolkitTranslate();
-    }
+    const val = els.selectToolkitTargetLang.value || 'vi';
+    applySelectedLanguageEverywhere(val);
   });
 
   els.btnToolkitClear?.addEventListener('click', () => {
@@ -4214,7 +4249,7 @@ function initToolkitView() {
   els.btnToolkitTranslate?.addEventListener('click', handleToolkitTranslate);
 
   els.btnToolkitSpeak?.addEventListener('click', () => {
-    const langKey = els.selectToolkitTargetLang?.value || 'vi';
+    const langKey = els.selectToolkitTargetLang?.value || state.selectedLangKey || 'vi';
     const text = els.textareaToolkitTarget?.value || '';
     const isSpeaking = els.btnToolkitSpeak.classList.contains('is-active');
     speakTextWithBrowserTTS(
@@ -4223,10 +4258,10 @@ function initToolkitView() {
       (st) => {
         if (st === 'speaking' || st === true) {
           els.btnToolkitSpeak.classList.add('is-active');
-          els.btnToolkitSpeak.textContent = '⏹️ 읽는 중 (중지)';
+          els.btnToolkitSpeak.textContent = '⏹️ 중지';
         } else {
           els.btnToolkitSpeak.classList.remove('is-active');
-          els.btnToolkitSpeak.textContent = '🔊 외국어 발음 듣기';
+          els.btnToolkitSpeak.textContent = '🔊 발음 듣기';
         }
       },
       isSpeaking
@@ -4239,7 +4274,7 @@ function initToolkitView() {
     try {
       await navigator.clipboard.writeText(target);
       if (els.toolkitFeedbackMsg) {
-        els.toolkitFeedbackMsg.textContent = '✓ 다국어 번역문을 클립보드에 복사했습니다!';
+        els.toolkitFeedbackMsg.textContent = '✓ 번역문을 복사했습니다!';
       }
     } catch {
       els.textareaToolkitTarget?.select();
@@ -4250,12 +4285,12 @@ function initToolkitView() {
     const ko = (els.textareaToolkitSource?.value || '').trim();
     const target = (els.textareaToolkitTarget?.value || '').trim();
     if (!ko && !target) return;
-    const langMeta = getTargetLanguageMeta(els.selectToolkitTargetLang?.value || 'vi');
+    const langMeta = getTargetLanguageMeta(els.selectToolkitTargetLang?.value || state.selectedLangKey || 'vi');
     const combined = `[학교 알림장 / 가정통신 안내]\n${ko}\n\n[${langMeta.label} (${langMeta.nativeLabel})]\n${target}`;
     try {
       await navigator.clipboard.writeText(combined);
       if (els.toolkitFeedbackMsg) {
-        els.toolkitFeedbackMsg.textContent = '✓ [한국어 + 다국어 병기] 학부모 문자·하이톡용 문구가 복사되었습니다!';
+        els.toolkitFeedbackMsg.textContent = '✓ [한국어 + 번역문] 문자용 문구가 복사되었습니다!';
       }
     } catch {
       els.textareaToolkitTarget?.select();
@@ -4269,15 +4304,15 @@ async function handleToolkitTranslate() {
   const koText = (els.textareaToolkitSource?.value || '').trim();
   if (!koText) {
     if (els.toolkitFeedbackMsg) {
-      els.toolkitFeedbackMsg.textContent = '번역할 한국어 알림장·안내문 문장을 먼저 입력하거나 위 템플릿 버튼을 눌러 주세요.';
+      els.toolkitFeedbackMsg.textContent = '번역할 한국어 알림장 문장을 입력하거나 위 예문 버튼을 눌러 주세요.';
     }
     return;
   }
 
-  const langKey = els.selectToolkitTargetLang?.value || 'vi';
+  const langKey = els.selectToolkitTargetLang?.value || state.selectedLangKey || 'vi';
   const langMeta = getTargetLanguageMeta(langKey);
   if (els.labelToolkitTargetLang) {
-    els.labelToolkitTargetLang.textContent = `🌏 ${langMeta.label} (${langMeta.nativeLabel}) 번역 결과`;
+    els.labelToolkitTargetLang.textContent = `${langMeta.label} 번역 결과`;
   }
 
   // Check if source matches a built-in template with pre-verified translation
@@ -4288,11 +4323,11 @@ async function handleToolkitTranslate() {
       els.textareaToolkitTarget.setAttribute('dir', langMeta.dir || 'ltr');
     }
     if (els.toolkitBacktranslateText && els.toolkitBacktranslateBox) {
-      els.toolkitBacktranslateText.textContent = `“${koText}” (검증된 학교 표준 템플릿 번역문)`;
+      els.toolkitBacktranslateText.textContent = `“${koText}” (검증된 학교 표준 번역문)`;
       els.toolkitBacktranslateBox.classList.remove('hidden');
     }
     if (els.toolkitFeedbackMsg) {
-      els.toolkitFeedbackMsg.textContent = `✓ ${langMeta.label} 표준 가정통신문·알림장 번역이 적용되었습니다!`;
+      els.toolkitFeedbackMsg.textContent = `✓ ${langMeta.label} 표준 알림장 번역이 적용되었습니다.`;
     }
     return;
   }
@@ -4348,7 +4383,7 @@ async function handleToolkitTranslate() {
     }
 
     if (els.toolkitFeedbackMsg) {
-      els.toolkitFeedbackMsg.textContent = `✓ ${langMeta.label} 번역 및 역번역 검증이 완료되었습니다!`;
+      els.toolkitFeedbackMsg.textContent = `✓ ${langMeta.label} 번역 완료!`;
     }
   } catch {
     // Fallback: apply matching school glossary terms so teacher still gets helpful terms + prompt copy
@@ -4370,10 +4405,10 @@ async function handleToolkitTranslate() {
 
 function renderClassroomCards() {
   if (!els.classroomCardsGrid) return;
-  const langKey = els.selectToolkitTargetLang?.value || 'vi';
+  const langKey = els.selectToolkitTargetLang?.value || state.selectedLangKey || 'vi';
   const langMeta = getTargetLanguageMeta(langKey);
   if (els.labelToolkitTargetLang) {
-    els.labelToolkitTargetLang.textContent = `🌏 ${langMeta.label} (${langMeta.nativeLabel}) 번역 결과`;
+    els.labelToolkitTargetLang.textContent = `${langMeta.label} 번역 결과`;
   }
 
   els.classroomCardsGrid.innerHTML = '';
@@ -4391,16 +4426,16 @@ function renderClassroomCards() {
       <div class="classroom-phrase-top">
         <span class="badge badge-context">${escapeHtml(item.category)}</span>
         <div class="inline-actions">
-          <button type="button" class="btn btn-outline btn-xs" data-role="phrase-tts-btn">🔊 발음 듣기</button>
+          <button type="button" class="btn btn-outline btn-xs" data-role="phrase-tts-btn">🔊 듣기</button>
           <button type="button" class="btn btn-surface btn-xs" data-role="phrase-copy-btn">📋 복사</button>
         </div>
       </div>
-      <div class="classroom-phrase-ko">🇰🇷 ${escapeHtml(item.ko)}</div>
+      <div class="classroom-phrase-ko">${escapeHtml(item.ko)}</div>
       <div class="classroom-phrase-target" lang="${escapeHtml(langMeta.key)}" dir="${escapeHtml(langMeta.dir || 'ltr')}">
         ${escapeHtml(targetText)}
       </div>
       <div class="classroom-phrase-pron">
-        🗣️ 발음 가이드: <strong>${escapeHtml(pronText)}</strong>
+        발음: <strong>${escapeHtml(pronText)}</strong>
       </div>
     `;
 
