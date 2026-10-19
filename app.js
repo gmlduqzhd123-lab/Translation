@@ -1176,7 +1176,7 @@ function createLanguageCardElement(lang) {
       </div>
       <span class="badge badge-context" id="lang-card-badge-${lang.key}">확인 중</span>
     </div>
-    <div class="lang-name-native" lang="${escapeHtml(lang.key)}">${escapeHtml(lang.nativeLabel)} (${escapeHtml(lang.candidates[0])})</div>
+    <div class="lang-name-native" lang="${escapeHtml(lang.key)}" dir="${escapeHtml(lang.dir || 'ltr')}">${escapeHtml(lang.nativeLabel)} (${escapeHtml(lang.candidates[0])})</div>
   `;
 
   const radio = label.querySelector('input[type="radio"]');
@@ -1204,6 +1204,26 @@ function renderLanguageCards() {
     } else if (els.languageOptionsGrid) {
       els.languageOptionsGrid.appendChild(cardEl);
     }
+  }
+
+  if (els.caseInputLang) {
+    const currentVal = els.caseInputLang.value;
+    els.caseInputLang.innerHTML =
+      '<option value="">선택해 주세요</option>' +
+      TARGET_LANGUAGES.map(
+        (l) => `<option value="${escapeHtml(l.key)}">${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
+      ).join('');
+    if (currentVal) els.caseInputLang.value = currentVal;
+  }
+
+  if (els.filterCaseLang) {
+    const currentFilter = els.filterCaseLang.value || 'all';
+    els.filterCaseLang.innerHTML =
+      '<option value="all">🌐 전체 언어</option>' +
+      TARGET_LANGUAGES.map(
+        (l) => `<option value="${escapeHtml(l.key)}">${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
+      ).join('');
+    els.filterCaseLang.value = currentFilter;
   }
 }
 
@@ -2443,6 +2463,7 @@ function renderReviewStep() {
               id="textarea-${item.id}"
               class="translation-textarea"
               lang="${escapeHtml(langMeta.key)}"
+              dir="${escapeHtml(langMeta.dir || 'ltr')}"
               placeholder="${escapeHtml(langMeta.label)} 번역문을 입력하거나 수정하세요..."
             ></textarea>
 
@@ -3066,7 +3087,7 @@ function handleOpenComparisonSheet() {
     tr.innerHTML = `
       <td><strong>${escapeHtml(item.locationLabel)}</strong><br/><small>${escapeHtml(item.contextLabel)}</small></td>
       <td lang="ko">${escapeHtml(item.sourceText)}</td>
-      <td lang="${escapeHtml(langMeta.key)}">${escapeHtml(st && st.finalText ? st.finalText : '(미입력)')}</td>
+      <td lang="${escapeHtml(langMeta.key)}" dir="${escapeHtml(langMeta.dir || 'ltr')}">${escapeHtml(st && st.finalText ? st.finalText : '(미입력)')}</td>
     `;
     els.printSheetTbody.appendChild(tr);
   }

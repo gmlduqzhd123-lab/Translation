@@ -25,7 +25,7 @@ export const TARGET_LANGUAGES = [
     key: 'zh-Hans',
     label: '중국어 간체',
     nativeLabel: '中文(简体)',
-    candidates: ['zh-Hans', 'zh'],
+    candidates: ['zh-Hans', 'zh-CN', 'zh'],
     speechLang: 'zh-CN',
     tier: 'core',
     sampleGreeting: '中文(简体) (중국어 간체)'
@@ -56,6 +56,15 @@ export const TARGET_LANGUAGES = [
     speechLang: 'ru-RU',
     tier: 'core',
     sampleGreeting: 'Русский (러시아어)'
+  },
+  {
+    key: 'zh-Hant',
+    label: '중국어 번체',
+    nativeLabel: '中文(繁體)',
+    candidates: ['zh-Hant', 'zh-TW', 'zh-HK'],
+    speechLang: 'zh-TW',
+    tier: 'extended',
+    sampleGreeting: '中文(繁體) (중국어 번체)'
   },
   {
     key: 'uz',
@@ -101,6 +110,134 @@ export const TARGET_LANGUAGES = [
     speechLang: 'fil-PH',
     tier: 'extended',
     sampleGreeting: 'Tagalog (필리핀어)'
+  },
+  {
+    key: 'id',
+    label: '인도네시아어',
+    nativeLabel: 'Bahasa Indonesia',
+    candidates: ['id', 'in'],
+    speechLang: 'id-ID',
+    tier: 'extended',
+    sampleGreeting: 'Bahasa Indonesia (인도네시아어)'
+  },
+  {
+    key: 'my',
+    label: '미얀마어(버마어)',
+    nativeLabel: 'မြန်မာဘာသာ',
+    candidates: ['my'],
+    speechLang: 'my-MM',
+    tier: 'extended',
+    sampleGreeting: 'မြန်မာဘာသာ (미얀마어)'
+  },
+  {
+    key: 'ne',
+    label: '네팔어',
+    nativeLabel: 'नेपाली',
+    candidates: ['ne'],
+    speechLang: 'ne-NP',
+    tier: 'extended',
+    sampleGreeting: 'नेपाली (네팔어)'
+  },
+  {
+    key: 'si',
+    label: '스리랑카어(신할라어)',
+    nativeLabel: 'සිංහල',
+    candidates: ['si'],
+    speechLang: 'si-LK',
+    tier: 'extended',
+    sampleGreeting: 'සිංහල (신할라어)'
+  },
+  {
+    key: 'hi',
+    label: '힌디어(인도)',
+    nativeLabel: 'हिन्दी',
+    candidates: ['hi'],
+    speechLang: 'hi-IN',
+    tier: 'extended',
+    sampleGreeting: 'हिन्दी (힌디어)'
+  },
+  {
+    key: 'bn',
+    label: '벵골어(방글라데시)',
+    nativeLabel: 'বাংলা',
+    candidates: ['bn'],
+    speechLang: 'bn-BD',
+    tier: 'extended',
+    sampleGreeting: 'বাংলা (벵골어)'
+  },
+  {
+    key: 'ur',
+    label: '파키스탄어(우르두어)',
+    nativeLabel: 'اردو',
+    candidates: ['ur'],
+    speechLang: 'ur-PK',
+    dir: 'rtl',
+    tier: 'extended',
+    sampleGreeting: 'اردو (우르두어)'
+  },
+  {
+    key: 'kk',
+    label: '카자흐어',
+    nativeLabel: 'Қазақша',
+    candidates: ['kk'],
+    speechLang: 'kk-KZ',
+    tier: 'extended',
+    sampleGreeting: 'Қазақша (카자흐어)'
+  },
+  {
+    key: 'ky',
+    label: '키르기스어',
+    nativeLabel: 'Кыргызча',
+    candidates: ['ky'],
+    speechLang: 'ky-KG',
+    tier: 'extended',
+    sampleGreeting: 'Кыргызча (키르기스어)'
+  },
+  {
+    key: 'ar',
+    label: '아랍어',
+    nativeLabel: 'العربية',
+    candidates: ['ar'],
+    speechLang: 'ar-SA',
+    dir: 'rtl',
+    tier: 'extended',
+    sampleGreeting: 'العربية (아랍어)'
+  },
+  {
+    key: 'es',
+    label: '스페인어',
+    nativeLabel: 'Español',
+    candidates: ['es'],
+    speechLang: 'es-ES',
+    tier: 'extended',
+    sampleGreeting: 'Español (스페인어)'
+  },
+  {
+    key: 'fr',
+    label: '프랑스어',
+    nativeLabel: 'Français',
+    candidates: ['fr'],
+    speechLang: 'fr-FR',
+    tier: 'extended',
+    sampleGreeting: 'Français (프랑스어)'
+  },
+  {
+    key: 'pt',
+    label: '포르투갈어',
+    nativeLabel: 'Português',
+    candidates: ['pt'],
+    speechLang: 'pt-BR',
+    tier: 'extended',
+    sampleGreeting: 'Português (포르투갈어)'
+  },
+  {
+    key: 'tr',
+    label: '튀르키예어',
+    nativeLabel: 'Türkçe',
+    candidates: ['tr'],
+    speechLang: 'tr-TR',
+    tier: 'extended',
+    sampleGreeting: 'Türkçe (튀르키예어)'
   }
 ];
 

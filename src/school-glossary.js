@@ -1,6 +1,6 @@
 /**
  * School & Classroom Multilingual Glossary + Non-translatable Text Detector
- * - Supports 10 languages: en, zh-Hans, vi, ja, ru, uz, mn, th, km, tl
+ * - Supports 25 languages: en, zh-Hans, vi, ja, ru, zh-Hant, uz, mn, th, km, tl, id, my, ne, si, hi, bn, ur, kk, ky, ar, es, fr, pt, tr
  * - Used for:
  *   1. Suggesting accurate school terminology per item in Step 4
  *   2. Bulk-applying glossary terms across the document
@@ -20,11 +20,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Mục tiêu học tập',
       ja: '学習目標',
       ru: 'Цели урока',
+      'zh-Hant': '學習目標',
       uz: 'Dars maqsadi',
       mn: 'Суралцах зорилго',
       th: 'จุดประสงค์การเรียนรู้',
       km: 'វត្ថុបំណងនៃការរៀន',
-      tl: 'Mga Layunin sa Pagkatuto'
+      tl: 'Mga Layunin sa Pagkatuto',
+      id: 'Tujuan Pembelajaran',
+      my: 'သင်ယူမှု ရည်မှန်းချက်',
+      ne: 'सिकाइ उद्देश्य',
+      si: 'ඉගෙනුම් අරමුණු',
+      hi: 'सीखने के उद्देश्य',
+      bn: 'শিখন উদ্দেশ্য',
+      ur: 'سیکھنے کے مقاصد',
+      kk: 'Оқу мақсаты',
+      ky: 'Окуу максаты',
+      ar: 'أهداف التعلم',
+      es: 'Objetivos de aprendizaje',
+      fr: "Objectifs d'apprentissage",
+      pt: 'Objetivos de aprendizagem',
+      tr: 'Öğrenme Hedefleri'
     }
   },
   {
@@ -36,11 +51,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Đồ dùng chuẩn bị',
       ja: '準備物',
       ru: 'Необходимые материалы',
+      'zh-Hant': '準備物品',
       uz: 'Kerakli jihozlar',
       mn: 'Бэлтгэх зүйлс',
       th: 'อุปกรณ์ที่ต้องเตรียม',
       km: 'សម្ភារៈត្រូវត្រៀម',
-      tl: 'Mga Kagamitan'
+      tl: 'Mga Kagamitan',
+      id: 'Perlengkapan yang Diperlukan',
+      my: 'လိုအပ်သော ပစ္စည်းများ',
+      ne: 'आवश्यक सामग्रीहरू',
+      si: 'අවශ්‍ය ද්‍රව්‍ය',
+      hi: 'आवश्यक सामग्री',
+      bn: 'প্রয়োজনীয় উপকরণ',
+      ur: 'ضروری اشیاء',
+      kk: 'Қажетті құралдар',
+      ky: 'Керектүү куралдар',
+      ar: 'الأدوات المطلوبة',
+      es: 'Materiales necesarios',
+      fr: 'Matériel nécessaire',
+      pt: 'Materiais necessários',
+      tr: 'Gerekli Malzemeler'
     }
   },
   {
@@ -52,11 +82,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Hoạt động nhóm',
       ja: 'グループ活動',
       ru: 'Групповая работа',
+      'zh-Hant': '小組活動',
       uz: 'Guruh faoliyati',
       mn: 'Багийн үйл ажиллагаа',
       th: 'กิจกรรมกลุ่ม',
       km: 'សកម្មភាពក្រុម',
-      tl: 'Pangkatang Gawain'
+      tl: 'Pangkatang Gawain',
+      id: 'Kegiatan Kelompok',
+      my: 'အဖွဲ့လိုက် လှုပ်ရှားမှု',
+      ne: 'समूह क्रियाकलाप',
+      si: 'කණ්ඩායම් ක්‍රියාකාරකම්',
+      hi: 'समूह गतिविधि',
+      bn: 'দলগত কাজ',
+      ur: 'گروپ سرگرمی',
+      kk: 'Топтық жұмыс',
+      ky: 'Топтук иш',
+      ar: 'نشاط جماعي',
+      es: 'Actividad en grupo',
+      fr: 'Activité de groupe',
+      pt: 'Atividade em grupo',
+      tr: 'Grup Etkinliği'
     }
   },
   {
@@ -68,11 +113,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Hoạt động cặp đôi',
       ja: 'ペア活動',
       ru: 'Работа в парах',
+      'zh-Hant': '同伴活動',
       uz: 'Juftlikda ishlash',
       mn: 'Хосоороо ажиллах',
       th: 'กิจกรรมคู่',
       km: 'សកម្មភាពដៃគូ',
-      tl: 'Gawaing Magkapareha'
+      tl: 'Gawaing Magkapareha',
+      id: 'Kegiatan Berpasangan',
+      my: 'နှစ်ဦးတွဲ လှုပ်ရှားမှု',
+      ne: 'जोडी क्रियाकलाप',
+      si: 'යුගල ක්‍රියාකාරකම්',
+      hi: 'जोड़ी में गतिविधि',
+      bn: 'জোড়ায় কাজ',
+      ur: 'جوڑی کی سرگرمی',
+      kk: 'Жұптық жұмыс',
+      ky: 'Жуп менен иштөө',
+      ar: 'نشاط ثنائي',
+      es: 'Actividad en parejas',
+      fr: 'Activité en binôme',
+      pt: 'Atividade em duplas',
+      tr: 'İkili Etkinlik'
     }
   },
   {
@@ -84,11 +144,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Hoạt động cá nhân',
       ja: '個人活動',
       ru: 'Индивидуальная работа',
+      'zh-Hant': '個人活動',
       uz: 'Mustaqil ish',
       mn: 'Бие даасан ажил',
       th: 'กิจกรรมเดี่ยว',
       km: 'សកម្មភាពបុគ្គល',
-      tl: 'Indibidwal na Gawain'
+      tl: 'Indibidwal na Gawain',
+      id: 'Kegiatan Individu',
+      my: 'တစ်ဦးချင်း လှုပ်ရှားမှု',
+      ne: 'व्यक्तिगत क्रियाकलाप',
+      si: 'තනි ක්‍රියාකාරකම්',
+      hi: 'व्यक्तिगत गतिविधि',
+      bn: 'একক কাজ',
+      ur: 'انفرادی سرگرمی',
+      kk: 'Жеке жұмыс',
+      ky: 'Жекече иш',
+      ar: 'نشاط فردي',
+      es: 'Actividad individual',
+      fr: 'Activité individuelle',
+      pt: 'Atividade individual',
+      tr: 'Bireysel Etkinlik'
     }
   },
   {
@@ -100,11 +175,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Phiếu hoạt động',
       ja: 'ワークシート',
       ru: 'Рабочий лист',
+      'zh-Hant': '學習單',
       uz: 'Ish varaqasi',
       mn: 'Ажлын хуудас',
       th: 'ใบกิจกรรม',
       km: 'សន្លឹកកិច្ចការ',
-      tl: 'Activity Sheet'
+      tl: 'Activity Sheet',
+      id: 'Lembar Kerja',
+      my: 'လေ့ကျင့်ခန်းစာရွက်',
+      ne: 'कार्यपत्र',
+      si: 'ක්‍රියාකාරකම් පත්‍රිකාව',
+      hi: 'कार्यपत्रक (वर्कशीट)',
+      bn: 'অনুশীলন পত্র',
+      ur: 'ورک شیٹ',
+      kk: 'Жұмыс парағы',
+      ky: 'Иш барагы',
+      ar: 'ورقة عمل',
+      es: 'Hoja de actividades',
+      fr: "Fiche d'activité",
+      pt: 'Folha de atividades',
+      tr: 'Çalışma Kağıdı'
     }
   },
   {
@@ -116,11 +206,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Sách giáo khoa',
       ja: '教科書',
       ru: 'Учебник',
+      'zh-Hant': '教科書',
       uz: 'Darslik',
       mn: 'Сурах бичиг',
       th: 'หนังสือเรียน',
       km: 'សៀវភៅសិក្សា',
-      tl: 'Aklat-aralin'
+      tl: 'Aklat-aralin',
+      id: 'Buku Pelajaran',
+      my: 'ကျောင်းသုံးစာအုပ်',
+      ne: 'पाठ्यपुस्तक',
+      si: 'පෙළපොත',
+      hi: 'पाठ्यपुस्तक',
+      bn: 'পাঠ্যবই',
+      ur: 'نصاب کی کتاب',
+      kk: 'Оқулық',
+      ky: 'Окуу китеби',
+      ar: 'الكتاب المدرسي',
+      es: 'Libro de texto',
+      fr: 'Manuel scolaire',
+      pt: 'Livro didático',
+      tr: 'Ders Kitabı'
     }
   },
   {
@@ -132,11 +237,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Kết quả thí nghiệm',
       ja: '実験結果',
       ru: 'Результаты опыта',
+      'zh-Hant': '實驗結果',
       uz: 'Tajriba natijasi',
       mn: 'Туршилтын үр дүн',
       th: 'ผลการทดลอง',
       km: 'លទ្ធផលពិសោធន៍',
-      tl: 'Resulta ng Eksperimento'
+      tl: 'Resulta ng Eksperimento',
+      id: 'Hasil Percobaan',
+      my: 'လက်တွေ့စမ်းသပ်မှု ရလဒ်',
+      ne: 'प्रयोगको नतिजा',
+      si: 'පරීක්ෂණ ප්‍රතිඵල',
+      hi: 'प्रयोग का परिणाम',
+      bn: 'পরীক্ষার ফলাফল',
+      ur: 'تجربے کا نتیجہ',
+      kk: 'Тәжірибе нәтижесі',
+      ky: 'Тажрыйбанын жыйынтыгы',
+      ar: 'نتائج التجربة',
+      es: 'Resultados del experimento',
+      fr: "Résultats de l'expérience",
+      pt: 'Resultados do experimento',
+      tr: 'Deney Sonuçları'
     }
   },
   {
@@ -148,11 +268,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Ghi chép quan sát',
       ja: '観察記録',
       ru: 'Запись наблюдений',
+      'zh-Hant': '觀察記錄',
       uz: 'Kuzatuv qaydlari',
       mn: 'Ажиглалтын тэмдэглэл',
       th: 'บันทึกการสังเกต',
-      km: 'កំណត់ត្រាសង្เกต',
-      tl: 'Tala ng Obserbasyon'
+      km: 'កំណត់ត្រាសង្កេត',
+      tl: 'Tala ng Obserbasyon',
+      id: 'Catatan Pengamatan',
+      my: 'လေ့လာမှတ်သားချက်',
+      ne: 'अवलोकन अभिलेख',
+      si: 'නිරීක්ෂණ සටහන',
+      hi: 'अवलोकन रिकॉर्ड',
+      bn: 'পর্যবেক্ষণ রেকর্ড',
+      ur: 'مشاہداتی ریکارڈ',
+      kk: 'Бақылау жазбасы',
+      ky: 'Байкоо жазуусу',
+      ar: 'سجل الملاحظة',
+      es: 'Registro de observación',
+      fr: "Journal d'observation",
+      pt: 'Registro de observação',
+      tr: 'Gözlem Kaydı'
     }
   },
   {
@@ -164,11 +299,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Đánh giá thực hành',
       ja: 'パフォーマンス評価',
       ru: 'Практическая оценка',
+      'zh-Hant': '表現評量',
       uz: 'Amaliy baholash',
       mn: 'Гүйцэтгэлийн үнэлгээ',
       th: 'การประเมินภาคปฏิบัติ',
       km: 'ការវាយតម្លៃការអនុវត្ត',
-      tl: 'Performance Assessment'
+      tl: 'Performance Assessment',
+      id: 'Penilaian Praktik',
+      my: 'လက်တွေ့စွမ်းဆောင်ရည် အကဲဖြတ်ခြင်း',
+      ne: 'कार्यसम्पादन मूल्याङ्कन',
+      si: 'කාර්ය සාධන ඇගයීම',
+      hi: 'प्रदर्शन मूल्यांकन',
+      bn: 'কার্যসম্পাদন মূল্যায়ন',
+      ur: 'عملی جائزہ',
+      kk: 'Тәжірибелік бағалау',
+      ky: 'Практикалык баалоо',
+      ar: 'تقييم الأداء العملي',
+      es: 'Evaluación práctica',
+      fr: 'Évaluation pratique',
+      pt: 'Avaliação prática',
+      tr: 'Performans Değerlendirmesi'
     }
   },
   {
@@ -180,11 +330,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Thư thông báo gửi phụ huynh',
       ja: '家庭通信（お便り）',
       ru: 'Информационное письмо для родителей',
+      'zh-Hant': '家長通知書',
       uz: 'Ota-onalar uchun xabarnoma',
       mn: 'Эцэг эхэд хүргэх мэдэгдэл',
       th: 'จดหมายข่าวแจ้งผู้ปกครอง',
       km: 'លិខិតជូនដំណឹងដល់មាតាបិតា',
-      tl: 'Liham para sa mga Magulang'
+      tl: 'Liham para sa mga Magulang',
+      id: 'Surat Pemberitahuan Orang Tua',
+      my: 'မိဘများထံ အသိပေးစာ',
+      ne: 'अभिभावक सूचना पत्र',
+      si: 'දෙමාපියන් වෙත දැනුම්දීමේ ලිපිය',
+      hi: 'अभिभावक सूचना पत्र',
+      bn: 'অভিভাবকদের জন্য বিজ্ঞপ্তি',
+      ur: 'والدین کے لیے اطلاع نامہ',
+      kk: 'Ата-аналарға хабарлама',
+      ky: 'Ата-энелерге билдирүү баракчасы',
+      ar: 'رسالة إخبارية لأولياء الأمور',
+      es: 'Circular para las familias',
+      fr: 'Lettre aux parents',
+      pt: 'Comunicado aos pais',
+      tr: 'Veli Bilgilendirme Mektubu'
     }
   },
   {
@@ -196,11 +361,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Sổ báo bài',
       ja: '連絡帳',
       ru: 'Дневник объявлений',
+      'zh-Hant': '聯絡簿',
       uz: 'Kundalik eslatma',
       mn: 'Мэдэгдлийн дэвтэр',
       th: 'สมุดจดการบ้าน',
       km: 'សៀវភៅតាមដាន',
-      tl: 'Talaan ng Paalala'
+      tl: 'Talaan ng Paalala',
+      id: 'Buku Penghubung / Catatan Harian',
+      my: 'နေ့စဉ်မှတ်စုစာအုပ်',
+      ne: 'दैनिक डायरी',
+      si: 'දෛනික සටහන් පොත',
+      hi: 'दैनिक सूचना डायरी',
+      bn: 'দৈনিক ডায়েরি',
+      ur: 'روزانہ ڈائری',
+      kk: 'Күнделік хабарлама',
+      ky: 'Күндөлүк эскерт메',
+      ar: 'مذكرة الواجبات اليومية',
+      es: 'Agenda escolar',
+      fr: 'Cahier de liaison',
+      pt: 'Agenda escolar',
+      tr: 'Günlük Duyuru Defteri'
     }
   },
   {
@@ -212,11 +392,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Lưu ý quan trọng',
       ja: '注意事項',
       ru: 'Меры предосторожности',
+      'zh-Hant': '注意事項',
       uz: 'Ehtiyot choralari',
       mn: 'Анхаарах зүйлс',
       th: 'ข้อควรระวัง',
       km: 'ចំណុចគួរប្រុងប្រយ័ត្ន',
-      tl: 'Mga Paalala sa Kaligtasan'
+      tl: 'Mga Paalala sa Kaligtasan',
+      id: 'Hal yang Perlu Diperhatikan',
+      my: 'သတိပြုရန် အချက်များ',
+      ne: 'ध्यान दिनुपर्ने कुराहरू',
+      si: 'අවධානය යොමු කළ යුතු කරුණු',
+      hi: 'सावधानियाँ',
+      bn: 'সতর্কতা',
+      ur: 'احتیاطی تدابیر',
+      kk: 'Сақтық шаралары',
+      ky: 'Көңүл буруучу жагдайлар',
+      ar: 'إرشادات السلامة والاحتياطات',
+      es: 'Precauciones',
+      fr: 'Précautions à prendre',
+      pt: 'Precauções',
+      tr: 'Dikkat Edilecek Hususlar'
     }
   },
   {
@@ -228,11 +423,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Tổng kết bài học',
       ja: 'まとめ',
       ru: 'Подведение итогов',
+      'zh-Hant': '總結與回顧',
       uz: 'Xulosa qilish',
       mn: 'Дүгнэлт хийх',
       th: 'สรุปบทเรียน',
       km: 'សង្ខេបមេរៀន',
-      tl: 'Pagbubuod'
+      tl: 'Pagbubuod',
+      id: 'Kesimpulan & Rangkuman',
+      my: 'သင်ခန်းစာ အနှစ်ချုပ်',
+      ne: 'सारांश र पुनरावलोकन',
+      si: 'පාඩම සාරාංශ කිරීම',
+      hi: 'सारांश और पुनरावृत्ति',
+      bn: 'পাঠ সংক্ষেপণ',
+      ur: 'خلاصہ اور دہرائی',
+      kk: 'Қорытындылау',
+      ky: 'Жыйынтыктоо',
+      ar: 'ملخص ومراجعة الدرس',
+      es: 'Resumen y repaso',
+      fr: 'Synthèse et bilan',
+      pt: 'Resumo e revisão',
+      tr: 'Özet ve Değerlendirme'
     }
   },
   {
@@ -244,11 +454,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Thuyết trình',
       ja: '発表する',
       ru: 'Презентация',
+      'zh-Hant': '發表與分享',
       uz: 'Taqdimot qilish',
       mn: 'Илтгэх',
       th: 'การนำเสนอ',
       km: 'ការធ្វើបទបង្ហាញ',
-      tl: 'Pag-uulat'
+      tl: 'Pag-uulat',
+      id: 'Presentasi',
+      my: 'တင်ပြဆွေးနွေးခြင်း',
+      ne: 'प्रस्तुतीकरण',
+      si: 'ඉදිරිපත් කිරීම',
+      hi: 'प्रस्तुतीकरण',
+      bn: 'উপস্থাপনা',
+      ur: 'پیشکش (پریزنٹیشن)',
+      kk: 'Таныстырылым жасау',
+      ky: 'Презентация жасоо',
+      ar: 'عرض تقديمي',
+      es: 'Presentación',
+      fr: 'Présentation orale',
+      pt: 'Apresentação',
+      tr: 'Sunum Yapma'
     }
   },
   {
@@ -260,11 +485,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Khối lớp',
       ja: '学年',
       ru: 'Класс (параллель)',
+      'zh-Hant': '年級',
       uz: 'Sinf',
       mn: 'Анги',
       th: 'ชั้นปี',
       km: 'ថ្នាក់ទី',
-      tl: 'Baitang'
+      tl: 'Baitang',
+      id: 'Kelas / Tingkat',
+      my: 'အတန်း',
+      ne: 'कक्षा',
+      si: 'ශ්‍රේණිය',
+      hi: 'कक्षा (ग्रेड)',
+      bn: 'শ্রেণি',
+      ur: 'جماعت',
+      kk: 'Сынып',
+      ky: 'Класс',
+      ar: 'الصف الدراسي',
+      es: 'Grado / Curso',
+      fr: 'Niveau / Classe',
+      pt: 'Série / Ano',
+      tr: 'Sınıf Düzeyi'
     }
   },
   {
@@ -276,11 +516,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Mã số học sinh',
       ja: '出席番号',
       ru: 'Номер ученика',
+      'zh-Hant': '學號',
       uz: "O'quvchi raqami",
       mn: 'Сурагчийн дугаар',
       th: 'เลขประจำตัวนักเรียน',
       km: 'អត្តលេខសិស្ស',
-      tl: 'Student Number'
+      tl: 'Student Number',
+      id: 'Nomor Induk Siswa',
+      my: 'ကျောင်းသားနံပါတ်',
+      ne: 'विद्यार्थी रोल नम्बर',
+      si: 'ශිෂ්‍ය අංකය',
+      hi: 'रोल नंबर (छात्र संख्या)',
+      bn: 'রোল নম্বর',
+      ur: 'طالب علم کا رول نمبر',
+      kk: 'Оқушы нөмірі',
+      ky: 'Окуучунун номери',
+      ar: 'رقم الطالب',
+      es: 'Número de estudiante',
+      fr: "Numéro d'élève",
+      pt: 'Número do aluno',
+      tr: 'Öğrenci Numarası'
     }
   },
   {
@@ -292,11 +547,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Họ và tên',
       ja: '名前',
       ru: 'Имя',
+      'zh-Hant': '姓名',
       uz: 'Ism-sharif',
       mn: 'Нэр',
       th: 'ชื่อ-นามสกุล',
       km: 'ឈ្មោះ',
-      tl: 'Pangalan'
+      tl: 'Pangalan',
+      id: 'Nama Lengkap',
+      my: 'အမည်',
+      ne: 'नाम',
+      si: 'නම',
+      hi: 'नाम',
+      bn: 'নাম',
+      ur: 'نام',
+      kk: 'Аты-жөні',
+      ky: 'Аты-жөнү',
+      ar: 'الاسم',
+      es: 'Nombre',
+      fr: 'Nom et prénom',
+      pt: 'Nome',
+      tr: 'Ad Soyad'
     }
   },
   {
@@ -308,11 +578,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Bài tập về nhà',
       ja: '課題（宿題）',
       ru: 'Домашнее задание',
+      'zh-Hant': '課後作業',
       uz: 'Uyga vazifa',
       mn: 'Гэрийн даалгавар',
       th: 'การบ้าน',
       km: 'កិច្ចការផ្ទះ',
-      tl: 'Takdang-aralin'
+      tl: 'Takdang-aralin',
+      id: 'Tugas / Pekerjaan Rumah',
+      my: 'အိမ်စာ',
+      ne: 'गृहकार्य',
+      si: 'ගෙදර වැඩ',
+      hi: 'गृहकार्य (होमवर्क)',
+      bn: 'বাড়ির কাজ',
+      ur: 'ہوم ورک / تفویض',
+      kk: 'Үй тапсырмасы',
+      ky: 'Үй тапшырмасы',
+      ar: 'الواجب المنزلي',
+      es: 'Tarea / Deberes',
+      fr: 'Devoirs',
+      pt: 'Tarefa de casa',
+      tr: 'Ödev'
     }
   },
   {
@@ -324,11 +609,26 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       vi: 'Cùng suy nghĩ nhé',
       ja: '考えてみましょう',
       ru: 'Давайте подумаем',
+      'zh-Hant': '想一想',
       uz: "O'ylab ko'raylik",
       mn: 'Хамтдаа эргэцүүлье',
       th: 'ลองคิดดูสิ',
       km: 'ចូរគិតទាំងអស់គ្នា',
-      tl: 'Pag-isipan Natin'
+      tl: 'Pag-isipan Natin',
+      id: 'Mari Kita Pikirkan Bersama',
+      my: 'အတူတကွ စဉ်းစားကြည့်ကြပါစို့',
+      ne: 'सँगै सोचौँ',
+      si: 'එක්ව සිතා බලමු',
+      hi: 'आइए मिलकर सोचें',
+      bn: 'চলো একসাথে চিন্তা করি',
+      ur: 'آئیے مل کر سوچیں',
+      kk: 'Бірге ойланайық',
+      ky: 'Бирге ойлонуп көрөлү',
+      ar: 'دعونا نفكر معاً',
+      es: 'Pensemos juntos',
+      fr: 'Réfléchissons ensemble',
+      pt: 'Vamos pensar juntos',
+      tr: 'Birlikte Düşünelim'
     }
   }
 ];
@@ -393,8 +693,8 @@ export function findMatchingGlossaryTerms(sourceText, langKey, currentTranslatio
 export function isNonTranslatableText(text) {
   const trimmed = String(text ?? '').trim();
   if (!trimmed) return false;
-  // Contains any Hangul syllable/jamo or Latin/CJK letters?
-  const hasLetters = /[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z\u4e00-\u9fff\u3040-\u30ff\u0400-\u04ff]/.test(trimmed);
+  // Contains any Unicode letter (Hangul, Latin, CJK, Cyrillic, Arabic, Devanagari, etc.)?
+  const hasLetters = /[\p{L}가-힣ㄱ-ㅎㅏ-ㅣ]/u.test(trimmed);
   if (!hasLetters) {
     return true;
   }
@@ -511,9 +811,9 @@ export function evaluateTranslationAccuracyIssues(sourceText, translatedText, ke
     }
   }
 
-  // 3. Check question mark mismatch
+  // 3. Check question mark mismatch (supports ?, ？, Arabic/Urdu ؟, Myanmar ՞/？, etc.)
   const srcIsQuestion = /[?？]\s*$/.test(src);
-  const dstIsQuestion = /[?？]\s*$/.test(dst);
+  const dstIsQuestion = /[?？؟¿]\s*$/.test(dst);
   if (srcIsQuestion && !dstIsQuestion) {
     issues.push({
       code: 'missing-question',

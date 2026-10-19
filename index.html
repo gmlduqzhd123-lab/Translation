@@ -196,7 +196,7 @@
               <div class="transform-icon" aria-hidden="true">🌏</div>
               <div class="transform-text">
                 <strong>다국어 수업자료 완성!</strong>
-                <span>영어 · 중국어 · 베트남어 · 일본어 · 러시아어 외 총 10개 국어</span>
+                <span>영어 · 중국어 · 베트남어 · 일본어 · 러시아어 외 총 25개 국어</span>
               </div>
             </div>
           </div>
@@ -341,7 +341,7 @@
             </summary>
             <div class="accordion-body">
               <ul class="info-list">
-                <li><strong>번역 지원 언어 (10개):</strong> 한국어 원문 → <strong>영어, 중국어 간체, 베트남어, 일본어, 러시아어, 우즈베크어, 몽골어, 태국어, 캄보디아어(크메르어), 필리핀어(타갈로그어)</strong> 중 1개 선택</li>
+                <li><strong>번역 지원 언어 (25개 국어):</strong> 한국어 원문 → <strong>영어, 중국어 간체·번체, 베트남어, 일본어, 러시아어, 우즈베크어, 몽골어, 태국어, 캄보디아어(크메르어), 필리핀어(타갈로그어), 인도네시아어, 미얀마어, 네팔어, 스리랑카어(신할라어), 힌디어, 벵골어, 파키스탄어(우르두어), 카자흐어, 키르기스어, 아랍어, 스페인어, 프랑스어, 포르투갈어, 튀르키예어</strong> 중 1개 선택</li>
                 <li><strong>번역되는 내용:</strong> 마우스로 클릭해 글자를 고칠 수 있는 모든 텍스트(슬라이드 제목·본문, 글상자, 표 안의 글자, 한글 문단)</li>
                 <li><strong>번역에서 제외되는 내용:</strong> <strong>그림(이미지) 파일 속에 그려진 글자</strong>, 스캔한 문서, PDF, 동영상·음성, 암호가 걸린 문서</li>
                 <li><strong>문서 모양 유지 안내:</strong> 사진·도형·표의 기본 틀은 그대로 유지됩니다. 다만 외국어 문장이 한국어보다 길어질 수 있으므로 다운로드 후 문서 프로그램에서 글자 크기를 한 번 확인해 주세요.</li>
@@ -430,8 +430,8 @@
           </div>
         </div>
 
-        <!-- 대상 언어 선택 라디오 그룹 (기본 5개 언어 + 다문화 학급 확장 5개 언어) -->
-        <fieldset class="lang-fieldset" role="radiogroup" aria-label="번역할 대상 언어 선택 (10개 국어 중 택 1)">
+        <!-- 대상 언어 선택 라디오 그룹 (기본 5개 언어 + 다문화 학급 확장 20개 언어) -->
+        <fieldset class="lang-fieldset" role="radiogroup" aria-label="번역할 대상 언어 선택 (25개 국어 중 택 1)">
           <legend class="fieldset-legend">1. 주요 대상 언어 5종 (Chrome 내장 자동 번역 우선 지원)</legend>
           <div id="language-options-grid" class="language-options-grid" role="group" aria-label="주요 대상 언어 5종">
             <!-- JS에서 렌더링 -->
@@ -439,9 +439,9 @@
 
           <div class="extended-lang-section">
             <div class="extended-lang-title">
-              🌏 다문화 학급 추가 지원 언어 5종 <small>(내장 번역 모델 지원 시 자동 번역 · 미지원 환경에서는 학교 용어집·표 붙여넣기 지원)</small>
+              🌏 다문화 학급 추가 지원 언어 20종 <small>(내장 번역 모델 지원 시 자동 번역 · 미지원 환경에서는 학교 용어집·표 붙여넣기 지원)</small>
             </div>
-            <div id="extended-language-options-grid" class="language-options-grid" role="group" aria-label="다문화 학급 추가 지원 언어 5종">
+            <div id="extended-language-options-grid" class="language-options-grid" role="group" aria-label="다문화 학급 추가 지원 언어 20종">
               <!-- JS에서 렌더링 -->
             </div>
           </div>
@@ -995,15 +995,30 @@
                 <select id="case-input-lang" required>
                   <option value="">선택해 주세요</option>
                   <option value="en">영어 (English)</option>
-                  <option value="zh-Hans">중국어 간체 (中文)</option>
+                  <option value="zh-Hans">중국어 간체 (中文(简体))</option>
                   <option value="vi">베트남어 (Tiếng Việt)</option>
                   <option value="ja">일본어 (日本語)</option>
                   <option value="ru">러시아어 (Русский)</option>
+                  <option value="zh-Hant">중국어 번체 (中文(繁體))</option>
                   <option value="uz">우즈베크어 (Oʻzbekcha)</option>
                   <option value="mn">몽골어 (Монгол)</option>
                   <option value="th">태국어 (ภาษาไทย)</option>
                   <option value="km">캄보디아어 (ភាសាខ្មែរ)</option>
                   <option value="tl">필리핀어 (Tagalog)</option>
+                  <option value="id">인도네시아어 (Bahasa Indonesia)</option>
+                  <option value="my">미얀마어 (မြန်မာဘာသာ)</option>
+                  <option value="ne">네팔어 (नेपाली)</option>
+                  <option value="si">스리랑카어 (සිංහල)</option>
+                  <option value="hi">힌디어 (हिन्दी)</option>
+                  <option value="bn">벵골어 (বাংলা)</option>
+                  <option value="ur">파키스탄어 (اردو)</option>
+                  <option value="kk">카자흐어 (Қазақша)</option>
+                  <option value="ky">키르기스어 (Кыргызча)</option>
+                  <option value="ar">아랍어 (العربية)</option>
+                  <option value="es">스페인어 (Español)</option>
+                  <option value="fr">프랑스어 (Français)</option>
+                  <option value="pt">포르투갈어 (Português)</option>
+                  <option value="tr">튀르키예어 (Türkçe)</option>
                 </select>
               </div>
 
@@ -1110,11 +1125,26 @@
             <option value="vi">베트남어</option>
             <option value="ja">일본어</option>
             <option value="ru">러시아어</option>
+            <option value="zh-Hant">중국어 번체</option>
             <option value="uz">우즈베크어</option>
             <option value="mn">몽골어</option>
             <option value="th">태국어</option>
             <option value="km">캄보디아어</option>
             <option value="tl">필리핀어</option>
+            <option value="id">인도네시아어</option>
+            <option value="my">미얀마어</option>
+            <option value="ne">네팔어</option>
+            <option value="si">스리랑카어</option>
+            <option value="hi">힌디어</option>
+            <option value="bn">벵골어</option>
+            <option value="ur">파키스탄어</option>
+            <option value="kk">카자흐어</option>
+            <option value="ky">키르기스어</option>
+            <option value="ar">아랍어</option>
+            <option value="es">스페인어</option>
+            <option value="fr">프랑스어</option>
+            <option value="pt">포르투갈어</option>
+            <option value="tr">튀르키예어</option>
           </select>
 
           <select id="filter-case-grade" aria-label="학년별 필터">
@@ -1277,8 +1307,8 @@
             <div class="manual-step-item">
               <div class="manual-step-badge">3단계</div>
               <div>
-                <h3>대상 언어(10개 국어) 선택 및 자동 번역 실행</h3>
-                <p><strong>영어, 중국어 간체, 베트남어, 일본어, 러시아어, 우즈베크어, 몽골어, 태국어, 캄보디아어(크메르어), 필리핀어(타갈로그어)</strong> 중 하나를 고르고 <strong>[🤖 선택한 언어로 자동 번역 초안 만들기]</strong>를 누릅니다. (직접 입력이나 외부 번역기 일괄 붙여넣기를 원하시면 <strong>[직접 번역문 입력하기]</strong>로 진행할 수 있습니다.)</p>
+                <h3>대상 언어(25개 국어) 선택 및 자동 번역 실행</h3>
+                <p><strong>영어, 중국어 간체·번체, 베트남어, 일본어, 러시아어, 우즈베크어, 몽골어, 태국어, 캄보디아어(크메르어), 필리핀어(타갈로그어), 인도네시아어, 미얀마어, 네팔어, 스리랑카어(신할라어), 힌디어, 벵골어, 파키스탄어(우르두어), 카자흐어, 키르기스어, 아랍어, 스페인어, 프랑스어, 포르투갈어, 튀르키예어</strong> 중 하나를 고르고 <strong>[🤖 선택한 언어로 자동 번역 초안 만들기]</strong>를 누릅니다. (직접 입력이나 외부 번역기 일괄 붙여넣기를 원하시면 <strong>[직접 번역문 입력하기]</strong>로 진행할 수 있습니다.)</p>
               </div>
             </div>
             <div class="manual-step-item">
