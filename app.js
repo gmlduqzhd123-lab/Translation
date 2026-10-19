@@ -40,6 +40,16 @@ function cacheElements() {
     5: document.getElementById('step-5')
   };
 
+  // Manual Modal
+  els.btnOpenManual = document.getElementById('btn-open-manual');
+  els.btnOpenManualInline = document.getElementById('btn-open-manual-inline');
+  els.manualModal = document.getElementById('manual-modal');
+  els.btnCloseManual = document.getElementById('btn-close-manual');
+  els.btnCloseManualBottom = document.getElementById('btn-close-manual-bottom');
+  els.manualTabs = document.querySelectorAll('.modal-tab');
+  els.manualTabPanels = document.querySelectorAll('.manual-tab-panel');
+  els.detailsLegacyConvert = document.getElementById('details-legacy-convert');
+
   // Step 1
   els.dropZone = document.getElementById('drop-zone');
   els.fileInput = document.getElementById('file-input');
@@ -100,6 +110,7 @@ function cacheElements() {
   els.reviewFailedChip = document.getElementById('review-failed-chip');
   els.reviewFailedCount = document.getElementById('review-failed-count');
   els.filterBtns = document.querySelectorAll('.filter-btn');
+  els.btnNextUnverified = document.getElementById('btn-next-unverified');
   els.btnFillEmptyWithSource = document.getElementById('btn-fill-empty-with-source');
   els.btnVerifyAllVisible = document.getElementById('btn-verify-all-visible');
   els.currentPositionIndicator = document.getElementById('current-position-indicator');
@@ -145,12 +156,56 @@ function checkMobileBanner() {
   }
 }
 
+function openManualModal(tabId = 'tab-basic') {
+  if (!els.manualModal) return;
+  switchManualTab(tabId);
+  els.manualModal.classList.remove('hidden');
+  els.btnCloseManual?.focus();
+}
+
+function closeManualModal() {
+  if (!els.manualModal) return;
+  els.manualModal.classList.add('hidden');
+}
+
+function switchManualTab(targetTabId) {
+  els.manualTabs.forEach((tab) => {
+    const isMatch = tab.getAttribute('data-manual-tab') === targetTabId;
+    tab.classList.toggle('active', isMatch);
+    tab.setAttribute('aria-selected', isMatch ? 'true' : 'false');
+  });
+  els.manualTabPanels.forEach((panel) => {
+    panel.classList.toggle('hidden', panel.id !== targetTabId);
+    panel.classList.toggle('active', panel.id === targetTabId);
+  });
+}
+
 function bindEvents() {
   // Unsaved work warning before refresh/close
   window.addEventListener('beforeunload', (e) => {
     if (state.hasUnsavedWork) {
       e.preventDefault();
       e.returnValue = '';
+    }
+  });
+
+  // Manual Modal events
+  els.btnOpenManual?.addEventListener('click', () => openManualModal('tab-basic'));
+  els.btnOpenManualInline?.addEventListener('click', () => openManualModal('tab-basic'));
+  els.btnCloseManual?.addEventListener('click', closeManualModal);
+  els.btnCloseManualBottom?.addEventListener('click', closeManualModal);
+  els.manualModal?.addEventListener('click', (e) => {
+    if (e.target === els.manualModal) closeManualModal();
+  });
+  els.manualTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.getAttribute('data-manual-tab');
+      if (target) switchManualTab(target);
+    });
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && els.manualModal && !els.manualModal.classList.contains('hidden')) {
+      closeManualModal();
     }
   });
 
@@ -256,6 +311,8 @@ function bindEvents() {
     });
   });
 
+  els.btnNextUnverified?.addEventListener('click', jumpToNextUnverified);
+
   els.btnFillEmptyWithSource.addEventListener('click', () => {
     if (!state.parsedDoc) return;
     let changed = 0;
@@ -357,11 +414,17 @@ function hideUploadError() {
   els.uploadErrorBox.classList.add('hidden');
 }
 
-function showUploadError(title, message, actionHint) {
+function showUploadError(title, message, actionHint, code = '') {
   els.uploadErrorTitle.textContent = title;
   els.uploadErrorMessage.textContent = message;
   els.uploadErrorAction.textContent = actionHint ? `해결 방법: ${actionHint}` : '';
   els.uploadErrorBox.classList.remove('hidden');
+
+  if (code.includes('LEGACY_') || code.includes('OLE2_')) {
+    if (els.detailsLegacyConvert) {
+      els.detailsLegacyConvert.open = true;
+    }
+  }
 }
 
 async function handleUploadedFile(file) {
@@ -371,7 +434,7 @@ async function handleUploadedFile(file) {
     await processLoadedBuffer(file.name, arrayBuffer);
   } catch (err) {
     if (err instanceof DocumentProcessError) {
-      showUploadError(err.title, err.message, err.actionHint);
+      showUploadError(err.title, err.message, err.actionHint, err.code);
     } else {
       showUploadError(
         '파일을 읽는 중 오류가 발생했습니다',
@@ -393,7 +456,7 @@ async function loadSampleDocument(url, displayFileName) {
     await processLoadedBuffer(displayFileName, arrayBuffer);
   } catch (err) {
     if (err instanceof DocumentProcessError) {
-      showUploadError(err.title, err.message, err.actionHint);
+      showUploadError(err.title, err.message, err.actionHint, err.code);
     } else {
       showUploadError(
         '샘플 파일 불러오기 실패',
@@ -448,7 +511,6 @@ function renderExtractStep() {
   if (!hasItems) return;
 
   if (doc.fileType === 'pptx') {
-    // Group by slideNumber
     const slideGroups = new Map();
     for (const item of doc.items) {
       if (!slideGroups.has(item.groupNumber)) {
@@ -463,7 +525,7 @@ function renderExtractStep() {
 
       const header = document.createElement('div');
       header.className = 'extract-group-header';
-      header.innerHTML = `<span>슬라이드 ${slideNum}</span><span>추출 항목 ${items.length}개</span>`;
+      header.innerHTML = `<span>슬라이드 ${slideNum}</span><span>추출 문장 ${items.length}개</span>`;
       card.appendChild(header);
 
       const list = document.createElement('div');
@@ -488,7 +550,6 @@ function renderExtractStep() {
       els.extractListContainer.appendChild(card);
     }
   } else {
-    // HWPX: Paragraph order
     const card = document.createElement('div');
     card.className = 'extract-group-card';
 
@@ -537,7 +598,7 @@ function renderLanguageCards() {
         </div>
         <span class="badge badge-context" id="lang-card-badge-${lang.key}">확인 중</span>
       </div>
-      <div class="lang-name-native">${escapeHtml(lang.nativeLabel)} (${escapeHtml(lang.candidates[0])})</div>
+      <div class="lang-name-native" lang="${escapeHtml(lang.key)}">${escapeHtml(lang.nativeLabel)} (${escapeHtml(lang.candidates[0])})</div>
     `;
 
     const radio = label.querySelector('input[type="radio"]');
@@ -600,7 +661,7 @@ async function updateSelectedLanguageStatusUI() {
   els.btnStartAutoTranslate.disabled = !info.supported || state.isTranslating;
   const langMeta = getTargetLanguageMeta(key);
   if (info.supported) {
-    els.btnStartAutoTranslate.textContent = `🤖 한국어 → ${langMeta.label} 자동 번역 초안 생성하기`;
+    els.btnStartAutoTranslate.textContent = `🤖 한국어 → ${langMeta.label} 자동 번역 초안 만들기`;
     els.autoTranslateHelper.textContent =
       info.status === 'available'
         ? '브라우저 내장 번역 모델이 준비되어 있어 즉시 번역 초안을 생성합니다.'
@@ -608,7 +669,7 @@ async function updateSelectedLanguageStatusUI() {
   } else {
     els.btnStartAutoTranslate.textContent = `자동 번역 사용 불가 (${langMeta.label})`;
     els.autoTranslateHelper.textContent =
-      '현재 브라우저 또는 언어 조합은 자동 번역을 지원하지 않습니다. 오른쪽 [수동 번역문 직접 입력으로 진행하기] 버튼을 눌러 계속 작업하세요.';
+      '현재 브라우저 또는 언어 조합은 자동 번역을 지원하지 않습니다. 오른쪽 [직접 번역문 입력하기] 버튼을 눌러 계속 작업하세요.';
   }
 }
 
@@ -661,7 +722,7 @@ async function handleStartAutoTranslate() {
       'error',
       `자동 번역 모델을 준비하지 못했습니다 (${err?.name || '오류'})`,
       `원인: ${err?.message || '브라우저에서 번역 모델 생성을 거부했거나 다운로드에 실패했습니다.'}`,
-      '우측의 [수동 번역문 직접 입력으로 진행하기] 버튼을 눌러 직접 번역문을 입력해 작업을 계속할 수 있습니다.'
+      '우측의 [직접 번역문 입력하기] 버튼을 눌러 직접 번역문을 입력해 작업을 계속할 수 있습니다.'
     );
     return;
   }
@@ -699,7 +760,6 @@ async function handleStartAutoTranslate() {
     els.itemTranslateFill.style.width = `${pct}%`;
     els.itemTranslateProgressbar.setAttribute('aria-valuenow', String(pct));
 
-    // Yield to browser UI thread so long documents never freeze the page
     await new Promise((r) => setTimeout(r, 0));
   }
 
@@ -716,7 +776,6 @@ async function handleStartAutoTranslate() {
   els.btnStartAutoTranslate.disabled = false;
   els.btnSkipToManual.disabled = false;
 
-  // Refresh availability status (now 'available' after download)
   checkLanguagePairSupport(langKey).then((updated) => {
     state.langSupportMap.set(langKey, updated);
     updateSelectedLanguageStatusUI();
@@ -759,6 +818,24 @@ function showTranslationAlert(type, title, message, actionHint) {
 }
 
 /* ==================== STEP 4: TRANSLATION REVIEW ==================== */
+
+function autoResizeTextarea(textarea) {
+  if (!textarea) return;
+  textarea.style.height = 'auto';
+  const nextHeight = Math.max(92, textarea.scrollHeight + 4);
+  textarea.style.height = `${nextHeight}px`;
+}
+
+function jumpToNextUnverified() {
+  if (!state.parsedDoc) return;
+  for (const item of state.parsedDoc.items) {
+    const st = state.itemStates.get(item.id);
+    if (st && !st.verified) {
+      focusReviewItem(item.id);
+      return;
+    }
+  }
+}
 
 function getItemOriginStatus(st) {
   const trimmed = (st.finalText || '').trim();
@@ -937,17 +1014,18 @@ function renderReviewStep() {
               원문 → 번역칸 복사
             </button>
           </div>
-          <div class="source-text-box">${escapeHtml(item.sourceText)}</div>
+          <div class="source-text-box" lang="ko">${escapeHtml(item.sourceText)}</div>
         </div>
 
         <div class="review-col">
           <div class="review-col-header">
-            <label for="textarea-${item.id}">${escapeHtml(langMeta.label)} 번역문 편집</label>
+            <label for="textarea-${item.id}">${escapeHtml(langMeta.label)} 번역문 편집 <small class="text-muted">(Ctrl+Enter: 확인 완료)</small></label>
             <span data-role="char-count" class="text-muted">${st.finalText.length}자</span>
           </div>
           <textarea
             id="textarea-${item.id}"
             class="translation-textarea"
+            lang="${escapeHtml(langMeta.key)}"
             placeholder="${escapeHtml(langMeta.label)} 번역문을 입력하거나 수정하세요..."
           ></textarea>
           <div class="draft-reference-bar ${st.draftText !== null && st.finalText !== st.draftText ? '' : 'hidden'}" data-role="draft-ref-bar">
@@ -972,8 +1050,20 @@ function renderReviewStep() {
     textarea.addEventListener('input', () => {
       st.finalText = textarea.value;
       state.hasUnsavedWork = true;
+      autoResizeTextarea(textarea);
       syncSingleCardUI(card, item, st);
       updateReviewCountersUI();
+    });
+
+    textarea.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        st.verified = true;
+        state.hasUnsavedWork = true;
+        syncSingleCardUI(card, item, st);
+        updateReviewCountersUI();
+        jumpToNextUnverified();
+      }
     });
 
     verifyBtn.addEventListener('click', () => {
@@ -990,6 +1080,7 @@ function renderReviewStep() {
       st.finalText = item.sourceText;
       textarea.value = st.finalText;
       state.hasUnsavedWork = true;
+      autoResizeTextarea(textarea);
       syncSingleCardUI(card, item, st);
       updateReviewCountersUI();
     });
@@ -1000,6 +1091,7 @@ function renderReviewStep() {
           st.finalText = st.draftText;
           textarea.value = st.finalText;
           state.hasUnsavedWork = true;
+          autoResizeTextarea(textarea);
           syncSingleCardUI(card, item, st);
           updateReviewCountersUI();
         }
@@ -1007,6 +1099,7 @@ function renderReviewStep() {
     }
 
     els.reviewItemsContainer.appendChild(card);
+    autoResizeTextarea(textarea);
   }
 
   applyReviewFilter();
@@ -1113,7 +1206,6 @@ function renderDownloadStep() {
   els.emptyHandlingBox.classList.toggle('hidden', c.empty === 0);
   els.btnDownloadFile.textContent = `📥 번역된 ${doc.fileType.toUpperCase()} 파일 다운로드 (${outName})`;
 
-  // Build warnings for empty and unverified items
   els.downloadWarningsPanel.innerHTML = '';
 
   const emptyItems = doc.items.filter((it) => {
@@ -1130,8 +1222,8 @@ function renderDownloadStep() {
     const okBox = document.createElement('div');
     okBox.className = 'alert-box alert-success';
     okBox.innerHTML = `
-      <div class="alert-title">✅ 모든 항목의 번역문 입력과 검토가 완료되었습니다</div>
-      <p class="alert-message">총 ${c.total}개 항목 모두 번역문이 입력되었고 ‘확인 완료’ 상태로 표시되었습니다. 아래 다운로드 버튼을 눌러 결과 파일을 저장하세요.</p>
+      <div class="alert-title">✅ 모든 문장의 번역 입력과 확인이 완료되었습니다!</div>
+      <p class="alert-message">총 ${c.total}개 문장 모두 번역문이 입력되었고 ‘확인 완료’로 표시되었습니다. 아래 다운로드 버튼을 눌러 결과 파일을 저장하세요.</p>
     `;
     els.downloadWarningsPanel.appendChild(okBox);
     return;
@@ -1142,7 +1234,7 @@ function renderDownloadStep() {
     emptyBox.className = 'alert-box alert-error';
     emptyBox.innerHTML = `
       <div class="alert-title">⚠️ 번역문이 비어 있는 항목이 ${emptyItems.length}개 있습니다</div>
-      <p class="alert-message">아래 항목을 클릭하면 해당 위치로 바로 이동해 번역문을 입력할 수 있습니다.</p>
+      <p class="alert-message">아래 항목의 <strong>[이동하여 입력하기]</strong>를 누르면 해당 문장으로 바로 이동해 번역문을 채울 수 있습니다.</p>
       <ul class="issue-list" id="empty-issue-list"></ul>
     `;
     const ul = emptyBox.querySelector('#empty-issue-list');
@@ -1165,8 +1257,8 @@ function renderDownloadStep() {
     const unvBox = document.createElement('div');
     unvBox.className = 'alert-box alert-warning';
     unvBox.innerHTML = `
-      <div class="alert-title">🔎 아직 ‘확인 완료’로 표시되지 않은 미검토 항목이 ${unverifiedItems.length}개 있습니다</div>
-      <p class="alert-message">자동 번역 초안이나 입력한 문장을 교사가 직접 확인한 뒤 ‘확인 완료’로 표시하는 것을 권장합니다.</p>
+      <div class="alert-title">🔎 아직 ‘확인 완료’로 표시하지 않은 미검토 항목이 ${unverifiedItems.length}개 있습니다</div>
+      <p class="alert-message">자동 번역 초안이나 입력한 문장을 선생님이 확인한 뒤 ‘확인 완료’로 표시하는 것을 권장합니다.</p>
       <ul class="issue-list" id="unverified-issue-list"></ul>
     `;
     const ul = unvBox.querySelector('#unverified-issue-list');
@@ -1232,7 +1324,7 @@ async function handleDownloadTranslatedFile() {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
 
     state.hasUnsavedWork = false;
-    els.downloadSuccessMsg.textContent = `✓ ${outName} 파일 다운로드가 시작되었습니다. 문서 프로그램(PowerPoint 또는 한글)에서 열어 글자 넘침과 배치를 꼭 확인하세요.`;
+    els.downloadSuccessMsg.textContent = `✓ ${outName} 파일이 저장되었습니다! PowerPoint 또는 한글에서 열어 글자 넘침과 배치를 꼭 확인해 주세요.`;
     els.downloadSuccessMsg.classList.remove('hidden');
   } catch (err) {
     els.downloadErrorTitle.textContent =
