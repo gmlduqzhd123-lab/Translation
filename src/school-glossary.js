@@ -1,0 +1,437 @@
+/**
+ * School & Classroom Multilingual Glossary + Non-translatable Text Detector
+ * - Supports 10 languages: en, zh-Hans, vi, ja, ru, uz, mn, th, km, tl
+ * - Used for:
+ *   1. Suggesting accurate school terminology per item in Step 4
+ *   2. Bulk-applying glossary terms across the document
+ *   3. Custom teacher glossary entries persisted in localStorage
+ *   4. Auto-detecting numbers/dates/symbols that should keep source text
+ */
+
+const CUSTOM_GLOSSARY_STORAGE_KEY = 'lesson_translator_custom_glossary_v1';
+
+export const BUILTIN_SCHOOL_GLOSSARY = [
+  {
+    ko: '학습 목표',
+    category: '수업 단계',
+    translations: {
+      en: 'Learning Objectives',
+      'zh-Hans': '学习目标',
+      vi: 'Mục tiêu học tập',
+      ja: '学習目標',
+      ru: 'Цели урока',
+      uz: 'Dars maqsadi',
+      mn: 'Суралцах зорилго',
+      th: 'จุดประสงค์การเรียนรู้',
+      km: 'វត្ថុបំណងនៃការរៀន',
+      tl: 'Mga Layunin sa Pagkatuto'
+    }
+  },
+  {
+    ko: '준비물',
+    category: '수업 준비',
+    translations: {
+      en: 'Materials Needed',
+      'zh-Hans': '准备物品',
+      vi: 'Đồ dùng chuẩn bị',
+      ja: '準備物',
+      ru: 'Необходимые материалы',
+      uz: 'Kerakli jihozlar',
+      mn: 'Бэлтгэх зүйлс',
+      th: 'อุปกรณ์ที่ต้องเตรียม',
+      km: 'សម្ភារៈត្រូវត្រៀម',
+      tl: 'Mga Kagamitan'
+    }
+  },
+  {
+    ko: '모둠 활동',
+    category: '활동 형태',
+    translations: {
+      en: 'Group Activity',
+      'zh-Hans': '小组活动',
+      vi: 'Hoạt động nhóm',
+      ja: 'グループ活動',
+      ru: 'Групповая работа',
+      uz: 'Guruh faoliyati',
+      mn: 'Багийн үйл ажиллагаа',
+      th: 'กิจกรรมกลุ่ม',
+      km: 'សកម្មភាពក្រុម',
+      tl: 'Pangkatang Gawain'
+    }
+  },
+  {
+    ko: '짝 활동',
+    category: '활동 형태',
+    translations: {
+      en: 'Pair Activity',
+      'zh-Hans': '同伴活动',
+      vi: 'Hoạt động cặp đôi',
+      ja: 'ペア活動',
+      ru: 'Работа в парах',
+      uz: 'Juftlikda ishlash',
+      mn: 'Хосоороо ажиллах',
+      th: 'กิจกรรมคู่',
+      km: 'សកម្មភាពដៃគូ',
+      tl: 'Gawaing Magkapareha'
+    }
+  },
+  {
+    ko: '개인 활동',
+    category: '활동 형태',
+    translations: {
+      en: 'Individual Activity',
+      'zh-Hans': '个人活动',
+      vi: 'Hoạt động cá nhân',
+      ja: '個人活動',
+      ru: 'Индивидуальная работа',
+      uz: 'Mustaqil ish',
+      mn: 'Бие даасан ажил',
+      th: 'กิจกรรมเดี่ยว',
+      km: 'សកម្មភាពបុគ្គល',
+      tl: 'orn-Indibidwal na Gawain'
+    }
+  },
+  {
+    ko: '활동지',
+    category: '수업 자료',
+    translations: {
+      en: 'Activity Sheet',
+      'zh-Hans': '活动单',
+      vi: 'Phiếu hoạt động',
+      ja: 'ワークシート',
+      ru: 'Рабочий лист',
+      uz: 'Ish varaqasi',
+      mn: 'Ажлын хуудас',
+      th: 'ใบกิจกรรม',
+      km: 'សន្លឹកកិច្ចការ',
+      tl: 'Activity Sheet'
+    }
+  },
+  {
+    ko: '교과서',
+    category: '수업 자료',
+    translations: {
+      en: 'Textbook',
+      'zh-Hans': '教科书',
+      vi: 'Sách giáo khoa',
+      ja: '教科書',
+      ru: 'Учебник',
+      uz: 'Darslik',
+      mn: 'Сурах бичиг',
+      th: 'หนังสือเรียน',
+      km: 'សៀវភៅសិក្សា',
+      tl: 'Aklat-aralin'
+    }
+  },
+  {
+    ko: '실험 결과',
+    category: '과학·탐구',
+    translations: {
+      en: 'Experiment Results',
+      'zh-Hans': '实验结果',
+      vi: 'Kết quả thí nghiệm',
+      ja: '実験結果',
+      ru: 'Результаты опыта',
+      uz: 'Tajriba natijasi',
+      mn: 'Туршилтын үр дүн',
+      th: 'ผลการทดลอง',
+      km: 'លទ្ធផលពិសោធន៍',
+      tl: 'Resulta ng Eksperimento'
+    }
+  },
+  {
+    ko: '관찰 기록',
+    category: '과학·탐구',
+    translations: {
+      en: 'Observation Record',
+      'zh-Hans': '观察记录',
+      vi: 'Ghi chép quan sát',
+      ja: '観察記録',
+      ru: 'Запись наблюдений',
+      uz: 'Kuzatuv qaydlari',
+      mn: 'Ажиглалтын тэмдэглэл',
+      th: 'บันทึกการสังเกต',
+      km: 'កំណត់ត្រាសង្เกต',
+      tl: 'Tala ng Obserbasyon'
+    }
+  },
+  {
+    ko: '수행평가',
+    category: '평가·행정',
+    translations: {
+      en: 'Performance Assessment',
+      'zh-Hans': '表现性评价',
+      vi: 'Đánh giá thực hành',
+      ja: 'パフォーマンス評価',
+      ru: 'Практическая оценка',
+      uz: 'Amaliy baholash',
+      mn: 'Гүйцэтгэлийн үнэлгээ',
+      th: 'การประเมินภาคปฏิบัติ',
+      km: 'ការវាយតម្លៃការអនុវត្ត',
+      tl: 'Performance Assessment'
+    }
+  },
+  {
+    ko: '가정통신문',
+    category: '평가·행정',
+    translations: {
+      en: 'School Newsletter',
+      'zh-Hans': '家长通知书',
+      vi: 'Thư thông báo gửi phụ huynh',
+      ja: '家庭通信（お便り）',
+      ru: 'Информационное письмо для родителей',
+      uz: 'Ota-onalar uchun xabarnoma',
+      mn: 'Эцэг эхэд хүргэх мэдэгдэл',
+      th: 'จดหมายข่าวแจ้งผู้ปกครอง',
+      km: 'លិខិតជូនដំណឹងដល់មាតាបិតា',
+      tl: 'Liham para sa mga Magulang'
+    }
+  },
+  {
+    ko: '알림장',
+    category: '평가·행정',
+    translations: {
+      en: 'Daily Notice',
+      'zh-Hans': '通知本',
+      vi: 'Sổ báo bài',
+      ja: '連絡帳',
+      ru: 'Дневник объявлений',
+      uz: 'Kundalik eslatma',
+      mn: 'Мэдэгдлийн дэвтэр',
+      th: 'สมุดจดการบ้าน',
+      km: 'សៀវភៅតាមដាន',
+      tl: 'Talaan ng Paalala'
+    }
+  },
+  {
+    ko: '주의사항',
+    category: '수업 단계',
+    translations: {
+      en: 'Precautions',
+      'zh-Hans': '注意事项',
+      vi: 'Lưu ý quan trọng',
+      ja: '注意事項',
+      ru: 'Меры предосторожности',
+      uz: 'Ehtiyot choralari',
+      mn: 'Анхаарах зүйлс',
+      th: 'ข้อควรระวัง',
+      km: 'ចំណុចគួរប្រុងប្រយ័ត្ន',
+      tl: 'Mga Paalala sa Kaligtasan'
+    }
+  },
+  {
+    ko: '정리하기',
+    category: '수업 단계',
+    translations: {
+      en: 'Wrap-up & Review',
+      'zh-Hans': '总结与回顾',
+      vi: 'Tổng kết bài học',
+      ja: 'まとめ',
+      ru: 'Подведение итогов',
+      uz: 'Xulosa qilish',
+      mn: 'Дүгнэлт хийх',
+      th: 'สรุปบทเรียน',
+      km: 'សង្ខេបមេរៀន',
+      tl: 'Pagbubuod'
+    }
+  },
+  {
+    ko: '발표하기',
+    category: '활동 형태',
+    translations: {
+      en: 'Presentation',
+      'zh-Hans': '发表与分享',
+      vi: 'Thuyết trình',
+      ja: '発表する',
+      ru: 'Презентация',
+      uz: 'Taqdimot qilish',
+      mn: 'Илтгэх',
+      th: 'การนำเสนอ',
+      km: 'ការធ្វើបទបង្ហាញ',
+      tl: 'Pag-uulat'
+    }
+  },
+  {
+    ko: '학년',
+    category: '학생 정보',
+    translations: {
+      en: 'Grade',
+      'zh-Hans': '年级',
+      vi: 'Khối lớp',
+      ja: '学年',
+      ru: 'Класс (параллель)',
+      uz: 'Sinf',
+      mn: 'Анги',
+      th: 'ชั้นปี',
+      km: 'ថ្នាក់ទី',
+      tl: 'Baitang'
+    }
+  },
+  {
+    ko: '학번',
+    category: '학생 정보',
+    translations: {
+      en: 'Student ID',
+      'zh-Hans': '学号',
+      vi: 'Mã số học sinh',
+      ja: '出席番号',
+      ru: 'Номер ученика',
+      uz: "O'quvchi raqami",
+      mn: 'Сурагчийн дугаар',
+      th: 'เลขประจำตัวนักเรียน',
+      km: 'អត្តលេខសិស្ស',
+      tl: 'Student Number'
+    }
+  },
+  {
+    ko: '이름',
+    category: '학생 정보',
+    translations: {
+      en: 'Name',
+      'zh-Hans': '姓名',
+      vi: 'Họ và tên',
+      ja: '名前',
+      ru: 'Имя',
+      uz: 'Ism-sharif',
+      mn: 'Нэр',
+      th: 'ชื่อ-นามสกุล',
+      km: 'ឈ្មោះ',
+      tl: 'Pangalan'
+    }
+  },
+  {
+    ko: '과제',
+    category: '평가·행정',
+    translations: {
+      en: 'Homework / Assignment',
+      'zh-Hans': '课后作业',
+      vi: 'Bài tập về nhà',
+      ja: '課題（宿題）',
+      ru: 'Домашнее задание',
+      uz: 'Uyga vazifa',
+      mn: 'Гэрийн даалгавар',
+      th: 'การบ้าน',
+      km: 'កិច្ចការផ្ទះ',
+      tl: 'Takdang-aralin'
+    }
+  },
+  {
+    ko: '생각해 봅시다',
+    category: '수업 단계',
+    translations: {
+      en: "Let's Think Together",
+      'zh-Hans': '想一想',
+      vi: 'Cùng suy nghĩ nhé',
+      ja: '考えてみましょう',
+      ru: 'Давайте подумаем',
+      uz: "O'ylab ko'raylik",
+      mn: 'Хамтдаа эргэцүүлье',
+      th: 'ลองคิดดูสิ',
+      km: 'ចូរគិតទាំងអស់គ្នា',
+      tl: 'Pag-isipan Natin'
+    }
+  }
+];
+
+export function loadCustomGlossary() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_GLOSSARY_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomGlossary(entries) {
+  try {
+    localStorage.setItem(CUSTOM_GLOSSARY_STORAGE_KEY, JSON.stringify(entries));
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
+export function getAllGlossaryEntries() {
+  const custom = loadCustomGlossary();
+  return [...custom, ...BUILTIN_SCHOOL_GLOSSARY];
+}
+
+/**
+ * Find glossary entries whose Korean term appears in sourceText
+ */
+export function findMatchingGlossaryTerms(sourceText, langKey) {
+  const raw = String(sourceText ?? '');
+  if (!raw.trim()) return [];
+  const entries = getAllGlossaryEntries();
+  const matches = [];
+
+  for (const entry of entries) {
+    if (!entry.ko) continue;
+    const targetTerm = entry.translations?.[langKey] || entry.translations?.all;
+    if (!targetTerm) continue;
+    if (raw.includes(entry.ko)) {
+      matches.push({
+        ko: entry.ko,
+        target: targetTerm,
+        category: entry.category || '사용자 단어'
+      });
+    }
+  }
+  return matches;
+}
+
+/**
+ * Detect whether a source text consists purely of numbers, dates, symbols, or punctuation
+ * so it can automatically keep the source text and be marked verified.
+ */
+export function isNonTranslatableText(text) {
+  const trimmed = String(text ?? '').trim();
+  if (!trimmed) return false;
+  // Contains any Hangul syllable/jamo or Latin/CJK letters?
+  const hasLetters = /[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z\u4e00-\u9fff\u3040-\u30ff\u0400-\u04ff]/.test(trimmed);
+  if (!hasLetters) {
+    return true;
+  }
+  // Common date/URL/email patterns that should not be translated
+  if (/^https?:\/\/\S+$/i.test(trimmed)) return true;
+  if (/^\d{4}[./-]\s*\d{1,2}[./-]\s*\d{1,2}\.?$/.test(trimmed)) return true;
+  return false;
+}
+
+/**
+ * Evaluate length overflow risk between Korean source text and translated text.
+ * Returns null if normal, or { ratioPct, level, message } if long.
+ */
+export function evaluateLengthOverflowRisk(sourceText, translatedText, contextLabel = '') {
+  const src = String(sourceText ?? '').trim();
+  const dst = String(translatedText ?? '').trim();
+  if (!src || !dst || src === dst) return null;
+
+  const srcLen = src.length;
+  const dstLen = dst.length;
+  if (dstLen <= 12) return null;
+
+  const ratio = dstLen / Math.max(1, srcLen);
+  const ratioPct = Math.round(ratio * 100);
+  const isTightContext =
+    contextLabel.includes('제목') ||
+    contextLabel.includes('표') ||
+    contextLabel.includes('도형');
+
+  const warnRatio = isTightContext ? 1.65 : 1.9;
+  const minExtraChars = isTightContext ? 10 : 18;
+
+  if (ratio >= warnRatio && dstLen - srcLen >= minExtraChars) {
+    return {
+      ratioPct,
+      srcLen,
+      dstLen,
+      level: ratio >= 2.5 ? 'high' : 'medium',
+      message: `원문 대비 길이 ${ratioPct}% (${srcLen}자 → ${dstLen}자 · ${
+        isTightContext ? '제목/표 칸 넘침 주의' : '글상자 줄바꿈 확인 권장'
+      })`
+    };
+  }
+  return null;
+}

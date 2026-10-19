@@ -17,6 +17,7 @@ export const TARGET_LANGUAGES = [
     label: '영어',
     nativeLabel: 'English',
     candidates: ['en'],
+    tier: 'core',
     sampleGreeting: 'English (영어)'
   },
   {
@@ -24,6 +25,7 @@ export const TARGET_LANGUAGES = [
     label: '중국어 간체',
     nativeLabel: '中文(简体)',
     candidates: ['zh-Hans', 'zh'],
+    tier: 'core',
     sampleGreeting: '中文(简体) (중국어 간체)'
   },
   {
@@ -31,6 +33,7 @@ export const TARGET_LANGUAGES = [
     label: '베트남어',
     nativeLabel: 'Tiếng Việt',
     candidates: ['vi'],
+    tier: 'core',
     sampleGreeting: 'Tiếng Việt (베트남어)'
   },
   {
@@ -38,6 +41,7 @@ export const TARGET_LANGUAGES = [
     label: '일본어',
     nativeLabel: '日本語',
     candidates: ['ja'],
+    tier: 'core',
     sampleGreeting: '日本語 (일본어)'
   },
   {
@@ -45,7 +49,48 @@ export const TARGET_LANGUAGES = [
     label: '러시아어',
     nativeLabel: 'Русский',
     candidates: ['ru'],
+    tier: 'core',
     sampleGreeting: 'Русский (러시아어)'
+  },
+  {
+    key: 'uz',
+    label: '우즈베크어',
+    nativeLabel: 'Oʻzbekcha',
+    candidates: ['uz'],
+    tier: 'extended',
+    sampleGreeting: 'Oʻzbekcha (우즈베크어)'
+  },
+  {
+    key: 'mn',
+    label: '몽골어',
+    nativeLabel: 'Монгол',
+    candidates: ['mn'],
+    tier: 'extended',
+    sampleGreeting: 'Монгол (몽골어)'
+  },
+  {
+    key: 'th',
+    label: '태국어',
+    nativeLabel: 'ภาษาไทย',
+    candidates: ['th'],
+    tier: 'extended',
+    sampleGreeting: 'ภาษาไทย (태국어)'
+  },
+  {
+    key: 'km',
+    label: '캄보디아어(크메르어)',
+    nativeLabel: 'ភាសាខ្មែរ',
+    candidates: ['km'],
+    tier: 'extended',
+    sampleGreeting: 'ភាសាខ្មែរ (캄보디아어)'
+  },
+  {
+    key: 'tl',
+    label: '필리핀어(타갈로그어)',
+    nativeLabel: 'Tagalog / Filipino',
+    candidates: ['tl', 'fil'],
+    tier: 'extended',
+    sampleGreeting: 'Tagalog (필리핀어)'
   }
 ];
 

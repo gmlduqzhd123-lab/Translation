@@ -117,9 +117,21 @@
               <div class="transform-icon" aria-hidden="true">🌏</div>
               <div class="transform-text">
                 <strong>다국어 수업자료 완성!</strong>
-                <span>영어 · 중국어 · 베트남어 · 일본어 · 러시아어</span>
+                <span>영어 · 중국어 · 베트남어 · 일본어 · 러시아어 외 총 10개 국어</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- 이전 임시 저장 작업 복구 배너 (아이디어 4) -->
+        <div id="session-restore-banner" class="session-restore-banner hidden" role="region" aria-label="이전 작업 이어서 하기">
+          <div class="session-restore-info">
+            <span class="session-restore-badge">💾 자동 임시 저장된 작업 발견</span>
+            <p id="session-restore-desc" class="session-restore-desc">이전에 작업하던 수업자료 검수 내역이 브라우저에 남아 있습니다.</p>
+          </div>
+          <div class="session-restore-actions">
+            <button type="button" id="btn-restore-session" class="btn btn-primary btn-sm">이어서 작업하기 →</button>
+            <button type="button" id="btn-discard-session" class="btn btn-outline btn-sm">임시 저장 삭제</button>
           </div>
         </div>
 
@@ -325,11 +337,20 @@
           </div>
         </div>
 
-        <!-- 대상 언어 5개 선택 라디오 그룹 -->
+        <!-- 대상 언어 선택 라디오 그룹 (기본 5개 언어 + 다문화 학급 확장 5개 언어) -->
         <fieldset class="lang-fieldset">
-          <legend class="fieldset-legend">1. 번역할 언어 선택 (5개 언어 중 1개 클릭)</legend>
-          <div id="language-options-grid" class="language-options-grid" role="radiogroup" aria-label="대상 언어 선택">
+          <legend class="fieldset-legend">1. 주요 대상 언어 5종 (Chrome 자동 번역 우선 지원)</legend>
+          <div id="language-options-grid" class="language-options-grid" role="radiogroup" aria-label="주요 대상 언어 선택">
             <!-- JS에서 렌더링 -->
+          </div>
+
+          <div class="extended-lang-section">
+            <div class="extended-lang-title">
+              🌏 다문화 학급 추가 지원 언어 5종 <small>(자동 번역 또는 학교 용어집·표 붙여넣기 지원)</small>
+            </div>
+            <div id="extended-language-options-grid" class="language-options-grid" role="radiogroup" aria-label="추가 다문화 언어 선택">
+              <!-- JS에서 렌더링 -->
+            </div>
           </div>
         </fieldset>
 
@@ -388,16 +409,16 @@
               🤖 선택한 언어로 자동 번역 초안 만들기
             </button>
             <p class="action-helper-text" id="auto-translate-helper">
-              Chrome 내장 번역 기능을 이용해 모든 문장의 번역 초안을 자동으로 채웁니다.
+              Chrome 내장 번역 기능을 이용해 모든 문장의 번역 초안을 자동으로 채웁니다. (숫자·날짜·기호만 있는 항목은 자동으로 원문 유지 처리됩니다.)
             </p>
           </div>
           <div class="step3-secondary-col">
-            <span class="action-col-badge secondary">직접 입력</span>
+            <span class="action-col-badge secondary">직접 입력 · 용어집/엑셀 활용</span>
             <button type="button" id="btn-skip-to-manual" class="btn btn-secondary btn-lg">
               ✍️ 자동 번역 없이 직접 번역문 입력하기 →
             </button>
             <p class="action-helper-text">
-              자동 번역이 안 되는 브라우저이거나, 선생님이 미리 준비한 번역문을 직접 입력·붙여넣고 싶을 때 누르세요.
+              자동 번역이 안 되는 환경이거나, 학교 용어집·엑셀(CSV) 붙여넣기로 직접 번역문을 채우고 싶을 때 누르세요.
             </p>
           </div>
         </div>
@@ -409,7 +430,10 @@
       <div class="panel-card">
         <div class="panel-header-row">
           <div>
-            <span class="step-tag">단계 4 / 5</span>
+            <div class="step-tag-row">
+              <span class="step-tag">단계 4 / 5</span>
+              <span id="autosave-status-badge" class="autosave-badge" role="status">💾 브라우저 자동 임시저장 켜짐</span>
+            </div>
             <h2 id="step4-heading">원문과 번역문을 나란히 비교하고 다듬어 주세요</h2>
             <p class="panel-desc">
               오른쪽 번역문 입력칸을 자유롭게 수정할 수 있습니다. 확인이 끝난 문장은 <strong>[미검토 → 확인 완료]</strong> 버튼을 눌러 표시해 주세요.
@@ -444,6 +468,10 @@
               <span>빈 번역문</span>
               <strong id="review-empty-count">0</strong>
             </div>
+            <div class="counter-chip counter-overflow hidden" id="review-overflow-chip" title="원문보다 번역문 글자 수가 훨씬 길어 슬라이드나 표 칸을 넘칠 수 있는 항목 수">
+              <span>📏 길이 넘침 주의</span>
+              <strong id="review-overflow-count">0</strong>
+            </div>
             <div class="counter-chip counter-failed hidden" id="review-failed-chip">
               <span>자동 번역 실패</span>
               <strong id="review-failed-count">0</strong>
@@ -455,13 +483,14 @@
               <button type="button" class="filter-btn active" data-filter="all">전체 보기</button>
               <button type="button" class="filter-btn" data-filter="unverified">미검토만 보기</button>
               <button type="button" class="filter-btn" data-filter="empty">빈 번역문만 보기</button>
+              <button type="button" class="filter-btn" data-filter="overflow" id="filter-btn-overflow">📏 길이 넘침 주의</button>
               <button type="button" class="filter-btn" data-filter="modified">내가 수정한 문장</button>
               <button type="button" class="filter-btn" data-filter="failed" id="filter-btn-failed">번역 실패 항목</button>
             </div>
 
             <div class="bulk-actions-group">
               <button type="button" id="btn-next-unverified" class="btn btn-outline btn-sm" title="아직 확인 완료하지 않은 다음 항목으로 바로 이동합니다">
-                🔍 다음 미검토 문장 찾기
+                🔍 다음 미검토 찾기
               </button>
               <button type="button" id="btn-fill-empty-with-source" class="btn btn-outline btn-sm" title="번역문이 비어 있는 항목에 한국어 원문을 그대로 채웁니다">
                 빈 칸에 원문 채우기
@@ -472,9 +501,97 @@
             </div>
           </div>
 
-          <!-- 슬라이드/문단 위치 바로가기 네비게이션 -->
+          <!-- 교사 편의 도구 모음: 동일 원문 자동 동기화 · 학교 용어집 · 일괄 찾기/바꾸기 · 엑셀/CSV 연동 -->
+          <div class="teacher-power-bar">
+            <label class="sync-toggle-label" title="슬라이드나 표에 반복 등장하는 동일한 한국어 문장을 한 번만 수정해도 문서 전체의 같은 문장에 자동 반영합니다">
+              <input type="checkbox" id="chk-auto-sync-identical" checked />
+              <span>🔗 동일 원문 자동 동기화</span>
+            </label>
+
+            <div class="power-tool-btns">
+              <button type="button" id="btn-toggle-glossary" class="btn btn-surface btn-sm" aria-expanded="false">
+                📚 학교 필수 용어집
+              </button>
+              <button type="button" id="btn-toggle-find-replace" class="btn btn-surface btn-sm" aria-expanded="false">
+                🔍 일괄 찾기·바꾸기
+              </button>
+              <button type="button" id="btn-toggle-csv-panel" class="btn btn-surface btn-sm" aria-expanded="false">
+                📊 엑셀(CSV)·붙여넣기
+              </button>
+            </div>
+          </div>
+
+          <!-- 서랍 1: 학교·교과 필수 용어집 (아이디어 2) -->
+          <div id="glossary-drawer" class="tool-drawer hidden" role="region" aria-label="학교 필수 용어집 도구">
+            <div class="tool-drawer-header">
+              <div>
+                <strong>📚 학교·교과 필수 용어집 (<span id="glossary-lang-label">대상 언어</span>)</strong>
+                <span class="tool-drawer-sub">자주 쓰이는 학교 표현을 한 번에 적용하거나 내 학급 맞춤 단어를 추가하세요.</span>
+              </div>
+              <div class="tool-drawer-actions">
+                <button type="button" id="btn-apply-glossary-all" class="btn btn-primary btn-sm">
+                  ✨ 빈 칸·초안에 학교 용어 일괄 반영
+                </button>
+              </div>
+            </div>
+            <div class="custom-glossary-form">
+              <input type="text" id="input-custom-glossary-ko" class="drawer-input" placeholder="추가할 한국어 용어 (예: 모둠장)" />
+              <input type="text" id="input-custom-glossary-target" class="drawer-input" placeholder="대상 언어 표현 (예: Group Leader)" />
+              <button type="button" id="btn-add-custom-glossary" class="btn btn-secondary btn-sm">+ 내 단어장에 추가</button>
+              <span id="glossary-feedback-msg" class="drawer-feedback"></span>
+            </div>
+            <div id="glossary-terms-grid" class="glossary-terms-grid"></div>
+          </div>
+
+          <!-- 서랍 2: 일괄 찾기 및 바꾸기 (아이디어 5) -->
+          <div id="find-replace-drawer" class="tool-drawer hidden" role="region" aria-label="번역문 일괄 찾기 및 바꾸기">
+            <div class="tool-drawer-header">
+              <div>
+                <strong>🔍 번역문 일괄 찾기 · 바꾸기</strong>
+                <span class="tool-drawer-sub">문서 전체 번역문에서 특정 단어나 표현을 찾아 한 번에 바꿉니다.</span>
+              </div>
+            </div>
+            <div class="find-replace-controls">
+              <input type="text" id="input-find-text" class="drawer-input" placeholder="찾을 단어/문구 입력..." />
+              <span aria-hidden="true">➔</span>
+              <input type="text" id="input-replace-text" class="drawer-input" placeholder="바꿀 단어/문구 입력..." />
+              <button type="button" id="btn-run-replace-all" class="btn btn-primary btn-sm">모두 바꾸기</button>
+              <span id="find-replace-feedback" class="drawer-feedback"></span>
+            </div>
+          </div>
+
+          <!-- 서랍 3: 엑셀/CSV 내보내기 및 번역문 일괄 붙여넣기 (아이디어 7) -->
+          <div id="csv-paste-drawer" class="tool-drawer hidden" role="region" aria-label="엑셀 CSV 내보내기 및 일괄 붙여넣기">
+            <div class="tool-drawer-header">
+              <div>
+                <strong>📊 엑셀(CSV) 내보내기 · 줄 단위 번역문 일괄 붙여넣기</strong>
+                <span class="tool-drawer-sub">다문화언어강사에게 엑셀 파일로 검토를 요청하거나, 외부에서 준비한 번역문을 순서대로 한 번에 붙여넣을 수 있습니다.</span>
+              </div>
+              <div class="tool-drawer-actions">
+                <button type="button" id="btn-export-csv" class="btn btn-secondary btn-sm">📥 엑셀용 CSV 다운로드</button>
+                <button type="button" id="btn-copy-source-lines" class="btn btn-outline btn-sm">📋 전체 원문 복사</button>
+              </div>
+            </div>
+            <div class="bulk-paste-box">
+              <textarea
+                id="textarea-bulk-paste"
+                class="bulk-paste-textarea"
+                rows="3"
+                placeholder="여기에 항목 순서대로 번역문(한 줄에 1개 항목, 또는 엑셀 번역문 열 복사본)을 붙여넣고 오른쪽 [일괄 반영]을 누르세요..."
+              ></textarea>
+              <div class="bulk-paste-side">
+                <button type="button" id="btn-apply-bulk-paste" class="btn btn-primary btn-sm">📥 순서대로 일괄 반영</button>
+                <span id="csv-paste-feedback" class="drawer-feedback"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 슬라이드/문단 위치 바로가기 네비게이션 (아이디어 8) -->
           <div class="jump-nav-row" aria-label="슬라이드 및 문단 빠른 이동">
-            <span class="jump-nav-title" id="current-position-indicator">현재 위치: 전체 목록</span>
+            <div class="jump-nav-left">
+              <span class="jump-nav-title" id="current-position-indicator">현재 위치: 전체 목록</span>
+              <button type="button" id="btn-collapse-verified-groups" class="link-btn">🗂️ 완료된 슬라이드·문단 접기/펼치기</button>
+            </div>
             <div id="review-jump-nav" class="jump-nav-buttons"></div>
           </div>
         </div>
@@ -496,7 +613,7 @@
           <div>
             <span class="step-tag">단계 5 / 5</span>
             <h2 id="step5-heading">최종 확인 후 번역된 수업자료를 다운로드하세요</h2>
-            <p class="panel-desc">빠진 번역문이나 미검토 문장이 없는지 확인한 뒤, 완성된 파일을 저장하세요.</p>
+            <p class="panel-desc">빠진 번역문이나 미검토 문장이 없는지 확인한 뒤, 원하는 출력 방식으로 완성된 파일을 저장하세요.</p>
           </div>
           <div class="header-actions">
             <button type="button" id="btn-back-to-step4" class="btn btn-outline">← 번역 검토 화면으로 돌아가기</button>
@@ -534,6 +651,35 @@
         <!-- 빈 번역문 및 미검토 항목 점검 패널 -->
         <div id="download-warnings-panel" class="download-warnings-panel"></div>
 
+        <!-- 문서 출력 방식 선택: 단독 번역 vs 한국어+번역문 병기 (아이디어 3) -->
+        <div class="output-mode-box" role="region" aria-labelledby="output-mode-heading">
+          <h3 id="output-mode-heading">🇰🇷↔️🌐 결과 문서 표기 방식 선택 (단독 번역 vs 이중언어 병기)</h3>
+          <p class="output-mode-desc">수업 상황이나 학생의 한국어 수준에 맞춰 문서 안에 글자를 어떻게 넣을지 선택해 주세요.</p>
+          <div class="output-mode-grid">
+            <label class="output-mode-card selected">
+              <input type="radio" name="output-mode" value="replace" checked />
+              <div>
+                <strong>번역문만 단독 표기 (기본)</strong>
+                <span>원래 한국어 자리에 번역된 외국어 문장만 깔끔하게 넣습니다.</span>
+              </div>
+            </label>
+            <label class="output-mode-card">
+              <input type="radio" name="output-mode" value="bilingual-ko-first" />
+              <div>
+                <strong>한국어 원문 + 번역문 줄바꿈 병기 (이중언어 수업용)</strong>
+                <span>윗줄에는 한국어 원문, 아랫줄에는 외국어 번역문을 함께 넣어 교사와 학생이 같이 볼 수 있게 합니다.</span>
+              </div>
+            </label>
+            <label class="output-mode-card">
+              <input type="radio" name="output-mode" value="bilingual-target-first" />
+              <div>
+                <strong>번역문 + 한국어 원문 줄바꿈 병기</strong>
+                <span>윗줄에는 외국어 번역문을 먼저 보여주고, 아랫줄에 한국어 원문을 함께 표기합니다.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
         <!-- 빈 번역문이 있을 때 처리 옵션 -->
         <div id="empty-handling-box" class="empty-handling-box hidden">
           <h3>⚠️ 아직 비어 있는 번역칸이 있습니다. 어떻게 처리할까요?</h3>
@@ -557,12 +703,43 @@
           <p class="alert-action" id="download-error-action"></p>
         </div>
 
-        <!-- 다운로드 실행 박스 -->
+        <!-- 다운로드 실행 박스 + 교사용 대조표 인쇄 버튼 (아이디어 10) -->
         <div class="download-cta-box">
-          <button type="button" id="btn-download-file" class="btn btn-primary btn-xl">
-            📥 번역된 수업자료 파일 다운로드 (.pptx / .hwpx)
-          </button>
+          <div class="download-cta-buttons">
+            <button type="button" id="btn-download-file" class="btn btn-primary btn-xl">
+              📥 번역된 수업자료 파일 다운로드 (.pptx / .hwpx)
+            </button>
+            <button type="button" id="btn-print-comparison-sheet" class="btn btn-secondary btn-lg">
+              🖨️ 교사용 ‘원문↔번역문 대조표’ 한 장 인쇄 / PDF 저장
+            </button>
+          </div>
           <p id="download-success-msg" class="download-success-msg hidden" role="status" aria-live="polite"></p>
+        </div>
+
+        <!-- 인쇄용 원문-번역문 대조표 미리보기/출력 영역 (아이디어 10) -->
+        <div id="printable-comparison-sheet" class="printable-comparison-sheet hidden" role="region" aria-label="교사용 원문-번역문 대조표">
+          <div class="print-sheet-header">
+            <div>
+              <h3 id="print-sheet-title">교사용 다국어 수업자료 원문 ↔ 번역문 대조표</h3>
+              <p id="print-sheet-meta" class="print-sheet-meta"></p>
+            </div>
+            <div class="print-sheet-actions no-print">
+              <button type="button" id="btn-trigger-window-print" class="btn btn-primary btn-sm">🖨️ 지금 인쇄 / PDF로 저장</button>
+              <button type="button" id="btn-close-print-sheet" class="btn btn-outline btn-sm">대조표 접기</button>
+            </div>
+          </div>
+          <div class="print-table-wrap">
+            <table class="comparison-print-table">
+              <thead>
+                <tr>
+                  <th style="width: 14%">위치 / 구분</th>
+                  <th style="width: 43%">한국어 원문</th>
+                  <th style="width: 43%">대상 언어 번역문</th>
+                </tr>
+              </thead>
+              <tbody id="print-sheet-tbody"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- 필수 안내: 문서 배치 및 실제 문서 프로그램 확인 체크리스트 -->

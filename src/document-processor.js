@@ -478,9 +478,11 @@ function detectHwpxParagraphContext(pEl) {
 
 /**
  * Rebuild a valid PPTX or HWPX Uint8Array with translations applied
+ * options.emptyFallback: 'keep-source' | 'empty'
+ * options.outputMode: 'replace' | 'bilingual-ko-first' | 'bilingual-target-first'
  */
 export async function buildTranslatedDocument(parsedDoc, translationsById, options = {}) {
-  const { emptyFallback = 'keep-source' } = options;
+  const { emptyFallback = 'keep-source', outputMode = 'replace' } = options;
   if (!parsedDoc || !parsedDoc.originalBuffer || !Array.isArray(parsedDoc.items)) {
     throw new DocumentProcessError(
       '원본 문서 정보가 없습니다',
@@ -494,8 +496,16 @@ export async function buildTranslatedDocument(parsedDoc, translationsById, optio
   for (const item of parsedDoc.items) {
     const rawVal = translationsById[item.id];
     const trimmed = typeof rawVal === 'string' ? rawVal.trim() : '';
+    const srcTrimmed = String(item.sourceText ?? '').trim();
+
     if (trimmed.length === 0) {
       resolvedMap[item.id] = emptyFallback === 'empty' ? '' : item.sourceText;
+    } else if (outputMode === 'bilingual-ko-first') {
+      resolvedMap[item.id] =
+        trimmed === srcTrimmed ? item.sourceText : `${item.sourceText}\n${rawVal}`;
+    } else if (outputMode === 'bilingual-target-first') {
+      resolvedMap[item.id] =
+        trimmed === srcTrimmed ? item.sourceText : `${rawVal}\n${item.sourceText}`;
     } else {
       resolvedMap[item.id] = rawVal;
     }
@@ -745,8 +755,12 @@ function replaceHwpxParagraphText(doc, pEl, newText) {
   }
 }
 
-export function buildOutputFileName(originalName, targetLangCode, fileType) {
+export function buildOutputFileName(originalName, targetLangCode, fileType, outputMode = 'replace') {
   const base = (originalName || 'lesson').replace(/\.(pptx|hwpx)$/i, '');
   const safeLang = (targetLangCode || 'translated').replace(/[^a-zA-Z0-9_-]/g, '_');
+  if (outputMode === 'bilingual-ko-first' || outputMode === 'bilingual-target-first') {
+    return `${base}_ko_${safeLang}.${fileType}`;
+  }
   return `${base}_${safeLang}.${fileType}`;
 }
+

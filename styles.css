@@ -1793,9 +1793,514 @@ body {
   text-align: center;
 }
 
+/* ==================== 10가지 고도화 기능 스타일 ==================== */
+
+/* 4. 임시 저장 복구 배너 & 자동저장 배지 */
+.session-restore-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  background: #eff6ff;
+  border: 2px solid #93c5fd;
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 18px;
+}
+
+.session-restore-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.session-restore-badge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.session-restore-desc {
+  margin: 0;
+  font-size: 0.94rem;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+.session-restore-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.step-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.step-tag-row .step-tag {
+  margin-bottom: 0;
+}
+
+.autosave-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+/* 9. 추가 다문화 언어 영역 */
+.extended-lang-section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.extended-lang-title {
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.extended-lang-title small {
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+/* 1. 글자 넘침 경고 표시기 */
+.counter-overflow {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #9a3412;
+}
+
+.overflow-warning-bar {
+  margin-top: 8px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.overflow-warning-medium {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+.overflow-warning-high {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+}
+
+/* 2, 5, 7. 교사 편의 도구 모음 (용어집 / 찾기·바꾸기 / CSV) */
+.teacher-power-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px solid var(--border-light);
+}
+
+.sync-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sync-toggle-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+.power-tool-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tool-drawer {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+}
+
+.tool-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tool-drawer-sub {
+  display: block;
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.tool-drawer-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.custom-glossary-form,
+.find-replace-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.drawer-input {
+  padding: 7px 11px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  min-width: 190px;
+  background: #ffffff;
+}
+
+.drawer-feedback {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.glossary-terms-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  max-height: 150px;
+  overflow-y: auto;
+  padding-top: 4px;
+}
+
+.glossary-term-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+}
+
+.glossary-term-chip strong {
+  color: var(--text-primary);
+}
+
+.glossary-term-chip span {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.glossary-suggest-bar {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 7px 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.glossary-suggest-label {
+  font-weight: 800;
+  color: #1e40af;
+}
+
+.glossary-suggest-chip {
+  background: #ffffff;
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.glossary-suggest-chip:hover {
+  background: #dbeafe;
+}
+
+.bulk-paste-box {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.bulk-paste-textarea {
+  width: 100%;
+  padding: 8px 11px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.86rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.bulk-paste-side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 6. 번역 제외 (원문 그대로 유지) 버튼 */
+.keep-source-toggle-btn {
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: #f8fafc;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.keep-source-toggle-btn:hover {
+  border-color: #64748b;
+  color: var(--text-primary);
+}
+
+.keep-source-toggle-btn.is-kept {
+  background: #e0f2fe;
+  border-color: #38bdf8;
+  color: #0369a1;
+}
+
+.origin-kept {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+/* 8. 슬라이드/그룹 접기·펼치기 헤더 및 완료 표시 점프 버튼 */
+.jump-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.jump-btn.is-group-done {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #047857;
+  font-weight: 800;
+}
+
+.review-group-divider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-top: 10px;
+}
+
+.review-group-divider.group-all-verified {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.review-group-title {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-card.group-collapsed {
+  display: none !important;
+}
+
+/* 3. 원문+번역문 병기 출력 방식 선택 카드 */
+.output-mode-box {
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.output-mode-box h3 {
+  margin: 0 0 6px;
+  font-size: 1.04rem;
+}
+
+.output-mode-desc {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.output-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.output-mode-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #ffffff;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 13px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.output-mode-card.selected {
+  border-color: var(--primary);
+  background: #eff6ff;
+}
+
+.output-mode-card input[type="radio"] {
+  margin-top: 4px;
+  accent-color: var(--primary);
+}
+
+.output-mode-card strong {
+  display: block;
+  font-size: 0.93rem;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.output-mode-card span {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* 10. 인쇄용 원문-번역문 대조표 */
+.download-cta-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.printable-comparison-sheet {
+  margin-top: 20px;
+  margin-bottom: 24px;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.print-sheet-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #1e293b;
+}
+
+.print-sheet-header h3 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+}
+
+.print-sheet-meta {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.print-sheet-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.print-table-wrap {
+  overflow-x: auto;
+}
+
+.comparison-print-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.comparison-print-table th,
+.comparison-print-table td {
+  border: 1px solid #cbd5e1;
+  padding: 9px 12px;
+  vertical-align: top;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.comparison-print-table th {
+  background: #f1f5f9;
+  font-weight: 800;
+}
+
 @media (max-width: 820px) {
   .transform-flow-grid,
-  .bottom-split-bar {
+  .bottom-split-bar,
+  .output-mode-grid,
+  .bulk-paste-box {
     grid-template-columns: 1fr;
   }
   .tf-arrow-col {
@@ -1816,4 +2321,38 @@ body {
     padding: 20px;
   }
 }
+
+@media print {
+  .app-header,
+  .stepper-bar,
+  .panel-header-row,
+  .final-summary-grid,
+  .download-warnings-panel,
+  .output-mode-box,
+  .empty-handling-box,
+  .download-error-box,
+  .download-cta-box,
+  .post-download-guide,
+  .panel-footer-actions,
+  .app-footer,
+  .no-print {
+    display: none !important;
+  }
+  body,
+  .main-container,
+  .panel-card {
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .printable-comparison-sheet {
+    display: block !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
 

@@ -12,6 +12,19 @@ import {
   startTranslatorCreation,
   translateSingleText
 } from './src/translator-service.js';
+import {
+  getAllGlossaryEntries,
+  loadCustomGlossary,
+  saveCustomGlossary,
+  findMatchingGlossaryTerms,
+  isNonTranslatableText,
+  evaluateLengthOverflowRisk
+} from './src/school-glossary.js';
+import {
+  saveWorkSessionToBrowser,
+  loadWorkSessionFromBrowser,
+  clearWorkSessionFromBrowser
+} from './src/storage-service.js';
 
 const state = {
   currentStep: 1,
@@ -19,12 +32,19 @@ const state = {
   parsedDoc: null,
   selectedLangKey: 'en',
   langSupportMap: new Map(),
-  itemStates: new Map(), // id -> { draftText, finalText, verified, autoFailed, errorMessage }
+  // id -> { draftText, finalText, verified, autoFailed, errorMessage, keepOriginal }
+  itemStates: new Map(),
   activeFilter: 'all',
+  collapsedGroups: new Set(),
+  autoSyncIdentical: true,
+  outputMode: 'replace',
   isTranslating: false,
   cancelTranslationRequested: false,
-  hasUnsavedWork: false
+  hasUnsavedWork: false,
+  pendingRestorableSession: null
 };
+
+let autoSaveTimer = null;
 
 // DOM Elements
 const els = {};
@@ -51,6 +71,10 @@ function cacheElements() {
   els.detailsLegacyConvert = document.getElementById('details-legacy-convert');
 
   // Step 1
+  els.sessionRestoreBanner = document.getElementById('session-restore-banner');
+  els.sessionRestoreDesc = document.getElementById('session-restore-desc');
+  els.btnRestoreSession = document.getElementById('btn-restore-session');
+  els.btnDiscardSession = document.getElementById('btn-discard-session');
   els.dropZone = document.getElementById('drop-zone');
   els.fileInput = document.getElementById('file-input');
   els.btnSelectFile = document.getElementById('btn-select-file');
@@ -77,6 +101,7 @@ function cacheElements() {
   // Step 3
   els.btnBackToStep2 = document.getElementById('btn-back-to-step2');
   els.languageOptionsGrid = document.getElementById('language-options-grid');
+  els.extendedLanguageOptionsGrid = document.getElementById('extended-language-options-grid');
   els.translatorAvailabilityBadge = document.getElementById('translator-availability-badge');
   els.translatorAvailabilityReason = document.getElementById('translator-availability-reason');
   els.translatorAvailabilityHint = document.getElementById('translator-availability-hint');
@@ -98,6 +123,7 @@ function cacheElements() {
   els.btnSkipToManual = document.getElementById('btn-skip-to-manual');
 
   // Step 4
+  els.autosaveStatusBadge = document.getElementById('autosave-status-badge');
   els.btnBackToStep3 = document.getElementById('btn-back-to-step3');
   els.btnBackToStep3Bottom = document.getElementById('btn-back-to-step3-bottom');
   els.btnToStep5 = document.getElementById('btn-to-step5');
@@ -107,13 +133,44 @@ function cacheElements() {
   els.reviewVerifiedCount = document.getElementById('review-verified-count');
   els.reviewUnverifiedCount = document.getElementById('review-unverified-count');
   els.reviewEmptyCount = document.getElementById('review-empty-count');
+  els.reviewOverflowChip = document.getElementById('review-overflow-chip');
+  els.reviewOverflowCount = document.getElementById('review-overflow-count');
   els.reviewFailedChip = document.getElementById('review-failed-chip');
   els.reviewFailedCount = document.getElementById('review-failed-count');
   els.filterBtns = document.querySelectorAll('.filter-btn');
   els.btnNextUnverified = document.getElementById('btn-next-unverified');
   els.btnFillEmptyWithSource = document.getElementById('btn-fill-empty-with-source');
   els.btnVerifyAllVisible = document.getElementById('btn-verify-all-visible');
+
+  // Step 4 Power Tools (Glossary, Find/Replace, CSV/Paste, Collapse)
+  els.chkAutoSyncIdentical = document.getElementById('chk-auto-sync-identical');
+  els.btnToggleGlossary = document.getElementById('btn-toggle-glossary');
+  els.btnToggleFindReplace = document.getElementById('btn-toggle-find-replace');
+  els.btnToggleCsvPanel = document.getElementById('btn-toggle-csv-panel');
+  els.glossaryDrawer = document.getElementById('glossary-drawer');
+  els.glossaryLangLabel = document.getElementById('glossary-lang-label');
+  els.btnApplyGlossaryAll = document.getElementById('btn-apply-glossary-all');
+  els.inputCustomGlossaryKo = document.getElementById('input-custom-glossary-ko');
+  els.inputCustomGlossaryTarget = document.getElementById('input-custom-glossary-target');
+  els.btnAddCustomGlossary = document.getElementById('btn-add-custom-glossary');
+  els.glossaryFeedbackMsg = document.getElementById('glossary-feedback-msg');
+  els.glossaryTermsGrid = document.getElementById('glossary-terms-grid');
+
+  els.findReplaceDrawer = document.getElementById('find-replace-drawer');
+  els.inputFindText = document.getElementById('input-find-text');
+  els.inputReplaceText = document.getElementById('input-replace-text');
+  els.btnRunReplaceAll = document.getElementById('btn-run-replace-all');
+  els.findReplaceFeedback = document.getElementById('find-replace-feedback');
+
+  els.csvPasteDrawer = document.getElementById('csv-paste-drawer');
+  els.btnExportCsv = document.getElementById('btn-export-csv');
+  els.btnCopySourceLines = document.getElementById('btn-copy-source-lines');
+  els.textareaBulkPaste = document.getElementById('textarea-bulk-paste');
+  els.btnApplyBulkPaste = document.getElementById('btn-apply-bulk-paste');
+  els.csvPasteFeedback = document.getElementById('csv-paste-feedback');
+
   els.currentPositionIndicator = document.getElementById('current-position-indicator');
+  els.btnCollapseVerifiedGroups = document.getElementById('btn-collapse-verified-groups');
   els.reviewJumpNav = document.getElementById('review-jump-nav');
   els.reviewItemsContainer = document.getElementById('review-items-container');
 
@@ -128,13 +185,20 @@ function cacheElements() {
   els.finalEmptySummary = document.getElementById('final-empty-summary');
   els.finalModifiedSummary = document.getElementById('final-modified-summary');
   els.downloadWarningsPanel = document.getElementById('download-warnings-panel');
+  els.outputModeRadios = document.querySelectorAll('input[name="output-mode"]');
   els.emptyHandlingBox = document.getElementById('empty-handling-box');
   els.downloadErrorBox = document.getElementById('download-error-box');
   els.downloadErrorTitle = document.getElementById('download-error-title');
   els.downloadErrorMessage = document.getElementById('download-error-message');
   els.downloadErrorAction = document.getElementById('download-error-action');
   els.btnDownloadFile = document.getElementById('btn-download-file');
+  els.btnPrintComparisonSheet = document.getElementById('btn-print-comparison-sheet');
   els.downloadSuccessMsg = document.getElementById('download-success-msg');
+  els.printableComparisonSheet = document.getElementById('printable-comparison-sheet');
+  els.printSheetMeta = document.getElementById('print-sheet-meta');
+  els.printSheetTbody = document.getElementById('print-sheet-tbody');
+  els.btnTriggerWindowPrint = document.getElementById('btn-trigger-window-print');
+  els.btnClosePrintSheet = document.getElementById('btn-close-print-sheet');
 }
 
 function init() {
@@ -143,6 +207,7 @@ function init() {
   bindEvents();
   renderLanguageCards();
   refreshAllLanguageSupport();
+  checkRestorableSession();
 }
 
 function checkMobileBanner() {
@@ -155,6 +220,71 @@ function checkMobileBanner() {
       '<strong>📱 모바일 접속 안내:</strong> 모바일 브라우저에서는 내장 Translator API(자동 번역)가 작동하지 않을 수 있습니다. 자동 번역은 <strong>데스크톱 Chrome 브라우저</strong>를 권장하며, 모바일에서는 수동 번역문 입력 및 파일 변환을 사용할 수 있습니다.';
   }
 }
+
+/* ==================== FEATURE #4: BROWSER AUTO-SAVE & RESTORE ==================== */
+
+async function checkRestorableSession() {
+  const saved = await loadWorkSessionFromBrowser();
+  if (!saved || !saved.originalBuffer || !saved.fileName || !Array.isArray(saved.itemStatesEntries)) {
+    return;
+  }
+  state.pendingRestorableSession = saved;
+  const langMeta = getTargetLanguageMeta(saved.selectedLangKey || 'en');
+  const totalCount = saved.itemStatesEntries.length;
+  const verifiedCount = saved.itemStatesEntries.filter(([, v]) => v && v.verified).length;
+  const timeStr = saved.savedAt ? new Date(saved.savedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
+
+  if (els.sessionRestoreDesc && els.sessionRestoreBanner) {
+    els.sessionRestoreDesc.textContent = `[${saved.fileName}] · ${langMeta.label} 번역 (${verifiedCount}/${totalCount}개 확인 완료${timeStr ? ` · ${timeStr} 저장` : ''}) 내역을 이어서 작업할 수 있습니다.`;
+    els.sessionRestoreBanner.classList.remove('hidden');
+  }
+}
+
+async function handleRestoreSession() {
+  const saved = state.pendingRestorableSession;
+  if (!saved) return;
+  try {
+    const parsed = await extractDocumentFromBuffer(saved.fileName, saved.originalBuffer);
+    state.parsedDoc = parsed;
+    state.selectedLangKey = saved.selectedLangKey || 'en';
+    state.itemStates = new Map(saved.itemStatesEntries);
+    state.collapsedGroups.clear();
+    state.activeFilter = 'all';
+    state.hasUnsavedWork = true;
+    state.maxUnlockedStep = 5;
+    els.sessionRestoreBanner?.classList.add('hidden');
+    renderLanguageCards();
+    refreshAllLanguageSupport();
+    goToStep(4);
+  } catch {
+    await clearWorkSessionFromBrowser();
+    els.sessionRestoreBanner?.classList.add('hidden');
+  }
+}
+
+function scheduleAutoSave() {
+  if (!state.parsedDoc || !state.parsedDoc.originalBuffer) return;
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(async () => {
+    const savedAt = await saveWorkSessionToBrowser({
+      fileName: state.parsedDoc.fileName,
+      fileType: state.parsedDoc.fileType,
+      originalBuffer: state.parsedDoc.originalBuffer,
+      selectedLangKey: state.selectedLangKey,
+      itemStatesEntries: Array.from(state.itemStates.entries())
+    });
+    if (savedAt && els.autosaveStatusBadge) {
+      const t = new Date(savedAt).toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      els.autosaveStatusBadge.textContent = `💾 브라우저 임시저장 완료 (${t})`;
+    }
+  }, 350);
+}
+
+/* ==================== MANUAL MODAL ==================== */
 
 function openManualModal(tabId = 'tab-basic') {
   if (!els.manualModal) return;
@@ -187,6 +317,14 @@ function bindEvents() {
       e.preventDefault();
       e.returnValue = '';
     }
+  });
+
+  // Session restore buttons (Feature #4)
+  els.btnRestoreSession?.addEventListener('click', handleRestoreSession);
+  els.btnDiscardSession?.addEventListener('click', async () => {
+    state.pendingRestorableSession = null;
+    await clearWorkSessionFromBrowser();
+    els.sessionRestoreBanner?.classList.add('hidden');
   });
 
   // Manual Modal events
@@ -289,6 +427,7 @@ function bindEvents() {
   els.btnStartAutoTranslate.addEventListener('click', handleStartAutoTranslate);
   els.btnSkipToManual.addEventListener('click', () => {
     if (state.isTranslating) return;
+    scheduleAutoSave();
     unlockAndGoToStep(4);
   });
   els.btnCancelTranslation.addEventListener('click', () => {
@@ -325,6 +464,7 @@ function bindEvents() {
     }
     if (changed > 0) {
       state.hasUnsavedWork = true;
+      scheduleAutoSave();
       renderReviewStep();
     }
   });
@@ -340,10 +480,40 @@ function bindEvents() {
       }
     });
     state.hasUnsavedWork = true;
+    scheduleAutoSave();
     renderReviewStep();
   });
 
-  // Step 5 buttons
+  // Step 4 Power Tools (Feature #2, #5, #7, #8)
+  els.chkAutoSyncIdentical?.addEventListener('change', () => {
+    state.autoSyncIdentical = Boolean(els.chkAutoSyncIdentical.checked);
+  });
+
+  els.btnToggleGlossary?.addEventListener('click', () => {
+    const isHidden = els.glossaryDrawer.classList.toggle('hidden');
+    els.btnToggleGlossary.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+    if (!isHidden) renderGlossaryDrawer();
+  });
+
+  els.btnToggleFindReplace?.addEventListener('click', () => {
+    const isHidden = els.findReplaceDrawer.classList.toggle('hidden');
+    els.btnToggleFindReplace.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+  });
+
+  els.btnToggleCsvPanel?.addEventListener('click', () => {
+    const isHidden = els.csvPasteDrawer.classList.toggle('hidden');
+    els.btnToggleCsvPanel.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+  });
+
+  els.btnAddCustomGlossary?.addEventListener('click', handleAddCustomGlossary);
+  els.btnApplyGlossaryAll?.addEventListener('click', handleApplyGlossaryAll);
+  els.btnRunReplaceAll?.addEventListener('click', handleRunFindReplaceAll);
+  els.btnExportCsv?.addEventListener('click', handleExportCsv);
+  els.btnCopySourceLines?.addEventListener('click', handleCopySourceLines);
+  els.btnApplyBulkPaste?.addEventListener('click', handleApplyBulkPaste);
+  els.btnCollapseVerifiedGroups?.addEventListener('click', handleToggleCollapseVerifiedGroups);
+
+  // Step 5 buttons & output mode (Feature #3 & #10)
   els.btnBackToStep4.addEventListener('click', () => goToStep(4));
   els.btnBackToStep4Bottom.addEventListener('click', () => goToStep(4));
   els.btnRestartNewFile.addEventListener('click', () => {
@@ -356,11 +526,30 @@ function bindEvents() {
     state.hasUnsavedWork = false;
     state.parsedDoc = null;
     state.itemStates.clear();
+    state.collapsedGroups.clear();
     state.maxUnlockedStep = 1;
+    clearWorkSessionFromBrowser();
     goToStep(1);
   });
 
+  els.outputModeRadios.forEach((radio) => {
+    radio.addEventListener('change', () => {
+      if (radio.checked) {
+        state.outputMode = radio.value;
+        document.querySelectorAll('.output-mode-card').forEach((card) => {
+          card.classList.toggle('selected', card.contains(radio));
+        });
+        updateStep5FilenameDisplay();
+      }
+    });
+  });
+
   els.btnDownloadFile.addEventListener('click', handleDownloadTranslatedFile);
+  els.btnPrintComparisonSheet?.addEventListener('click', handleOpenComparisonSheet);
+  els.btnTriggerWindowPrint?.addEventListener('click', () => window.print());
+  els.btnClosePrintSheet?.addEventListener('click', () => {
+    els.printableComparisonSheet?.classList.add('hidden');
+  });
 }
 
 function unlockAndGoToStep(stepNum) {
@@ -400,6 +589,7 @@ function goToStep(stepNum) {
   } else if (stepNum === 3) {
     updateSelectedLanguageStatusUI();
   } else if (stepNum === 4) {
+    renderGlossaryDrawer();
     renderReviewStep();
   } else if (stepNum === 5) {
     renderDownloadStep();
@@ -471,13 +661,17 @@ async function processLoadedBuffer(fileName, arrayBuffer) {
   const parsed = await extractDocumentFromBuffer(fileName, arrayBuffer);
   state.parsedDoc = parsed;
   state.itemStates.clear();
+  state.collapsedGroups.clear();
+
   for (const item of parsed.items) {
+    const autoSkip = isNonTranslatableText(item.sourceText);
     state.itemStates.set(item.id, {
-      draftText: null,
-      finalText: '',
-      verified: false,
+      draftText: autoSkip ? item.sourceText : null,
+      finalText: autoSkip ? item.sourceText : '',
+      verified: autoSkip,
       autoFailed: false,
-      errorMessage: null
+      errorMessage: null,
+      keepOriginal: autoSkip
     });
   }
   state.activeFilter = 'all';
@@ -485,6 +679,7 @@ async function processLoadedBuffer(fileName, arrayBuffer) {
   state.maxUnlockedStep = parsed.items.length > 0 ? 3 : 2;
   els.translationResultAlert.classList.add('hidden');
   els.translationProgressPanel.classList.add('hidden');
+  scheduleAutoSave();
   goToStep(2);
 }
 
@@ -583,35 +778,47 @@ function renderExtractStep() {
 
 /* ==================== STEP 3: LANGUAGE SELECTION & TRANSLATION ==================== */
 
-function renderLanguageCards() {
-  els.languageOptionsGrid.innerHTML = '';
-  for (const lang of TARGET_LANGUAGES) {
-    const label = document.createElement('label');
-    label.className = `lang-option-card${lang.key === state.selectedLangKey ? ' selected' : ''}`;
-    label.setAttribute('data-lang-key', lang.key);
+function createLanguageCardElement(lang) {
+  const label = document.createElement('label');
+  label.className = `lang-option-card${lang.key === state.selectedLangKey ? ' selected' : ''}`;
+  label.setAttribute('data-lang-key', lang.key);
 
-    label.innerHTML = `
-      <div class="lang-option-top">
-        <div>
-          <input type="radio" name="target-language" value="${lang.key}" ${lang.key === state.selectedLangKey ? 'checked' : ''} />
-          <span class="lang-name-ko">${escapeHtml(lang.label)}</span>
-        </div>
-        <span class="badge badge-context" id="lang-card-badge-${lang.key}">확인 중</span>
+  label.innerHTML = `
+    <div class="lang-option-top">
+      <div>
+        <input type="radio" name="target-language" value="${lang.key}" ${lang.key === state.selectedLangKey ? 'checked' : ''} />
+        <span class="lang-name-ko">${escapeHtml(lang.label)}</span>
       </div>
-      <div class="lang-name-native" lang="${escapeHtml(lang.key)}">${escapeHtml(lang.nativeLabel)} (${escapeHtml(lang.candidates[0])})</div>
-    `;
+      <span class="badge badge-context" id="lang-card-badge-${lang.key}">확인 중</span>
+    </div>
+    <div class="lang-name-native" lang="${escapeHtml(lang.key)}">${escapeHtml(lang.nativeLabel)} (${escapeHtml(lang.candidates[0])})</div>
+  `;
 
-    const radio = label.querySelector('input[type="radio"]');
-    radio.addEventListener('change', () => {
-      if (state.isTranslating) return;
-      state.selectedLangKey = lang.key;
-      document.querySelectorAll('.lang-option-card').forEach((c) => {
-        c.classList.toggle('selected', c.getAttribute('data-lang-key') === lang.key);
-      });
-      updateSelectedLanguageStatusUI();
+  const radio = label.querySelector('input[type="radio"]');
+  radio.addEventListener('change', () => {
+    if (state.isTranslating) return;
+    state.selectedLangKey = lang.key;
+    document.querySelectorAll('.lang-option-card').forEach((c) => {
+      c.classList.toggle('selected', c.getAttribute('data-lang-key') === lang.key);
     });
+    updateSelectedLanguageStatusUI();
+    scheduleAutoSave();
+  });
 
-    els.languageOptionsGrid.appendChild(label);
+  return label;
+}
+
+function renderLanguageCards() {
+  if (els.languageOptionsGrid) els.languageOptionsGrid.innerHTML = '';
+  if (els.extendedLanguageOptionsGrid) els.extendedLanguageOptionsGrid.innerHTML = '';
+
+  for (const lang of TARGET_LANGUAGES) {
+    const cardEl = createLanguageCardElement(lang);
+    if (lang.tier === 'extended' && els.extendedLanguageOptionsGrid) {
+      els.extendedLanguageOptionsGrid.appendChild(cardEl);
+    } else if (els.languageOptionsGrid) {
+      els.languageOptionsGrid.appendChild(cardEl);
+    }
   }
 }
 
@@ -625,7 +832,7 @@ async function refreshAllLanguageSupport() {
         ? info.status === 'available'
           ? '자동 번역 가능'
           : '모델 다운로드 가능'
-        : '수동 입력 전용';
+        : '용어집·수동 입력';
       cardBadge.className = `badge ${
         info.supported
           ? info.status === 'available'
@@ -669,7 +876,7 @@ async function updateSelectedLanguageStatusUI() {
   } else {
     els.btnStartAutoTranslate.textContent = `자동 번역 사용 불가 (${langMeta.label})`;
     els.autoTranslateHelper.textContent =
-      '현재 브라우저 또는 언어 조합은 자동 번역을 지원하지 않습니다. 오른쪽 [직접 번역문 입력하기] 버튼을 눌러 계속 작업하세요.';
+      '현재 브라우저 또는 언어 조합은 자동 번역을 지원하지 않습니다. 오른쪽 [직접 번역문 입력하기] 버튼을 눌러 학교 용어집이나 엑셀 붙여넣기로 계속 작업하세요.';
   }
 }
 
@@ -729,6 +936,7 @@ async function handleStartAutoTranslate() {
 
   let successCount = 0;
   let failCount = 0;
+  const translationCache = new Map();
 
   for (let idx = 0; idx < total; idx++) {
     if (state.cancelTranslationRequested) {
@@ -741,18 +949,36 @@ async function handleStartAutoTranslate() {
     els.itemTranslateCurrentLabel.textContent = `${item.locationLabel} (${item.contextLabel}) 번역 중`;
     els.translationProgressCounts.textContent = `${idx + 1} / ${total}`;
 
-    try {
-      const translated = await translateSingleText(translator, item.sourceText);
-      itemState.draftText = translated;
-      itemState.finalText = translated;
-      itemState.verified = false; // Never auto-mark as verified
+    // Feature #6: Keep original for non-translatable numbers/dates/symbols or user-locked items
+    if (itemState.keepOriginal || isNonTranslatableText(item.sourceText)) {
+      itemState.keepOriginal = true;
+      itemState.draftText = item.sourceText;
+      itemState.finalText = item.sourceText;
+      itemState.verified = true;
       itemState.autoFailed = false;
       itemState.errorMessage = null;
       successCount++;
-    } catch (itemErr) {
-      itemState.autoFailed = true;
-      itemState.errorMessage = itemErr?.message || '자동 번역 실패';
-      failCount++;
+    } else {
+      try {
+        const srcKey = item.sourceText.trim();
+        let translated;
+        if (translationCache.has(srcKey)) {
+          translated = translationCache.get(srcKey);
+        } else {
+          translated = await translateSingleText(translator, item.sourceText);
+          translationCache.set(srcKey, translated);
+        }
+        itemState.draftText = translated;
+        itemState.finalText = translated;
+        itemState.verified = false; // Never auto-mark translated sentences as verified
+        itemState.autoFailed = false;
+        itemState.errorMessage = null;
+        successCount++;
+      } catch (itemErr) {
+        itemState.autoFailed = true;
+        itemState.errorMessage = itemErr?.message || '자동 번역 실패';
+        failCount++;
+      }
     }
 
     const pct = Math.round(((idx + 1) / total) * 100);
@@ -775,6 +1001,7 @@ async function handleStartAutoTranslate() {
   state.hasUnsavedWork = true;
   els.btnStartAutoTranslate.disabled = false;
   els.btnSkipToManual.disabled = false;
+  scheduleAutoSave();
 
   checkLanguagePairSupport(langKey).then((updated) => {
     state.langSupportMap.set(langKey, updated);
@@ -817,6 +1044,260 @@ function showTranslationAlert(type, title, message, actionHint) {
   els.translationResultAlert.classList.remove('hidden');
 }
 
+/* ==================== STEP 4 POWER TOOLS: GLOSSARY, FIND/REPLACE, CSV/PASTE ==================== */
+
+function renderGlossaryDrawer() {
+  if (!els.glossaryTermsGrid) return;
+  const langMeta = getTargetLanguageMeta(state.selectedLangKey);
+  if (els.glossaryLangLabel) {
+    els.glossaryLangLabel.textContent = langMeta.label;
+  }
+
+  const entries = getAllGlossaryEntries();
+  els.glossaryTermsGrid.innerHTML = '';
+
+  for (const entry of entries) {
+    const targetTerm = entry.translations?.[state.selectedLangKey] || entry.translations?.all;
+    if (!targetTerm) continue;
+    const chip = document.createElement('div');
+    chip.className = 'glossary-term-chip';
+    chip.innerHTML = `<strong>${escapeHtml(entry.ko)}</strong> ➔ <span>${escapeHtml(targetTerm)}</span>`;
+    els.glossaryTermsGrid.appendChild(chip);
+  }
+}
+
+function handleAddCustomGlossary() {
+  const ko = (els.inputCustomGlossaryKo?.value || '').trim();
+  const target = (els.inputCustomGlossaryTarget?.value || '').trim();
+  if (!ko || !target) {
+    if (els.glossaryFeedbackMsg) {
+      els.glossaryFeedbackMsg.textContent = '한국어 용어와 대상 언어 표현을 모두 입력해 주세요.';
+    }
+    return;
+  }
+
+  const customList = loadCustomGlossary();
+  const existing = customList.find((e) => e.ko === ko);
+  if (existing) {
+    existing.translations = existing.translations || {};
+    existing.translations[state.selectedLangKey] = target;
+  } else {
+    customList.unshift({
+      ko,
+      category: '내 단어장',
+      translations: {
+        [state.selectedLangKey]: target,
+        all: target
+      }
+    });
+  }
+  saveCustomGlossary(customList);
+  els.inputCustomGlossaryKo.value = '';
+  els.inputCustomGlossaryTarget.value = '';
+  if (els.glossaryFeedbackMsg) {
+    els.glossaryFeedbackMsg.textContent = `✓ '${ko} ➔ ${target}' 단어가 추가되었습니다.`;
+  }
+  renderGlossaryDrawer();
+  renderReviewStep();
+}
+
+function handleApplyGlossaryAll() {
+  if (!state.parsedDoc) return;
+  const entries = getAllGlossaryEntries();
+  let updatedCount = 0;
+
+  for (const item of state.parsedDoc.items) {
+    const st = state.itemStates.get(item.id);
+    if (!st || st.keepOriginal) continue;
+    const srcTrimmed = item.sourceText.trim();
+
+    for (const entry of entries) {
+      const targetTerm = entry.translations?.[state.selectedLangKey] || entry.translations?.all;
+      if (!targetTerm) continue;
+      if (srcTrimmed === entry.ko && st.finalText.trim() !== targetTerm) {
+        st.finalText = targetTerm;
+        updatedCount++;
+        break;
+      } else if (st.finalText.trim().length === 0 && srcTrimmed.includes(entry.ko)) {
+        st.finalText = targetTerm;
+        updatedCount++;
+        break;
+      }
+    }
+  }
+
+  if (els.glossaryFeedbackMsg) {
+    els.glossaryFeedbackMsg.textContent =
+      updatedCount > 0
+        ? `✓ 총 ${updatedCount}개 문장에 학교 용어집 표현을 반영했습니다.`
+        : '일치하는 빈 항목이나 단독 용어 항목이 없습니다. 각 문장 아래의 추천 용어 버튼을 클릭해 삽입할 수도 있습니다.';
+  }
+  if (updatedCount > 0) {
+    state.hasUnsavedWork = true;
+    scheduleAutoSave();
+    renderReviewStep();
+  }
+}
+
+function handleRunFindReplaceAll() {
+  if (!state.parsedDoc) return;
+  const findStr = els.inputFindText?.value || '';
+  const replaceStr = els.inputReplaceText?.value || '';
+  if (!findStr) {
+    if (els.findReplaceFeedback) {
+      els.findReplaceFeedback.textContent = '찾을 단어를 입력해 주세요.';
+    }
+    return;
+  }
+
+  let changedItems = 0;
+  for (const item of state.parsedDoc.items) {
+    const st = state.itemStates.get(item.id);
+    if (!st || !st.finalText) continue;
+    if (st.finalText.includes(findStr)) {
+      st.finalText = st.finalText.split(findStr).join(replaceStr);
+      changedItems++;
+    }
+  }
+
+  if (els.findReplaceFeedback) {
+    els.findReplaceFeedback.textContent =
+      changedItems > 0
+        ? `✓ 총 ${changedItems}개 항목에서 '${findStr}'을(를) '${replaceStr}'(으)로 바꿨습니다.`
+        : `'${findStr}'이(가) 포함된 번역문을 찾지 못했습니다.`;
+  }
+
+  if (changedItems > 0) {
+    state.hasUnsavedWork = true;
+    scheduleAutoSave();
+    renderReviewStep();
+  }
+}
+
+function escapeCsvCell(val) {
+  const s = String(val ?? '').replace(/"/g, '""');
+  return `"${s}"`;
+}
+
+function handleExportCsv() {
+  if (!state.parsedDoc) return;
+  const langMeta = getTargetLanguageMeta(state.selectedLangKey);
+  const rows = [
+    ['번호', '위치', '구분', '한국어 원문', `${langMeta.label} 번역문`, '확인 상태'].map(escapeCsvCell).join(',')
+  ];
+
+  for (const item of state.parsedDoc.items) {
+    const st = state.itemStates.get(item.id);
+    rows.push(
+      [
+        item.index,
+        item.locationLabel,
+        item.contextLabel,
+        item.sourceText,
+        st ? st.finalText : '',
+        st && st.verified ? '확인 완료' : '미검토'
+      ]
+        .map(escapeCsvCell)
+        .join(',')
+    );
+  }
+
+  // Prepend UTF-8 BOM (\uFEFF) so Microsoft Excel opens Korean & foreign scripts cleanly
+  const csvContent = '\uFEFF' + rows.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const base = state.parsedDoc.fileName.replace(/\.(pptx|hwpx)$/i, '');
+  a.href = url;
+  a.download = `${base}_${langMeta.key}_번역대조표.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+  if (els.csvPasteFeedback) {
+    els.csvPasteFeedback.textContent = '✓ 엑셀용 CSV 파일을 다운로드했습니다.';
+  }
+}
+
+async function handleCopySourceLines() {
+  if (!state.parsedDoc) return;
+  const lines = state.parsedDoc.items.map((it) => it.sourceText.replace(/\r?\n/g, ' ')).join('\n');
+  try {
+    await navigator.clipboard.writeText(lines);
+    if (els.csvPasteFeedback) {
+      els.csvPasteFeedback.textContent = `✓ 원문 ${state.parsedDoc.items.length}줄을 클립보드에 복사했습니다.`;
+    }
+  } catch {
+    if (els.textareaBulkPaste) {
+      els.textareaBulkPaste.value = lines;
+      els.textareaBulkPaste.select();
+    }
+    if (els.csvPasteFeedback) {
+      els.csvPasteFeedback.textContent = '아래 입력창에 원문 목록을 채웠습니다. 복사하여 활용하세요.';
+    }
+  }
+}
+
+function handleApplyBulkPaste() {
+  if (!state.parsedDoc) return;
+  const raw = els.textareaBulkPaste?.value || '';
+  const lines = raw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l, idx, arr) => !(idx === arr.length - 1 && l === ''));
+
+  if (lines.length === 0) {
+    if (els.csvPasteFeedback) {
+      els.csvPasteFeedback.textContent = '붙여넣을 번역문 줄을 입력창에 먼저 넣어 주세요.';
+    }
+    return;
+  }
+
+  const items = state.parsedDoc.items;
+  let applied = 0;
+  for (let i = 0; i < Math.min(items.length, lines.length); i++) {
+    const st = state.itemStates.get(items[i].id);
+    if (st && lines[i].length > 0) {
+      // If pasted from TSV (source \t translation), take the last tab column
+      const parts = lines[i].split('\t');
+      st.finalText = parts[parts.length - 1].trim();
+      st.keepOriginal = false;
+      applied++;
+    }
+  }
+
+  if (els.csvPasteFeedback) {
+    els.csvPasteFeedback.textContent = `✓ 총 ${applied}개 항목에 번역문을 순서대로 반영했습니다.`;
+  }
+  state.hasUnsavedWork = true;
+  scheduleAutoSave();
+  renderReviewStep();
+}
+
+function handleToggleCollapseVerifiedGroups() {
+  if (!state.parsedDoc) return;
+  const groups = getDocumentGroups();
+  const verifiedGroupNums = [];
+  for (const [gNum, gItems] of groups.entries()) {
+    const allVerified = gItems.every((it) => state.itemStates.get(it.id)?.verified);
+    if (allVerified) verifiedGroupNums.push(gNum);
+  }
+
+  if (verifiedGroupNums.length === 0) {
+    window.alert('모든 문장이 [✓ 확인 완료]된 슬라이드·문단 그룹이 아직 없습니다.');
+    return;
+  }
+
+  const anyNotCollapsed = verifiedGroupNums.some((g) => !state.collapsedGroups.has(g));
+  if (anyNotCollapsed) {
+    verifiedGroupNums.forEach((g) => state.collapsedGroups.add(g));
+  } else {
+    verifiedGroupNums.forEach((g) => state.collapsedGroups.delete(g));
+  }
+  renderReviewStep();
+}
+
 /* ==================== STEP 4: TRANSLATION REVIEW ==================== */
 
 function autoResizeTextarea(textarea) {
@@ -831,6 +1312,7 @@ function jumpToNextUnverified() {
   for (const item of state.parsedDoc.items) {
     const st = state.itemStates.get(item.id);
     if (st && !st.verified) {
+      state.collapsedGroups.delete(item.groupNumber);
       focusReviewItem(item.id);
       return;
     }
@@ -839,6 +1321,13 @@ function jumpToNextUnverified() {
 
 function getItemOriginStatus(st) {
   const trimmed = (st.finalText || '').trim();
+  if (st.keepOriginal) {
+    return {
+      code: 'kept',
+      label: '원문 그대로 유지',
+      cssClass: 'origin-kept'
+    };
+  }
   if (st.autoFailed && trimmed.length === 0) {
     return {
       code: 'failed',
@@ -876,12 +1365,13 @@ function getItemOriginStatus(st) {
 
 function computeReviewCounters() {
   if (!state.parsedDoc) {
-    return { total: 0, verified: 0, unverified: 0, empty: 0, modified: 0, failed: 0 };
+    return { total: 0, verified: 0, unverified: 0, empty: 0, modified: 0, failed: 0, overflow: 0 };
   }
   let verified = 0;
   let empty = 0;
   let modified = 0;
   let failed = 0;
+  let overflow = 0;
 
   for (const item of state.parsedDoc.items) {
     const st = state.itemStates.get(item.id);
@@ -896,6 +1386,9 @@ function computeReviewCounters() {
     ) {
       modified++;
     }
+    if (evaluateLengthOverflowRisk(item.sourceText, st.finalText, item.contextLabel)) {
+      overflow++;
+    }
   }
 
   const total = state.parsedDoc.items.length;
@@ -905,7 +1398,8 @@ function computeReviewCounters() {
     unverified: total - verified,
     empty,
     modified,
-    failed
+    failed,
+    overflow
   };
 }
 
@@ -917,8 +1411,23 @@ function updateReviewCountersUI() {
   els.reviewVerifiedCount.textContent = `${c.verified}개`;
   els.reviewUnverifiedCount.textContent = `${c.unverified}개`;
   els.reviewEmptyCount.textContent = `${c.empty}개`;
+  if (els.reviewOverflowCount && els.reviewOverflowChip) {
+    els.reviewOverflowCount.textContent = `${c.overflow}개`;
+    els.reviewOverflowChip.classList.toggle('hidden', c.overflow === 0);
+  }
   els.reviewFailedCount.textContent = `${c.failed}개`;
   els.reviewFailedChip.classList.toggle('hidden', c.failed === 0);
+}
+
+function getDocumentGroups() {
+  const groups = new Map();
+  if (!state.parsedDoc) return groups;
+  for (const item of state.parsedDoc.items) {
+    const gNum = item.fileType === 'pptx' ? item.groupNumber : Math.ceil(item.groupNumber / 5);
+    if (!groups.has(gNum)) groups.set(gNum, []);
+    groups.get(gNum).push(item);
+  }
+  return groups;
 }
 
 function renderReviewJumpNav() {
@@ -926,44 +1435,65 @@ function renderReviewJumpNav() {
   const doc = state.parsedDoc;
   if (!doc || doc.items.length === 0) return;
 
-  if (doc.fileType === 'pptx') {
-    const slides = [...new Set(doc.items.map((it) => it.groupNumber))];
-    for (const sNum of slides) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'jump-btn';
-      btn.textContent = `슬라이드 ${sNum}`;
-      btn.addEventListener('click', () => {
-        const firstCard = els.reviewItemsContainer.querySelector(
-          `.review-card[data-group-num="${sNum}"]:not(.hidden)`
-        );
-        if (firstCard) {
-          firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          els.currentPositionIndicator.textContent = `현재 위치: 슬라이드 ${sNum}`;
+  const groups = getDocumentGroups();
+  for (const [gNum, gItems] of groups.entries()) {
+    const doneCount = gItems.filter((it) => state.itemStates.get(it.id)?.verified).length;
+    const isAllDone = doneCount === gItems.length;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `jump-btn${isAllDone ? ' is-group-done' : ''}`;
+    const labelPrefix =
+      doc.fileType === 'pptx'
+        ? `슬라이드 ${gNum}`
+        : gItems.length === 1
+          ? `문단 ${gItems[0].groupNumber}`
+          : `문단 ${gItems[0].groupNumber}~${gItems[gItems.length - 1].groupNumber}`;
+    btn.textContent = `${isAllDone ? '✓ ' : ''}${labelPrefix} (${doneCount}/${gItems.length})`;
+
+    btn.addEventListener('click', () => {
+      state.collapsedGroups.delete(gNum);
+      const firstCard = els.reviewItemsContainer.querySelector(
+        `.review-card[data-item-id="${gItems[0].id}"]`
+      );
+      if (firstCard) {
+        firstCard.classList.remove('group-collapsed');
+        firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        els.currentPositionIndicator.textContent = `현재 위치: ${labelPrefix}`;
+      }
+    });
+    els.reviewJumpNav.appendChild(btn);
+  }
+}
+
+/**
+ * Feature #5: Synchronize identical Korean source sentences across the document when edited
+ */
+function propagateIdenticalSourceText(editedItem, sourceState) {
+  if (!state.autoSyncIdentical || !state.parsedDoc) return;
+  const targetTrimmed = editedItem.sourceText.trim();
+  if (!targetTrimmed) return;
+
+  for (const other of state.parsedDoc.items) {
+    if (other.id === editedItem.id) continue;
+    if (other.sourceText.trim() === targetTrimmed) {
+      const otherSt = state.itemStates.get(other.id);
+      if (!otherSt) continue;
+      otherSt.finalText = sourceState.finalText;
+      otherSt.keepOriginal = sourceState.keepOriginal;
+      otherSt.verified = sourceState.verified;
+
+      const otherCard = els.reviewItemsContainer.querySelector(
+        `.review-card[data-item-id="${other.id}"]`
+      );
+      if (otherCard) {
+        const otherTa = otherCard.querySelector('textarea');
+        if (otherTa && otherTa.value !== otherSt.finalText) {
+          otherTa.value = otherSt.finalText;
+          autoResizeTextarea(otherTa);
         }
-      });
-      els.reviewJumpNav.appendChild(btn);
-    }
-  } else {
-    const items = doc.items;
-    const stepSize = items.length > 20 ? 10 : 1;
-    for (let i = 0; i < items.length; i += stepSize) {
-      const startNum = items[i].groupNumber;
-      const endNum = items[Math.min(items.length - 1, i + stepSize - 1)].groupNumber;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'jump-btn';
-      btn.textContent = stepSize === 1 ? `문단 ${startNum}` : `문단 ${startNum}~${endNum}`;
-      btn.addEventListener('click', () => {
-        const targetCard = els.reviewItemsContainer.querySelector(
-          `.review-card[data-item-id="${items[i].id}"]`
-        );
-        if (targetCard && !targetCard.classList.contains('hidden')) {
-          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          els.currentPositionIndicator.textContent = `현재 위치: ${items[i].locationLabel}`;
-        }
-      });
-      els.reviewJumpNav.appendChild(btn);
+        syncSingleCardUI(otherCard, other, otherSt);
+      }
     }
   }
 }
@@ -975,131 +1505,287 @@ function renderReviewStep() {
 
   els.reviewItemsContainer.innerHTML = '';
   const langMeta = getTargetLanguageMeta(state.selectedLangKey);
+  const groups = getDocumentGroups();
 
-  for (const item of state.parsedDoc.items) {
-    const st = state.itemStates.get(item.id);
-    const origin = getItemOriginStatus(st);
-    const isEmpty = st.finalText.trim().length === 0;
+  for (const [gNum, gItems] of groups.entries()) {
+    const doneCount = gItems.filter((it) => state.itemStates.get(it.id)?.verified).length;
+    const isAllDone = doneCount === gItems.length;
+    const isCollapsed = state.collapsedGroups.has(gNum);
+    const groupTitle =
+      state.parsedDoc.fileType === 'pptx'
+        ? `슬라이드 ${gNum}`
+        : gItems.length === 1
+          ? `문단 ${gItems[0].groupNumber}`
+          : `문단 ${gItems[0].groupNumber} ~ ${gItems[gItems.length - 1].groupNumber}`;
 
-    const card = document.createElement('article');
-    card.className = `review-card${st.verified ? ' verified' : ''}${isEmpty ? ' is-empty' : ''}`;
-    card.setAttribute('data-item-id', item.id);
-    card.setAttribute('data-group-num', String(item.groupNumber));
-    card.setAttribute('data-location-label', item.locationLabel);
-
-    card.innerHTML = `
-      <div class="review-card-header">
-        <div class="review-meta-left">
-          <span class="location-badge">${escapeHtml(item.locationLabel)}</span>
-          <span class="badge badge-context">${escapeHtml(item.contextLabel)}</span>
-          <span class="origin-badge ${origin.cssClass}" data-role="origin-badge">${escapeHtml(origin.label)}</span>
-        </div>
-        <div class="review-meta-right">
-          <button
-            type="button"
-            class="verify-toggle-btn${st.verified ? ' is-verified' : ''}"
-            data-role="verify-btn"
-            aria-pressed="${st.verified ? 'true' : 'false'}"
-          >
-            ${st.verified ? '✓ 확인 완료됨' : '미검토 (클릭하여 확인 완료)'}
-          </button>
-        </div>
+    // Group Header Bar (Feature #8)
+    const divider = document.createElement('div');
+    divider.className = `review-group-divider${isAllDone ? ' group-all-verified' : ''}`;
+    divider.setAttribute('data-divider-group', String(gNum));
+    divider.innerHTML = `
+      <div class="review-group-title">
+        <span>${isAllDone ? '✅' : '📂'} ${escapeHtml(groupTitle)}</span>
+        <span class="badge ${isAllDone ? 'badge-available' : 'badge-context'}">${doneCount} / ${gItems.length} 확인 완료</span>
       </div>
-
-      <div class="review-card-body">
-        <div class="review-col">
-          <div class="review-col-header">
-            <span>한국어 원문</span>
-            <button type="button" class="link-btn" data-role="copy-source-btn" title="한국어 원문을 오른쪽 번역 입력칸에 그대로 복사합니다">
-              원문 → 번역칸 복사
-            </button>
-          </div>
-          <div class="source-text-box" lang="ko">${escapeHtml(item.sourceText)}</div>
-        </div>
-
-        <div class="review-col">
-          <div class="review-col-header">
-            <label for="textarea-${item.id}">${escapeHtml(langMeta.label)} 번역문 편집 <small class="text-muted">(Ctrl+Enter: 확인 완료)</small></label>
-            <span data-role="char-count" class="text-muted">${st.finalText.length}자</span>
-          </div>
-          <textarea
-            id="textarea-${item.id}"
-            class="translation-textarea"
-            lang="${escapeHtml(langMeta.key)}"
-            placeholder="${escapeHtml(langMeta.label)} 번역문을 입력하거나 수정하세요..."
-          ></textarea>
-          <div class="draft-reference-bar ${st.draftText !== null && st.finalText !== st.draftText ? '' : 'hidden'}" data-role="draft-ref-bar">
-            <span class="draft-reference-text" data-role="draft-ref-text">자동 번역 초안: ${escapeHtml(st.draftText || '')}</span>
-            <button type="button" class="link-btn" data-role="restore-draft-btn">초안으로 되돌리기</button>
-          </div>
-        </div>
+      <div class="tool-drawer-actions">
+        <button type="button" class="btn btn-surface btn-sm" data-role="group-verify-btn">
+          ✓ 이 그룹 일괄 확인 완료
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" data-role="group-collapse-btn">
+          ${isCollapsed ? '펼치기 ▼' : '접기 ▲'}
+        </button>
       </div>
     `;
 
-    const textarea = card.querySelector('textarea');
-    textarea.value = st.finalText;
-
-    const verifyBtn = card.querySelector('[data-role="verify-btn"]');
-    const copySourceBtn = card.querySelector('[data-role="copy-source-btn"]');
-    const restoreDraftBtn = card.querySelector('[data-role="restore-draft-btn"]');
-
-    textarea.addEventListener('focus', () => {
-      els.currentPositionIndicator.textContent = `현재 위치: ${item.locationLabel} (${item.contextLabel})`;
-    });
-
-    textarea.addEventListener('input', () => {
-      st.finalText = textarea.value;
-      state.hasUnsavedWork = true;
-      autoResizeTextarea(textarea);
-      syncSingleCardUI(card, item, st);
-      updateReviewCountersUI();
-    });
-
-    textarea.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        st.verified = true;
-        state.hasUnsavedWork = true;
-        syncSingleCardUI(card, item, st);
-        updateReviewCountersUI();
-        jumpToNextUnverified();
+    divider.querySelector('[data-role="group-collapse-btn"]').addEventListener('click', () => {
+      if (state.collapsedGroups.has(gNum)) {
+        state.collapsedGroups.delete(gNum);
+      } else {
+        state.collapsedGroups.add(gNum);
       }
+      renderReviewStep();
     });
 
-    verifyBtn.addEventListener('click', () => {
-      st.verified = !st.verified;
-      state.hasUnsavedWork = true;
-      syncSingleCardUI(card, item, st);
-      updateReviewCountersUI();
-      if (state.activeFilter !== 'all') {
-        applyReviewFilter();
+    divider.querySelector('[data-role="group-verify-btn"]').addEventListener('click', () => {
+      for (const it of gItems) {
+        const st = state.itemStates.get(it.id);
+        if (st && st.finalText.trim().length > 0) {
+          st.verified = true;
+        }
       }
+      state.hasUnsavedWork = true;
+      scheduleAutoSave();
+      renderReviewStep();
     });
 
-    copySourceBtn.addEventListener('click', () => {
-      st.finalText = item.sourceText;
+    els.reviewItemsContainer.appendChild(divider);
+
+    for (const item of gItems) {
+      const st = state.itemStates.get(item.id);
+      const origin = getItemOriginStatus(st);
+      const isEmpty = st.finalText.trim().length === 0;
+      const overflowInfo = evaluateLengthOverflowRisk(
+        item.sourceText,
+        st.finalText,
+        item.contextLabel
+      );
+      const glossaryMatches = findMatchingGlossaryTerms(item.sourceText, state.selectedLangKey);
+
+      const card = document.createElement('article');
+      card.className = `review-card${st.verified ? ' verified' : ''}${isEmpty ? ' is-empty' : ''}${
+        isCollapsed ? ' group-collapsed' : ''
+      }`;
+      card.setAttribute('data-item-id', item.id);
+      card.setAttribute('data-group-num', String(item.groupNumber));
+      card.setAttribute('data-nav-group', String(gNum));
+      card.setAttribute('data-location-label', item.locationLabel);
+
+      const glossaryBarHtml =
+        glossaryMatches.length > 0
+          ? `<div class="glossary-suggest-bar" data-role="glossary-bar">
+              <span class="glossary-suggest-label">📚 추천 학교 용어 (클릭 시 입력):</span>
+              ${glossaryMatches
+                .map(
+                  (m) =>
+                    `<button type="button" class="glossary-suggest-chip" data-term="${escapeHtml(
+                      m.target
+                    )}" title="클릭하면 번역문 입력칸에 '${escapeHtml(m.target)}'을(를) 넣습니다">${escapeHtml(
+                      m.ko
+                    )} ➔ ${escapeHtml(m.target)}</button>`
+                )
+                .join('')}
+            </div>`
+          : '';
+
+      card.innerHTML = `
+        <div class="review-card-header">
+          <div class="review-meta-left">
+            <span class="location-badge">${escapeHtml(item.locationLabel)}</span>
+            <span class="badge badge-context">${escapeHtml(item.contextLabel)}</span>
+            <span class="origin-badge ${origin.cssClass}" data-role="origin-badge">${escapeHtml(origin.label)}</span>
+          </div>
+          <div class="review-meta-right">
+            <button
+              type="button"
+              class="keep-source-toggle-btn${st.keepOriginal ? ' is-kept' : ''}"
+              data-role="keep-source-btn"
+              title="고유명사·날짜·학번 등 번역하지 않고 한국어 원문 그대로 유지할 항목으로 지정합니다"
+            >
+              ${st.keepOriginal ? '⏭️ 원문 유지 중' : '⏭️ 원문 그대로 유지'}
+            </button>
+            <button
+              type="button"
+              class="verify-toggle-btn${st.verified ? ' is-verified' : ''}"
+              data-role="verify-btn"
+              aria-pressed="${st.verified ? 'true' : 'false'}"
+            >
+              ${st.verified ? '✓ 확인 완료됨' : '미검토 (클릭하여 확인 완료)'}
+            </button>
+          </div>
+        </div>
+
+        <div class="review-card-body">
+          <div class="review-col">
+            <div class="review-col-header">
+              <span>한국어 원문 (${item.sourceText.length}자)</span>
+              <button type="button" class="link-btn" data-role="copy-source-btn" title="한국어 원문을 오른쪽 번역 입력칸에 그대로 복사합니다">
+                원문 → 번역칸 복사
+              </button>
+            </div>
+            <div class="source-text-box" lang="ko">${escapeHtml(item.sourceText)}</div>
+            ${glossaryBarHtml}
+          </div>
+
+          <div class="review-col">
+            <div class="review-col-header">
+              <label for="textarea-${item.id}">${escapeHtml(langMeta.label)} 번역문 편집 <small class="text-muted">(Ctrl+Enter: 확인 완료)</small></label>
+              <span data-role="char-count" class="text-muted">${st.finalText.length}자</span>
+            </div>
+            <textarea
+              id="textarea-${item.id}"
+              class="translation-textarea"
+              lang="${escapeHtml(langMeta.key)}"
+              placeholder="${escapeHtml(langMeta.label)} 번역문을 입력하거나 수정하세요..."
+            ></textarea>
+            <div
+              class="overflow-warning-bar ${
+                overflowInfo
+                  ? overflowInfo.level === 'high'
+                    ? 'overflow-warning-high'
+                    : 'overflow-warning-medium'
+                  : 'hidden'
+              }"
+              data-role="overflow-bar"
+            >
+              <span data-role="overflow-text">${overflowInfo ? `📏 ${escapeHtml(overflowInfo.message)}` : ''}</span>
+            </div>
+            <div class="draft-reference-bar ${st.draftText !== null && st.finalText !== st.draftText ? '' : 'hidden'}" data-role="draft-ref-bar">
+              <span class="draft-reference-text" data-role="draft-ref-text">자동 번역 초안: ${escapeHtml(st.draftText || '')}</span>
+              <button type="button" class="link-btn" data-role="restore-draft-btn">초안으로 되돌리기</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const textarea = card.querySelector('textarea');
       textarea.value = st.finalText;
-      state.hasUnsavedWork = true;
-      autoResizeTextarea(textarea);
-      syncSingleCardUI(card, item, st);
-      updateReviewCountersUI();
-    });
 
-    if (restoreDraftBtn) {
-      restoreDraftBtn.addEventListener('click', () => {
-        if (st.draftText !== null) {
-          st.finalText = st.draftText;
+      const verifyBtn = card.querySelector('[data-role="verify-btn"]');
+      const keepSourceBtn = card.querySelector('[data-role="keep-source-btn"]');
+      const copySourceBtn = card.querySelector('[data-role="copy-source-btn"]');
+      const restoreDraftBtn = card.querySelector('[data-role="restore-draft-btn"]');
+      const glossaryChips = card.querySelectorAll('.glossary-suggest-chip');
+
+      glossaryChips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+          const term = chip.getAttribute('data-term') || '';
+          if (!term) return;
+          if (st.finalText.trim().length === 0 || item.sourceText.trim().length <= 10) {
+            st.finalText = term;
+          } else if (!st.finalText.includes(term)) {
+            st.finalText = `${st.finalText.trim()} (${term})`;
+          }
+          st.keepOriginal = false;
           textarea.value = st.finalText;
           state.hasUnsavedWork = true;
           autoResizeTextarea(textarea);
           syncSingleCardUI(card, item, st);
+          propagateIdenticalSourceText(item, st);
           updateReviewCountersUI();
+          scheduleAutoSave();
+        });
+      });
+
+      textarea.addEventListener('focus', () => {
+        els.currentPositionIndicator.textContent = `현재 위치: ${item.locationLabel} (${item.contextLabel})`;
+      });
+
+      textarea.addEventListener('input', () => {
+        st.finalText = textarea.value;
+        if (st.finalText !== item.sourceText) {
+          st.keepOriginal = false;
+        }
+        state.hasUnsavedWork = true;
+        autoResizeTextarea(textarea);
+        syncSingleCardUI(card, item, st);
+        propagateIdenticalSourceText(item, st);
+        updateReviewCountersUI();
+        scheduleAutoSave();
+      });
+
+      textarea.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          st.verified = true;
+          state.hasUnsavedWork = true;
+          syncSingleCardUI(card, item, st);
+          propagateIdenticalSourceText(item, st);
+          updateReviewCountersUI();
+          renderReviewJumpNav();
+          scheduleAutoSave();
+          jumpToNextUnverified();
         }
       });
-    }
 
-    els.reviewItemsContainer.appendChild(card);
-    autoResizeTextarea(textarea);
+      keepSourceBtn.addEventListener('click', () => {
+        st.keepOriginal = !st.keepOriginal;
+        if (st.keepOriginal) {
+          st.finalText = item.sourceText;
+          st.verified = true;
+          textarea.value = st.finalText;
+          autoResizeTextarea(textarea);
+        }
+        state.hasUnsavedWork = true;
+        syncSingleCardUI(card, item, st);
+        propagateIdenticalSourceText(item, st);
+        updateReviewCountersUI();
+        renderReviewJumpNav();
+        scheduleAutoSave();
+      });
+
+      verifyBtn.addEventListener('click', () => {
+        st.verified = !st.verified;
+        state.hasUnsavedWork = true;
+        syncSingleCardUI(card, item, st);
+        propagateIdenticalSourceText(item, st);
+        updateReviewCountersUI();
+        renderReviewJumpNav();
+        scheduleAutoSave();
+        if (state.activeFilter !== 'all') {
+          applyReviewFilter();
+        }
+      });
+
+      copySourceBtn.addEventListener('click', () => {
+        st.finalText = item.sourceText;
+        textarea.value = st.finalText;
+        state.hasUnsavedWork = true;
+        autoResizeTextarea(textarea);
+        syncSingleCardUI(card, item, st);
+        propagateIdenticalSourceText(item, st);
+        updateReviewCountersUI();
+        scheduleAutoSave();
+      });
+
+      if (restoreDraftBtn) {
+        restoreDraftBtn.addEventListener('click', () => {
+          if (st.draftText !== null) {
+            st.finalText = st.draftText;
+            st.keepOriginal = false;
+            textarea.value = st.finalText;
+            state.hasUnsavedWork = true;
+            autoResizeTextarea(textarea);
+            syncSingleCardUI(card, item, st);
+            propagateIdenticalSourceText(item, st);
+            updateReviewCountersUI();
+            scheduleAutoSave();
+          }
+        });
+      }
+
+      els.reviewItemsContainer.appendChild(card);
+      autoResizeTextarea(textarea);
+    }
   }
 
   applyReviewFilter();
@@ -1108,6 +1794,11 @@ function renderReviewStep() {
 function syncSingleCardUI(card, item, st) {
   const isEmpty = st.finalText.trim().length === 0;
   const origin = getItemOriginStatus(st);
+  const overflowInfo = evaluateLengthOverflowRisk(
+    item.sourceText,
+    st.finalText,
+    item.contextLabel
+  );
 
   card.classList.toggle('verified', st.verified);
   card.classList.toggle('is-empty', isEmpty);
@@ -1116,6 +1807,12 @@ function syncSingleCardUI(card, item, st) {
   if (originBadge) {
     originBadge.textContent = origin.label;
     originBadge.className = `origin-badge ${origin.cssClass}`;
+  }
+
+  const keepSourceBtn = card.querySelector('[data-role="keep-source-btn"]');
+  if (keepSourceBtn) {
+    keepSourceBtn.classList.toggle('is-kept', Boolean(st.keepOriginal));
+    keepSourceBtn.textContent = st.keepOriginal ? '⏭️ 원문 유지 중' : '⏭️ 원문 그대로 유지';
   }
 
   const verifyBtn = card.querySelector('[data-role="verify-btn"]');
@@ -1128,6 +1825,20 @@ function syncSingleCardUI(card, item, st) {
   const charCount = card.querySelector('[data-role="char-count"]');
   if (charCount) {
     charCount.textContent = `${st.finalText.length}자`;
+  }
+
+  const overflowBar = card.querySelector('[data-role="overflow-bar"]');
+  const overflowText = card.querySelector('[data-role="overflow-text"]');
+  if (overflowBar && overflowText) {
+    if (overflowInfo) {
+      overflowBar.className = `overflow-warning-bar ${
+        overflowInfo.level === 'high' ? 'overflow-warning-high' : 'overflow-warning-medium'
+      }`;
+      overflowText.textContent = `📏 ${overflowInfo.message}`;
+    } else {
+      overflowBar.className = 'overflow-warning-bar hidden';
+      overflowText.textContent = '';
+    }
   }
 
   const draftRefBar = card.querySelector('[data-role="draft-ref-bar"]');
@@ -1148,17 +1859,22 @@ function applyReviewFilter() {
   cards.forEach((card) => {
     const id = card.getAttribute('data-item-id');
     const st = state.itemStates.get(id);
-    if (!st) return;
+    const item = state.parsedDoc?.items.find((it) => it.id === id);
+    if (!st || !item) return;
 
     const isEmpty = st.finalText.trim().length === 0;
     const isModified =
       (st.draftText !== null && st.finalText !== st.draftText && !isEmpty) ||
       (st.draftText === null && !isEmpty);
     const isFailed = st.autoFailed && isEmpty;
+    const isOverflow = Boolean(
+      evaluateLengthOverflowRisk(item.sourceText, st.finalText, item.contextLabel)
+    );
 
     let visible = true;
     if (filter === 'unverified') visible = !st.verified;
     else if (filter === 'empty') visible = isEmpty;
+    else if (filter === 'overflow') visible = isOverflow;
     else if (filter === 'modified') visible = isModified;
     else if (filter === 'failed') visible = isFailed;
 
@@ -1175,6 +1891,7 @@ export function focusReviewItem(itemId) {
   setTimeout(() => {
     const card = els.reviewItemsContainer.querySelector(`.review-card[data-item-id="${itemId}"]`);
     if (card) {
+      card.classList.remove('group-collapsed');
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
       const ta = card.querySelector('textarea');
       if (ta) ta.focus();
@@ -1182,7 +1899,16 @@ export function focusReviewItem(itemId) {
   }, 60);
 }
 
-/* ==================== STEP 5: FINAL CHECK & DOWNLOAD ==================== */
+/* ==================== STEP 5: FINAL CHECK, BILINGUAL MODE, PRINT & DOWNLOAD ==================== */
+
+function updateStep5FilenameDisplay() {
+  if (!state.parsedDoc) return;
+  const doc = state.parsedDoc;
+  const langMeta = getTargetLanguageMeta(state.selectedLangKey);
+  const outName = buildOutputFileName(doc.fileName, langMeta.key, doc.fileType, state.outputMode);
+  els.finalOutputFilename.textContent = outName;
+  els.btnDownloadFile.textContent = `📥 번역된 ${doc.fileType.toUpperCase()} 파일 다운로드 (${outName})`;
+}
 
 function renderDownloadStep() {
   if (!state.parsedDoc) return;
@@ -1192,9 +1918,8 @@ function renderDownloadStep() {
   const doc = state.parsedDoc;
   const langMeta = getTargetLanguageMeta(state.selectedLangKey);
   const c = computeReviewCounters();
-  const outName = buildOutputFileName(doc.fileName, langMeta.key, doc.fileType);
 
-  els.finalOutputFilename.textContent = outName;
+  updateStep5FilenameDisplay();
   els.finalTargetLang.textContent = `${langMeta.label} (${langMeta.nativeLabel})`;
   els.finalVerifiedSummary.textContent = `${c.verified} / ${c.total}개`;
   els.finalUnverifiedSummary.textContent = `${c.unverified}개`;
@@ -1204,7 +1929,6 @@ function renderDownloadStep() {
   els.finalModifiedSummary.textContent = `${c.modified}개`;
 
   els.emptyHandlingBox.classList.toggle('hidden', c.empty === 0);
-  els.btnDownloadFile.textContent = `📥 번역된 ${doc.fileType.toUpperCase()} 파일 다운로드 (${outName})`;
 
   els.downloadWarningsPanel.innerHTML = '';
 
@@ -1218,15 +1942,32 @@ function renderDownloadStep() {
     return !st || !st.verified;
   });
 
+  const overflowItems = doc.items.filter((it) => {
+    const st = state.itemStates.get(it.id);
+    return st && Boolean(evaluateLengthOverflowRisk(it.sourceText, st.finalText, it.contextLabel));
+  });
+
   if (emptyItems.length === 0 && unverifiedItems.length === 0) {
     const okBox = document.createElement('div');
     okBox.className = 'alert-box alert-success';
     okBox.innerHTML = `
       <div class="alert-title">✅ 모든 문장의 번역 입력과 확인이 완료되었습니다!</div>
-      <p class="alert-message">총 ${c.total}개 문장 모두 번역문이 입력되었고 ‘확인 완료’로 표시되었습니다. 아래 다운로드 버튼을 눌러 결과 파일을 저장하세요.</p>
+      <p class="alert-message">총 ${c.total}개 문장 모두 번역문이 입력되었고 ‘확인 완료’로 표시되었습니다. 아래에서 출력 방식을 선택하고 파일을 저장하세요.</p>
     `;
     els.downloadWarningsPanel.appendChild(okBox);
-    return;
+  }
+
+  if (overflowItems.length > 0) {
+    const ovBox = document.createElement('div');
+    ovBox.className = 'alert-box alert-info';
+    ovBox.innerHTML = `
+      <div class="alert-title">📏 원문보다 글자 수가 많이 길어진 문장이 ${overflowItems.length}개 있습니다</div>
+      <p class="alert-message">다운로드한 뒤 PowerPoint 또는 한글에서 아래 위치의 글상자나 표 칸이 넘치지 않는지 먼저 살펴봐 주세요: <strong>${overflowItems
+        .slice(0, 6)
+        .map((it) => escapeHtml(it.locationLabel))
+        .join(', ')}${overflowItems.length > 6 ? ' 외' : ''}</strong></p>
+    `;
+    els.downloadWarningsPanel.appendChild(ovBox);
   }
 
   if (emptyItems.length > 0) {
@@ -1278,6 +2019,33 @@ function renderDownloadStep() {
   }
 }
 
+/**
+ * Feature #10: Render and open Printable Teacher Comparison Sheet
+ */
+function handleOpenComparisonSheet() {
+  if (!state.parsedDoc || !els.printableComparisonSheet || !els.printSheetTbody) return;
+  const doc = state.parsedDoc;
+  const langMeta = getTargetLanguageMeta(state.selectedLangKey);
+  const dateStr = new Date().toLocaleDateString('ko-KR');
+
+  els.printSheetMeta.textContent = `원본 문서: ${doc.fileName}  |  대상 언어: ${langMeta.label} (${langMeta.nativeLabel})  |  문장 수: ${doc.items.length}개  |  작성일: ${dateStr}`;
+  els.printSheetTbody.innerHTML = '';
+
+  for (const item of doc.items) {
+    const st = state.itemStates.get(item.id);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${escapeHtml(item.locationLabel)}</strong><br/><small>${escapeHtml(item.contextLabel)}</small></td>
+      <td lang="ko">${escapeHtml(item.sourceText)}</td>
+      <td lang="${escapeHtml(langMeta.key)}">${escapeHtml(st && st.finalText ? st.finalText : '(미입력)')}</td>
+    `;
+    els.printSheetTbody.appendChild(tr);
+  }
+
+  els.printableComparisonSheet.classList.remove('hidden');
+  els.printableComparisonSheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 async function handleDownloadTranslatedFile() {
   if (!state.parsedDoc) return;
   els.downloadErrorBox.classList.add('hidden');
@@ -1287,7 +2055,7 @@ async function handleDownloadTranslatedFile() {
   try {
     const doc = state.parsedDoc;
     const langMeta = getTargetLanguageMeta(state.selectedLangKey);
-    const outName = buildOutputFileName(doc.fileName, langMeta.key, doc.fileType);
+    const outName = buildOutputFileName(doc.fileName, langMeta.key, doc.fileType, state.outputMode);
 
     const fallbackRadio = document.querySelector('input[name="empty-fallback-mode"]:checked');
     const emptyFallback = fallbackRadio ? fallbackRadio.value : 'keep-source';
@@ -1298,7 +2066,10 @@ async function handleDownloadTranslatedFile() {
       translationsMap[item.id] = st ? st.finalText : '';
     }
 
-    const uint8 = await buildTranslatedDocument(doc, translationsMap, { emptyFallback });
+    const uint8 = await buildTranslatedDocument(doc, translationsMap, {
+      emptyFallback,
+      outputMode: state.outputMode
+    });
     if (!uint8 || uint8.byteLength < 100) {
       throw new DocumentProcessError(
         '생성된 파일 데이터가 비정상적입니다',
