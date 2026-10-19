@@ -55,19 +55,23 @@ import {
   decodeStudentViewPayload
 } from './src/teacher-toolkit.js';
 
+const PREF_LANG_STORAGE_KEY = 'multilingual_translator_pref_lang_v1';
+const PREF_RECENT_LANGS_STORAGE_KEY = 'multilingual_translator_recent_langs_v1';
+const PREF_OUTPUT_MODE_STORAGE_KEY = 'multilingual_translator_pref_output_mode_v1';
+
 const state = {
   activeMainView: 'translator',
   currentStep: 1,
   maxUnlockedStep: 1,
   parsedDoc: null,
-  selectedLangKey: 'en',
+  selectedLangKey: 'vi',
   translatedLangKey: null,
   langSupportMap: new Map(),
   // id -> { draftText, draftBackTranslatedKo, finalText, backTranslatedKo, verified, autoFailed, errorMessage, keepOriginal }
   itemStates: new Map(),
   activeFilter: 'all',
   collapsedGroups: new Set(),
-  warningListExpanded: true,
+  warningListExpanded: false,
   autoSyncIdentical: true,
   outputMode: 'replace',
   isTranslating: false,
@@ -99,6 +103,7 @@ function cacheElements() {
   els.viewToolkit = document.getElementById('view-toolkit');
   els.stepperBarNav = document.getElementById('stepper-bar-nav');
   els.casesCountPill = document.getElementById('cases-count-pill');
+  els.btnShareSiteUrl = document.getElementById('btn-share-site-url');
 
   els.chkEnableAutosave = document.getElementById('chk-enable-autosave');
   els.labelAutosaveToggle = document.getElementById('label-autosave-toggle');
@@ -127,8 +132,12 @@ function cacheElements() {
   els.detailsLegacyConvert = document.getElementById('details-legacy-convert');
 
   // Step 1
+  els.btnQuickstartUpload = document.getElementById('btn-quickstart-upload');
+  els.btnQuickstartNotice = document.getElementById('btn-quickstart-notice');
+  els.btnQuickstartCards = document.getElementById('btn-quickstart-cards');
   els.chkQuickTranslateMode = document.getElementById('chk-quick-translate-mode');
   els.selectQuickTargetLang = document.getElementById('select-quick-target-lang');
+  els.step1RecentLangsBar = document.getElementById('step1-recent-langs-bar');
   els.btnOpenToolkitFromStep1 = document.getElementById('btn-open-toolkit-from-step1');
   els.sessionRestoreBanner = document.getElementById('session-restore-banner');
   els.sessionRestoreDesc = document.getElementById('session-restore-desc');
@@ -159,6 +168,7 @@ function cacheElements() {
 
   // Step 3
   els.btnBackToStep2 = document.getElementById('btn-back-to-step2');
+  els.step3RecentLangsBar = document.getElementById('step3-recent-langs-bar');
   els.languageOptionsGrid = document.getElementById('language-options-grid');
   els.extendedLanguageOptionsGrid = document.getElementById('extended-language-options-grid');
   els.translatorAvailabilityBadge = document.getElementById('translator-availability-badge');
@@ -194,6 +204,13 @@ function cacheElements() {
   els.btnBackToStep3Bottom = document.getElementById('btn-back-to-step3-bottom');
   els.btnToStep5 = document.getElementById('btn-to-step5');
   els.btnToStep5Bottom = document.getElementById('btn-to-step5-bottom');
+  els.selectStep4OutputMode = document.getElementById('select-step4-output-mode');
+  els.btnStep4DirectDownload = document.getElementById('btn-step4-direct-download');
+  els.btnStep4DirectDownloadBottom = document.getElementById('btn-step4-direct-download-bottom');
+  els.btnStep4OpenQr = document.getElementById('btn-step4-open-qr');
+  els.step4DirectDownloadFeedback = document.getElementById('step4-direct-download-feedback');
+  els.btnToggleAdvancedReviewTools = document.getElementById('btn-toggle-advanced-review-tools');
+  els.advancedReviewToolsWrap = document.getElementById('advanced-review-tools-wrap');
   els.reviewTargetLangLabel = document.getElementById('review-target-lang-label');
   els.reviewTotalCount = document.getElementById('review-total-count');
   els.reviewVerifiedCount = document.getElementById('review-verified-count');
@@ -388,14 +405,135 @@ function cacheElements() {
 
 function init() {
   cacheElements();
+  loadSavedTeacherPreferences();
   checkMobileBanner();
   syncStorageControlUI();
   bindEvents();
   renderLanguageCards();
+  renderRecentLanguageBars();
+  syncOutputModeControls();
   initToolkitView();
   refreshAllLanguageSupport();
   checkRestorableSession();
   handleInitialUrlRouting();
+}
+
+function getSavedRecentLanguages() {
+  const defaultList = ['vi', 'zh-Hans', 'en', 'ru'];
+  try {
+    if (typeof localStorage === 'undefined') return defaultList;
+    const raw = localStorage.getItem(PREF_RECENT_LANGS_STORAGE_KEY);
+    if (!raw) return defaultList;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) return defaultList;
+    const valid = parsed.filter((k) => TARGET_LANGUAGES.some((l) => l.key === k));
+    for (const d of defaultList) {
+      if (valid.length < 4 && !valid.includes(d)) valid.push(d);
+    }
+    return valid.slice(0, 4);
+  } catch {
+    return defaultList;
+  }
+}
+
+function loadSavedTeacherPreferences() {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    const savedLang = localStorage.getItem(PREF_LANG_STORAGE_KEY);
+    if (savedLang && TARGET_LANGUAGES.some((l) => l.key === savedLang)) {
+      state.selectedLangKey = savedLang;
+    }
+    const savedMode = localStorage.getItem(PREF_OUTPUT_MODE_STORAGE_KEY);
+    if (
+      savedMode === 'replace' ||
+      savedMode === 'bilingual-ko-first' ||
+      savedMode === 'bilingual-target-first'
+    ) {
+      state.outputMode = savedMode;
+    }
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function rememberSelectedLanguage(langKey) {
+  if (!langKey || !TARGET_LANGUAGES.some((l) => l.key === langKey)) return;
+  state.selectedLangKey = langKey;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(PREF_LANG_STORAGE_KEY, langKey);
+      const currentRecent = getSavedRecentLanguages().filter((k) => k !== langKey);
+      currentRecent.unshift(langKey);
+      localStorage.setItem(PREF_RECENT_LANGS_STORAGE_KEY, JSON.stringify(currentRecent.slice(0, 4)));
+    }
+  } catch {
+    // ignore
+  }
+  renderRecentLanguageBars();
+}
+
+function rememberOutputMode(mode) {
+  if (!mode) return;
+  state.outputMode = mode;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(PREF_OUTPUT_MODE_STORAGE_KEY, mode);
+    }
+  } catch {
+    // ignore
+  }
+  syncOutputModeControls();
+}
+
+function syncOutputModeControls() {
+  if (els.selectStep4OutputMode) {
+    els.selectStep4OutputMode.value = state.outputMode;
+  }
+  els.outputModeRadios?.forEach((radio) => {
+    radio.checked = radio.value === state.outputMode;
+  });
+  document.querySelectorAll('.output-mode-card').forEach((card) => {
+    const r = card.querySelector('input[type="radio"]');
+    card.classList.toggle('selected', Boolean(r && r.checked));
+  });
+}
+
+function applySelectedLanguageEverywhere(langKey) {
+  if (!langKey || state.isTranslating) return;
+  rememberSelectedLanguage(langKey);
+  if (els.selectQuickTargetLang) {
+    els.selectQuickTargetLang.value = langKey;
+  }
+  if (els.selectToolkitTargetLang) {
+    els.selectToolkitTargetLang.value = langKey;
+  }
+  document.querySelectorAll('.lang-option-card').forEach((c) => {
+    const isMatch = c.getAttribute('data-lang-key') === langKey;
+    c.classList.toggle('selected', isMatch);
+    const r = c.querySelector('input[type="radio"]');
+    if (r) r.checked = isMatch;
+  });
+  updateSelectedLanguageStatusUI();
+}
+
+function renderRecentLanguageBars() {
+  const recentKeys = getSavedRecentLanguages();
+  const containers = [els.step1RecentLangsBar, els.step3RecentLangsBar].filter(Boolean);
+  for (const container of containers) {
+    container.innerHTML = '<span class="recent-langs-label">⭐ 우리 반·최근 사용 언어:</span>';
+    for (const key of recentKeys) {
+      const meta = getTargetLanguageMeta(key);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `recent-lang-chip${state.selectedLangKey === key ? ' is-current' : ''}`;
+      btn.textContent = `${meta.label} (${meta.nativeLabel})`;
+      btn.addEventListener('click', () => {
+        applySelectedLanguageEverywhere(key);
+        scheduleAutoSave();
+      });
+      container.appendChild(btn);
+    }
+  }
 }
 
 function checkMobileBanner() {
@@ -771,6 +909,43 @@ function bindEvents() {
     });
   });
 
+  // Header: Peer Teacher Site Share (Idea #5)
+  els.btnShareSiteUrl?.addEventListener('click', async () => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}`;
+    const shareText = `[다국어 수업자료 변환기] 한국어 PPT·한글·워드·엑셀 수업자료를 다국어로 서식 유지 변환하는 선생님용 도구: ${shareUrl}`;
+    try {
+      await navigator.clipboard.writeText(shareText);
+      const prev = els.btnShareSiteUrl.textContent;
+      els.btnShareSiteUrl.textContent = '✓ 공유 주소 복사됨!';
+      setTimeout(() => {
+        if (els.btnShareSiteUrl) els.btnShareSiteUrl.textContent = prev;
+      }, 2200);
+    } catch {
+      window.prompt('동료 선생님께 전달할 주소를 복사하세요:', shareUrl);
+    }
+  });
+
+  // Step 1: 3-Second Quick Start Cards (Idea #1)
+  els.btnQuickstartUpload?.addEventListener('click', () => {
+    els.fileInput?.click();
+  });
+
+  els.btnQuickstartNotice?.addEventListener('click', () => {
+    switchMainView('toolkit');
+    setTimeout(() => {
+      els.textareaToolkitSource?.focus();
+      els.textareaToolkitSource?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+  });
+
+  els.btnQuickstartCards?.addEventListener('click', () => {
+    switchMainView('toolkit');
+    setTimeout(() => {
+      const cardsHeading = document.getElementById('classroom-cards-heading');
+      cardsHeading?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  });
+
   // Idea #1: Quick Convert Mode & Toolkit shortcut in Step 1
   els.btnOpenToolkitFromStep1?.addEventListener('click', () => {
     switchMainView('toolkit');
@@ -779,14 +954,7 @@ function bindEvents() {
   els.selectQuickTargetLang?.addEventListener('change', () => {
     const val = els.selectQuickTargetLang.value;
     if (val && !state.isTranslating) {
-      state.selectedLangKey = val;
-      document.querySelectorAll('.lang-option-card').forEach((c) => {
-        const isMatch = c.getAttribute('data-lang-key') === val;
-        c.classList.toggle('selected', isMatch);
-        const r = c.querySelector('input[type="radio"]');
-        if (r) r.checked = isMatch;
-      });
-      updateSelectedLanguageStatusUI();
+      applySelectedLanguageEverywhere(val);
     }
   });
 
@@ -888,13 +1056,32 @@ function bindEvents() {
   });
   els.btnRunMultiLangZip?.addEventListener('click', handleRunMultiLangZip);
 
-  // Step 4 buttons
+  // Step 4 buttons & Instant Download (Idea #2 & #4)
   const backToStep3 = () => goToStep(3);
   const forwardToStep5 = () => unlockAndGoToStep(5);
   els.btnBackToStep3.addEventListener('click', backToStep3);
   els.btnBackToStep3Bottom.addEventListener('click', backToStep3);
   els.btnToStep5.addEventListener('click', forwardToStep5);
   els.btnToStep5Bottom.addEventListener('click', forwardToStep5);
+
+  els.selectStep4OutputMode?.addEventListener('change', () => {
+    rememberOutputMode(els.selectStep4OutputMode.value);
+    updateStep5FilenameDisplay();
+    scheduleAutoSave();
+  });
+
+  els.btnStep4DirectDownload?.addEventListener('click', () => handleDownloadTranslatedFile(true));
+  els.btnStep4DirectDownloadBottom?.addEventListener('click', () => handleDownloadTranslatedFile(true));
+  els.btnStep4OpenQr?.addEventListener('click', handleOpenStudentQrModal);
+
+  els.btnToggleAdvancedReviewTools?.addEventListener('click', () => {
+    if (!els.advancedReviewToolsWrap) return;
+    const isHidden = els.advancedReviewToolsWrap.classList.toggle('hidden');
+    els.btnToggleAdvancedReviewTools.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+    els.btnToggleAdvancedReviewTools.textContent = isHidden
+      ? '🛠️ 상세 편집 도구 열기 ▼'
+      : '🛠️ 상세 편집 도구 접기 ▲';
+  });
 
   els.filterBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -1014,17 +1201,14 @@ function bindEvents() {
   els.outputModeRadios.forEach((radio) => {
     radio.addEventListener('change', () => {
       if (radio.checked) {
-        state.outputMode = radio.value;
-        document.querySelectorAll('.output-mode-card').forEach((card) => {
-          card.classList.toggle('selected', card.contains(radio));
-        });
+        rememberOutputMode(radio.value);
         updateStep5FilenameDisplay();
         scheduleAutoSave();
       }
     });
   });
 
-  els.btnDownloadFile.addEventListener('click', handleDownloadTranslatedFile);
+  els.btnDownloadFile.addEventListener('click', () => handleDownloadTranslatedFile(false));
   els.btnOpenStudentQrModal?.addEventListener('click', handleOpenStudentQrModal);
   els.btnCloseStudentQrModal?.addEventListener('click', closeStudentQrModal);
   els.btnCloseStudentQrBottom?.addEventListener('click', closeStudentQrModal);
@@ -1388,14 +1572,7 @@ function createLanguageCardElement(lang) {
   const radio = label.querySelector('input[type="radio"]');
   radio.addEventListener('change', () => {
     if (state.isTranslating) return;
-    state.selectedLangKey = lang.key;
-    if (els.selectQuickTargetLang) {
-      els.selectQuickTargetLang.value = lang.key;
-    }
-    document.querySelectorAll('.lang-option-card').forEach((c) => {
-      c.classList.toggle('selected', c.getAttribute('data-lang-key') === lang.key);
-    });
-    updateSelectedLanguageStatusUI();
+    applySelectedLanguageEverywhere(lang.key);
     scheduleAutoSave();
   });
 
@@ -3472,15 +3649,63 @@ function getMimeTypeForFileType(fileType) {
   return 'application/hwp+zip';
 }
 
-async function handleDownloadTranslatedFile() {
+function inferSubjectFromFileName(fileName = '') {
+  const lower = String(fileName).toLowerCase();
+  if (lower.includes('과학') || lower.includes('science')) return '과학';
+  if (lower.includes('사회') || lower.includes('역사')) return '사회';
+  if (lower.includes('국어') || lower.includes('독서')) return '국어';
+  if (lower.includes('수학') || lower.includes('math')) return '수학';
+  if (lower.includes('가정통신') || lower.includes('안내') || lower.includes('알림')) return '가정통신문·학급안내';
+  if (lower.includes('창체') || lower.includes('안전')) return '창의적 체험활동';
+  return '수업·학급자료';
+}
+
+function openPrefilledCaseFromCurrentDoc() {
+  const doc = state.parsedDoc;
+  const langKey = state.translatedLangKey || state.selectedLangKey || 'vi';
+  const langMeta = getTargetLanguageMeta(langKey);
+  const baseTitle = doc?.fileName
+    ? doc.fileName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()
+    : '다국어 수업자료';
+  const modeLabel =
+    state.outputMode === 'bilingual-ko-first' || state.outputMode === 'bilingual-target-first'
+      ? '한·다국어 병기'
+      : '번역 변환';
+
+  switchMainView('cases');
+  openCaseWritePanel(null);
+
+  if (els.caseInputTitle) {
+    els.caseInputTitle.value = `${baseTitle} (${langMeta.label} ${modeLabel} 수업 활용)`;
+  }
+  if (els.caseInputLang) {
+    els.caseInputLang.value = langKey;
+  }
+  if (els.caseInputSubject) {
+    els.caseInputSubject.value = inferSubjectFromFileName(doc?.fileName || '');
+  }
+  if (els.caseEditId && doc?.fileType) {
+    els.caseEditId.dataset.fileFormat = doc.fileType === 'hwpx' ? 'hwpx' : 'pptx';
+  }
+  setTimeout(() => {
+    els.caseInputGoal?.focus();
+  }, 100);
+}
+
+async function handleDownloadTranslatedFile(isFromStep4 = false) {
   if (!state.parsedDoc) return;
-  els.downloadErrorBox.classList.add('hidden');
-  els.downloadSuccessMsg.classList.add('hidden');
-  els.btnDownloadFile.disabled = true;
+  els.downloadErrorBox?.classList.add('hidden');
+  els.downloadSuccessMsg?.classList.add('hidden');
+  els.step4DirectDownloadFeedback?.classList.add('hidden');
+  if (els.btnDownloadFile) els.btnDownloadFile.disabled = true;
+  if (els.btnStep4DirectDownload) els.btnStep4DirectDownload.disabled = true;
+  if (els.btnStep4DirectDownloadBottom) els.btnStep4DirectDownloadBottom.disabled = true;
 
   try {
     const doc = state.parsedDoc;
     const langMeta = getTargetLanguageMeta(state.selectedLangKey);
+    rememberSelectedLanguage(state.selectedLangKey);
+    rememberOutputMode(state.outputMode);
     const outName = buildOutputFileName(doc.fileName, langMeta.key, doc.fileType, state.outputMode);
 
     const fallbackRadio = document.querySelector('input[name="empty-fallback-mode"]:checked');
@@ -3519,20 +3744,53 @@ async function handleDownloadTranslatedFile() {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
 
     state.hasUnsavedWork = false;
-    els.downloadSuccessMsg.textContent = `✓ ${outName} 파일이 저장되었습니다! 원본 프로그램(PowerPoint·한글·Word·Excel)에서 열어 글자 넘침과 배치를 확인해 주세요.`;
-    els.downloadSuccessMsg.classList.remove('hidden');
+    const successHtml = `
+      <div>✓ <strong>${escapeHtml(outName)}</strong> 파일이 저장되었습니다! (원본 프로그램에서 열어 글자 배치를 확인해 주세요)</div>
+      <div class="post-download-share-row">
+        <button type="button" class="btn btn-secondary btn-sm" data-role="open-prefilled-case-btn">
+          ✏️ 방금 변환한 자료로 10초 활용 후기 남기기 (제목·언어 자동 입력)
+        </button>
+      </div>
+    `;
+
+    if (els.downloadSuccessMsg) {
+      els.downloadSuccessMsg.innerHTML = successHtml;
+      els.downloadSuccessMsg.classList.remove('hidden');
+      els.downloadSuccessMsg
+        .querySelector('[data-role="open-prefilled-case-btn"]')
+        ?.addEventListener('click', openPrefilledCaseFromCurrentDoc);
+    }
+
+    if (els.step4DirectDownloadFeedback) {
+      els.step4DirectDownloadFeedback.innerHTML = successHtml;
+      els.step4DirectDownloadFeedback.classList.remove('hidden');
+      els.step4DirectDownloadFeedback
+        .querySelector('[data-role="open-prefilled-case-btn"]')
+        ?.addEventListener('click', openPrefilledCaseFromCurrentDoc);
+      if (isFromStep4) {
+        els.step4DirectDownloadFeedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
   } catch (err) {
-    els.downloadErrorTitle.textContent =
-      err instanceof DocumentProcessError ? err.title : '결과 파일 생성 중 오류가 발생했습니다';
-    els.downloadErrorMessage.textContent =
-      err?.message || '번역문을 문서 구조에 반영하는 중 문제가 발생하여 다운로드를 차단했습니다.';
-    els.downloadErrorAction.textContent =
-      err instanceof DocumentProcessError && err.actionHint
-        ? `해결 방법: ${err.actionHint}`
-        : '해결 방법: 원본 파일을 다시 업로드하거나 특수 제어 문자가 포함되었는지 확인해 주세요.';
-    els.downloadErrorBox.classList.remove('hidden');
+    if (els.downloadErrorTitle) {
+      els.downloadErrorTitle.textContent =
+        err instanceof DocumentProcessError ? err.title : '결과 파일 생성 중 오류가 발생했습니다';
+    }
+    if (els.downloadErrorMessage) {
+      els.downloadErrorMessage.textContent =
+        err?.message || '번역문을 문서 구조에 반영하는 중 문제가 발생하여 다운로드를 차단했습니다.';
+    }
+    if (els.downloadErrorAction) {
+      els.downloadErrorAction.textContent =
+        err instanceof DocumentProcessError && err.actionHint
+          ? `해결 방법: ${err.actionHint}`
+          : '해결 방법: 원본 파일을 다시 업로드하거나 특수 제어 문자가 포함되었는지 확인해 주세요.';
+    }
+    els.downloadErrorBox?.classList.remove('hidden');
   } finally {
-    els.btnDownloadFile.disabled = false;
+    if (els.btnDownloadFile) els.btnDownloadFile.disabled = false;
+    if (els.btnStep4DirectDownload) els.btnStep4DirectDownload.disabled = false;
+    if (els.btnStep4DirectDownloadBottom) els.btnStep4DirectDownloadBottom.disabled = false;
   }
 }
 
