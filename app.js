@@ -13,7 +13,7 @@ import {
   startReverseTranslatorCreation,
   translateSingleText,
   speakTextWithBrowserTTS
-} from './src/translator-service.js';
+} from './src/translator-service.js?v=20261020-5';
 import {
   getAllGlossaryEntries,
   loadCustomGlossary,
@@ -56,7 +56,7 @@ import {
 } from './src/teacher-toolkit.js';
 
 const PREF_LANG_STORAGE_KEY = 'multilingual_translator_pref_lang_v1';
-const PREF_RECENT_LANGS_STORAGE_KEY = 'multilingual_translator_recent_langs_v1';
+const PREF_RECENT_LANGS_STORAGE_KEY = 'multilingual_translator_recent_langs_v2';
 const PREF_OUTPUT_MODE_STORAGE_KEY = 'multilingual_translator_pref_output_mode_v1';
 
 const state = {
@@ -427,7 +427,7 @@ function init() {
 }
 
 function getSavedRecentLanguages() {
-  const defaultList = ['vi', 'zh-Hans', 'en', 'ru'];
+  const defaultList = ['vi', 'zh-Hans', 'tl', 'km'];
   try {
     if (typeof localStorage === 'undefined') return defaultList;
     const raw = localStorage.getItem(PREF_RECENT_LANGS_STORAGE_KEY);

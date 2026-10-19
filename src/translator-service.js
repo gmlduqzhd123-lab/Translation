@@ -12,24 +12,7 @@ export const SOURCE_LANGUAGE = {
 };
 
 export const TARGET_LANGUAGES = [
-  {
-    key: 'en',
-    label: '영어',
-    nativeLabel: 'English',
-    candidates: ['en'],
-    speechLang: 'en-US',
-    tier: 'core',
-    sampleGreeting: 'English (영어)'
-  },
-  {
-    key: 'zh-Hans',
-    label: '중국어 간체',
-    nativeLabel: '中文(简体)',
-    candidates: ['zh-Hans', 'zh-CN', 'zh'],
-    speechLang: 'zh-CN',
-    tier: 'core',
-    sampleGreeting: '中文(简体) (중국어 간체)'
-  },
+  // 1위: 베트남
   {
     key: 'vi',
     label: '베트남어',
@@ -39,15 +22,37 @@ export const TARGET_LANGUAGES = [
     tier: 'core',
     sampleGreeting: 'Tiếng Việt (베트남어)'
   },
+  // 2위·4위: 중국 / 중국(한국계)
   {
-    key: 'ja',
-    label: '일본어',
-    nativeLabel: '日本語',
-    candidates: ['ja'],
-    speechLang: 'ja-JP',
+    key: 'zh-Hans',
+    label: '중국어 간체',
+    nativeLabel: '中文(简体)',
+    candidates: ['zh-Hans', 'zh-CN', 'zh'],
+    speechLang: 'zh-CN',
     tier: 'core',
-    sampleGreeting: '日本語 (일본어)'
+    sampleGreeting: '中文(简体) (중국어 간체)'
   },
+  // 3위: 필리핀
+  {
+    key: 'tl',
+    label: '필리핀어(타갈로그어)',
+    nativeLabel: 'Tagalog / Filipino',
+    candidates: ['tl', 'fil'],
+    speechLang: 'fil-PH',
+    tier: 'core',
+    sampleGreeting: 'Tagalog (필리핀어)'
+  },
+  // 5위: 캄보디아
+  {
+    key: 'km',
+    label: '캄보디아어(크메르어)',
+    nativeLabel: 'ភាសាខ្មែរ',
+    candidates: ['km'],
+    speechLang: 'km-KH',
+    tier: 'core',
+    sampleGreeting: 'ភាសាខ្មែរ (캄보디아어)'
+  },
+  // 6위·11위: 러시아·중앙아시아(한국계) / 러시아
   {
     key: 'ru',
     label: '러시아어',
@@ -57,15 +62,7 @@ export const TARGET_LANGUAGES = [
     tier: 'core',
     sampleGreeting: 'Русский (러시아어)'
   },
-  {
-    key: 'zh-Hant',
-    label: '중국어 번체',
-    nativeLabel: '中文(繁體)',
-    candidates: ['zh-Hant', 'zh-TW', 'zh-HK'],
-    speechLang: 'zh-TW',
-    tier: 'extended',
-    sampleGreeting: '中文(繁體) (중국어 번체)'
-  },
+  // 7위: 중앙아시아 (우즈베크어 · 카자흐어 · 키르기스어)
   {
     key: 'uz',
     label: '우즈베크어',
@@ -76,6 +73,35 @@ export const TARGET_LANGUAGES = [
     sampleGreeting: 'Oʻzbekcha (우즈베크어)'
   },
   {
+    key: 'kk',
+    label: '카자흐어',
+    nativeLabel: 'Қазақша',
+    candidates: ['kk'],
+    speechLang: 'kk-KZ',
+    tier: 'extended',
+    sampleGreeting: 'Қазақша (카자흐어)'
+  },
+  {
+    key: 'ky',
+    label: '키르기스어',
+    nativeLabel: 'Кыргызча',
+    candidates: ['ky'],
+    speechLang: 'ky-KG',
+    tier: 'extended',
+    sampleGreeting: 'Кыргызча (키르기스어)'
+  },
+  // 9위: 일본
+  {
+    key: 'ja',
+    label: '일본어',
+    nativeLabel: '日本語',
+    candidates: ['ja'],
+    speechLang: 'ja-JP',
+    tier: 'extended',
+    sampleGreeting: '日本語 (일본어)'
+  },
+  // 10위: 몽골
+  {
     key: 'mn',
     label: '몽골어',
     nativeLabel: 'Монгол',
@@ -84,6 +110,7 @@ export const TARGET_LANGUAGES = [
     tier: 'extended',
     sampleGreeting: 'Монгол (몽골어)'
   },
+  // 12위: 태국
   {
     key: 'th',
     label: '태국어',
@@ -93,24 +120,75 @@ export const TARGET_LANGUAGES = [
     tier: 'extended',
     sampleGreeting: 'ภาษาไทย (태국어)'
   },
+  // 13위: 미국
   {
-    key: 'km',
-    label: '캄보디아어(크메르어)',
-    nativeLabel: 'ភាសាខ្មែរ',
-    candidates: ['km'],
-    speechLang: 'km-KH',
+    key: 'en',
+    label: '영어',
+    nativeLabel: 'English',
+    candidates: ['en'],
+    speechLang: 'en-US',
     tier: 'extended',
-    sampleGreeting: 'ភាសាខ្មែរ (캄보디아어)'
+    sampleGreeting: 'English (영어)'
+  },
+  // 14위: 유럽 (스페인어 · 프랑스어 · 포르투갈어 · 튀르키예어)
+  {
+    key: 'es',
+    label: '스페인어',
+    nativeLabel: 'Español',
+    candidates: ['es'],
+    speechLang: 'es-ES',
+    tier: 'extended',
+    sampleGreeting: 'Español (스페인어)'
   },
   {
-    key: 'tl',
-    label: '필리핀어(타갈로그어)',
-    nativeLabel: 'Tagalog / Filipino',
-    candidates: ['tl', 'fil'],
-    speechLang: 'fil-PH',
+    key: 'fr',
+    label: '프랑스어',
+    nativeLabel: 'Français',
+    candidates: ['fr'],
+    speechLang: 'fr-FR',
     tier: 'extended',
-    sampleGreeting: 'Tagalog (필리핀어)'
+    sampleGreeting: 'Français (프랑스어)'
   },
+  {
+    key: 'pt',
+    label: '포르투갈어',
+    nativeLabel: 'Português',
+    candidates: ['pt'],
+    speechLang: 'pt-BR',
+    tier: 'extended',
+    sampleGreeting: 'Português (포르투갈어)'
+  },
+  {
+    key: 'tr',
+    label: '튀르키예어',
+    nativeLabel: 'Türkçe',
+    candidates: ['tr'],
+    speechLang: 'tr-TR',
+    tier: 'extended',
+    sampleGreeting: 'Türkçe (튀르키예어)'
+  },
+  // 15위: 중동
+  {
+    key: 'ar',
+    label: '아랍어',
+    nativeLabel: 'العربية',
+    candidates: ['ar'],
+    speechLang: 'ar-SA',
+    dir: 'rtl',
+    tier: 'extended',
+    sampleGreeting: 'العربية (아랍어)'
+  },
+  // 16위: 대만
+  {
+    key: 'zh-Hant',
+    label: '중국어 번체',
+    nativeLabel: '中文(繁體)',
+    candidates: ['zh-Hant', 'zh-TW', 'zh-HK'],
+    speechLang: 'zh-TW',
+    tier: 'extended',
+    sampleGreeting: '中文(繁體) (중국어 번체)'
+  },
+  // 18위: 인도네시아
   {
     key: 'id',
     label: '인도네시아어',
@@ -120,6 +198,7 @@ export const TARGET_LANGUAGES = [
     tier: 'extended',
     sampleGreeting: 'Bahasa Indonesia (인도네시아어)'
   },
+  // 기타 지역 (미얀마 · 네팔 · 스리랑카 · 인도 · 방글라데시 · 파키스탄)
   {
     key: 'my',
     label: '미얀마어(버마어)',
@@ -174,70 +253,6 @@ export const TARGET_LANGUAGES = [
     dir: 'rtl',
     tier: 'extended',
     sampleGreeting: 'اردو (우르두어)'
-  },
-  {
-    key: 'kk',
-    label: '카자흐어',
-    nativeLabel: 'Қазақша',
-    candidates: ['kk'],
-    speechLang: 'kk-KZ',
-    tier: 'extended',
-    sampleGreeting: 'Қазақша (카자흐어)'
-  },
-  {
-    key: 'ky',
-    label: '키르기스어',
-    nativeLabel: 'Кыргызча',
-    candidates: ['ky'],
-    speechLang: 'ky-KG',
-    tier: 'extended',
-    sampleGreeting: 'Кыргызча (키르기스어)'
-  },
-  {
-    key: 'ar',
-    label: '아랍어',
-    nativeLabel: 'العربية',
-    candidates: ['ar'],
-    speechLang: 'ar-SA',
-    dir: 'rtl',
-    tier: 'extended',
-    sampleGreeting: 'العربية (아랍어)'
-  },
-  {
-    key: 'es',
-    label: '스페인어',
-    nativeLabel: 'Español',
-    candidates: ['es'],
-    speechLang: 'es-ES',
-    tier: 'extended',
-    sampleGreeting: 'Español (스페인어)'
-  },
-  {
-    key: 'fr',
-    label: '프랑스어',
-    nativeLabel: 'Français',
-    candidates: ['fr'],
-    speechLang: 'fr-FR',
-    tier: 'extended',
-    sampleGreeting: 'Français (프랑스어)'
-  },
-  {
-    key: 'pt',
-    label: '포르투갈어',
-    nativeLabel: 'Português',
-    candidates: ['pt'],
-    speechLang: 'pt-BR',
-    tier: 'extended',
-    sampleGreeting: 'Português (포르투갈어)'
-  },
-  {
-    key: 'tr',
-    label: '튀르키예어',
-    nativeLabel: 'Türkçe',
-    candidates: ['tr'],
-    speechLang: 'tr-TR',
-    tier: 'extended',
-    sampleGreeting: 'Türkçe (튀르키예어)'
   }
 ];
 
