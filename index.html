@@ -27,9 +27,9 @@
   <script src="./ys-install.js" defer></script>
   <script src="./ys-qr.js" defer></script>
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="./styles.css?v=20261020-8" />
+  <link rel="stylesheet" href="./styles.css?v=20261020-9" />
   <script src="./vendor/jszip.min.js" defer></script>
-  <script type="module" src="./app.js?v=20261020-8"></script>
+  <script type="module" src="./app.js?v=20261020-9"></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">본문으로 바로 건너뛰기</a>
@@ -59,7 +59,7 @@
     </div>
 
     <!-- 상단 주요 기능 전환 탭 & 브라우저 임시 저장 통제 바 -->
-    <div class="top-workspace-bar" role="region" aria-label="주요 메뉴 및 브라우저 임시 저장 설정">
+    <div class="top-workspace-bar" role="region" aria-label="주요 메뉴 및 이용 현황">
       <div class="container top-workspace-inner">
         <div class="main-view-tabs" role="tablist" aria-label="주요 기능 화면 전환">
           <button
@@ -108,25 +108,25 @@
           </button>
         </div>
 
-        <div class="storage-control-bar" role="group" aria-label="이용 현황 및 브라우저 임시 저장 통제">
+        <div class="storage-control-bar" role="group" aria-label="이용 현황">
           <div id="usage-stats-pill" class="usage-stats-pill" title="누적 이용자 수 및 번역 실행 횟수 (개인정보 미수집 · 익명 집계)">
             <span>👥 이용자 <strong id="stat-unique-users">-</strong>명</span>
             <span class="usage-stats-sep">·</span>
             <span>🔄 번역 <strong id="stat-total-translations">-</strong>회</span>
           </div>
-          <label class="storage-toggle-label" title="체크하면 작업 중인 문서와 번역문을 이 브라우저(IndexedDB)에 임시 저장하여 새로고침 후에도 이어서 작업할 수 있습니다">
+          <label class="storage-toggle-label hidden" title="체크하면 작업 중인 문서와 번역문을 이 브라우저(IndexedDB)에 임시 저장하여 새로고침 후에도 이어서 작업할 수 있습니다">
             <input type="checkbox" id="chk-enable-autosave" checked />
             <span id="label-autosave-toggle">💾 임시 저장 켜짐</span>
           </label>
           <button
             type="button"
             id="btn-clear-browser-storage"
-            class="btn btn-outline btn-sm storage-clear-btn"
+            class="btn btn-outline btn-sm storage-clear-btn hidden"
             title="이 브라우저에 임시 저장된 원본 파일과 번역 작업 내용을 즉시 삭제합니다"
           >
             🗑️ 작업 내용 삭제
           </button>
-          <span id="storage-control-feedback" class="storage-control-feedback" role="status" aria-live="polite"></span>
+          <span id="storage-control-feedback" class="storage-control-feedback hidden" role="status" aria-live="polite"></span>
         </div>
       </div>
     </div>
