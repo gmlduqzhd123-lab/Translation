@@ -88,23 +88,39 @@
   </nav>
 
   <main id="main-content" class="container main-container">
-    <!-- ==================== STEP 1: 파일 업로드 (화면 A - 시안 A 적용) ==================== -->
+    <!-- ==================== STEP 1: 파일 업로드 (화면 A - 시안 1 적용) ==================== -->
     <section id="step-1" class="step-panel active" aria-labelledby="step1-heading">
       <div class="panel-card hero-stage-card">
-        <!-- 시안 A: 중앙 집중형 간결 히어로 소개 -->
-        <div class="hero-intro">
-          <div class="hero-pill">
-            <span>🏫 교사용 다국어 수업자료 변환기</span>
-            <span class="hero-pill-divider" aria-hidden="true">|</span>
-            <span>영어 · 중국어 · 베트남어 · 일본어 · 러시아어</span>
-          </div>
-          <h2 id="step1-heading" class="hero-headline">
-            한국어 <span class="hero-underline">PPTX · HWPX</span> 수업자료를 올리면<br />
-            다국어 수업자료로 그대로 변환합니다
+        <!-- 1. 한눈에 보이는 Before -> After 시각적 변환 도식 -->
+        <div class="visual-transform-banner" aria-label="변환 과정 요약 도식">
+          <h2 id="step1-heading" class="transform-banner-title">
+            한국어 수업자료를 올리면, 서식은 그대로 두고 글자만 다국어로 바꿔줍니다
           </h2>
-          <p class="hero-subdesc">
-            복잡한 설정 없이 파일만 선택하세요. 글자만 추출해 번역하고 표·사진·문서 구조는 그대로 유지합니다.
-          </p>
+
+          <div class="transform-flow-grid">
+            <!-- 입력 (Before) -->
+            <div class="transform-box transform-before">
+              <div class="transform-icon" aria-hidden="true">🇰🇷</div>
+              <div class="transform-text">
+                <strong>한국어 원본 파일</strong>
+                <span>파워포인트(<b>.pptx</b>) · 한글(<b>.hwpx</b>)</span>
+              </div>
+            </div>
+
+            <!-- 과정 화살표 -->
+            <div class="transform-arrow-wrap" aria-hidden="true">
+              <span class="transform-process-pill">🤖 자동 번역 + ✏️ 교사 검수 ➔</span>
+            </div>
+
+            <!-- 출력 (After) -->
+            <div class="transform-box transform-after">
+              <div class="transform-icon" aria-hidden="true">🌏</div>
+              <div class="transform-text">
+                <strong>다국어 수업자료 완성!</strong>
+                <span>영어 · 중국어 · 베트남어 · 일본어 · 러시아어</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- 파일 처리 오류 표시 영역 -->
@@ -114,10 +130,10 @@
           <p class="alert-action" id="upload-error-action"></p>
         </div>
 
-        <!-- 시안 A: 중앙 단일 액션 업로드 & 즉시 체험 박스 -->
+        <!-- 2. 오직 '내 파일 올리기' 하나에만 집중한 메인 드롭존 -->
         <div
           id="drop-zone"
-          class="drop-zone hero-drop-zone"
+          class="drop-zone focused-drop-zone"
           role="button"
           tabindex="0"
           aria-describedby="drop-zone-hint"
@@ -128,49 +144,58 @@
             class="sr-only"
             accept=".pptx,.hwpx,.ppt,.hwp"
           />
-          <div class="drop-zone-icon" aria-hidden="true">📂</div>
-          <p class="drop-zone-main">여기에 <strong>.pptx</strong> 또는 <strong>.hwpx</strong> 파일을 끌어다 놓으세요</p>
-          <p id="drop-zone-hint" class="drop-zone-desc">
-            또는 아래 버튼을 눌러 컴퓨터에서 파일을 선택하거나 예시 파일로 바로 체험해 보세요
+          <p class="drop-zone-main">
+            📂 여기에 수업자료 파일(<span class="ext-accent">.pptx</span> 또는 <span class="ext-accent">.hwpx</span>)을 끌어다 놓으세요
           </p>
-
-          <div class="hero-action-buttons">
+          <div class="focused-upload-cta">
             <button type="button" id="btn-select-file" class="btn btn-primary btn-xl">
-              컴퓨터에서 파일 선택하기
-            </button>
-            <button type="button" id="btn-load-sample-pptx" class="btn btn-surface btn-lg">
-              📊 예시 PPTX 체험
-            </button>
-            <button type="button" id="btn-load-sample-hwpx" class="btn btn-surface btn-lg">
-              📝 예시 HWPX 체험
+              내 컴퓨터에서 파일 선택하기
             </button>
           </div>
-
-          <div class="hero-Quick-links">
-            <span>예시 원본 내려받기:</span>
-            <a href="./samples/sample-science-lesson.pptx" download="sample-science-lesson.pptx" class="sample-download-link">과학 수업 PPTX</a>
-            <span aria-hidden="true">·</span>
-            <a href="./samples/sample-science-activity.hwpx" download="sample-science-activity.hwpx" class="sample-download-link">과학 활동지 HWPX</a>
-            <span class="hero-link-sep" aria-hidden="true">|</span>
-            <button type="button" id="btn-open-manual-inline" class="link-btn">
-              📘 1분 사용 설명서 보기
-            </button>
-          </div>
+          <p id="drop-zone-hint" class="drop-zone-security-note">
+            🔒 업로드한 파일은 외부 서버로 전송되지 않고 선생님 컴퓨터 안에서만 안전하게 처리됩니다
+          </p>
         </div>
 
-        <!-- 시안 A: 하단 3대 핵심 특징 요약 카드 -->
-        <div class="feature-pillars-grid" aria-label="주요 특징 요약">
-          <div class="feature-pillar-card">
-            <div class="feature-pillar-title">① 100% 내 컴퓨터 처리</div>
-            <p class="feature-pillar-desc">수업자료와 문장을 외부 서버로 전송하지 않아 학생·수업 정보가 안전합니다.</p>
+        <!-- 3. 하단 분리 바: 좌측 샘플 체험 & 우측 3단계 진행 순서 -->
+        <div class="bottom-split-bar">
+          <!-- 좌측: 예시 파일 체험 -->
+          <div class="split-card sample-try-card">
+            <div class="sample-try-text">
+              <strong>💡 지금 파일이 없으신가요?</strong>
+              <span>예시 수업자료로 10초 만에 체험해 보세요 (<a href="./samples/sample-science-lesson.pptx" download="sample-science-lesson.pptx" class="sample-download-link">PPTX 원본</a> · <a href="./samples/sample-science-activity.hwpx" download="sample-science-activity.hwpx" class="sample-download-link">HWPX 원본</a>)</span>
+            </div>
+            <div class="sample-try-btns">
+              <button type="button" id="btn-load-sample-pptx" class="btn btn-surface btn-sm">
+                📊 PPTX 예시 열기
+              </button>
+              <button type="button" id="btn-load-sample-hwpx" class="btn btn-surface btn-sm">
+                📝 HWPX 예시 열기
+              </button>
+            </div>
           </div>
-          <div class="feature-pillar-card">
-            <div class="feature-pillar-title">② 원본 문서 형식 유지</div>
-            <p class="feature-pillar-desc">슬라이드·표·이미지를 유지한 채 원본과 같은 <strong>.pptx</strong>·<strong>.hwpx</strong>로 저장합니다.</p>
-          </div>
-          <div class="feature-pillar-card">
-            <div class="feature-pillar-title">③ 원문·번역문 나란히 검수</div>
-            <p class="feature-pillar-desc">자동 번역 초안을 선생님이 직접 비교·수정한 뒤 완성합니다.</p>
+
+          <!-- 우측: 3단계 이용 순서 + 설명서 -->
+          <div class="split-card step-order-card" aria-label="이용 순서 3단계">
+            <div class="step-order-flow">
+              <div class="step-order-item">
+                <span class="step-order-tag">STEP 1</span>
+                <strong>파일 선택</strong>
+              </div>
+              <span class="step-order-arrow" aria-hidden="true">➔</span>
+              <div class="step-order-item">
+                <span class="step-order-tag">STEP 2</span>
+                <strong>언어 선택·번역</strong>
+              </div>
+              <span class="step-order-arrow" aria-hidden="true">➔</span>
+              <div class="step-order-item">
+                <span class="step-order-tag">STEP 3</span>
+                <strong>수정·다운로드</strong>
+              </div>
+            </div>
+            <button type="button" id="btn-open-manual-inline" class="link-btn">
+              📘 1분 설명서
+            </button>
           </div>
         </div>
 
