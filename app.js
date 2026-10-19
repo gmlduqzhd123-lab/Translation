@@ -226,7 +226,7 @@ function bindEvents() {
   });
 
   els.dropZone.addEventListener('click', (e) => {
-    if (e.target === els.btnSelectFile) return;
+    if (e.target.closest('button, a')) return;
     els.fileInput.click();
   });
 
