@@ -27,16 +27,16 @@
   <script src="./ys-install.js" defer></script>
   <script src="./ys-qr.js" defer></script>
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="./styles.css?v=20261020-12" />
+  <link rel="stylesheet" href="./styles.css?v=20261020-14" />
   <script src="./vendor/jszip.min.js" defer></script>
-  <script type="module" src="./app.js?v=20261020-13"></script>
+  <script type="module" src="./app.js?v=20261020-14"></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">본문으로 바로 건너뛰기</a>
 
   <header class="app-header">
     <div class="container header-inner">
-      <div class="brand-group">
+      <div id="brand-home-trigger" class="brand-group" role="button" tabindex="0" title="메인 화면(첫 화면)으로 돌아가기" aria-label="다국어 수업자료 변환기 메인 화면으로 돌아가기">
         <div class="brand-icon" aria-hidden="true">🏫</div>
         <div>
           <div class="brand-title-row">
@@ -48,12 +48,12 @@
       </div>
 
       <div class="header-right-group">
-        <div class="ys-key"><button type="button" class="ys-chip" data-ys-install>📲 <span class="ys-wide">앱 </span>설치</button><button type="button" class="ys-chip" data-qr aria-label="QR 코드로 접속">📱 QR</button></div>
+        <div class="ys-key"><button type="button" class="ys-chip" data-ys-install><span class="header-btn-icon" aria-hidden="true">📲</span><span><span class="ys-wide">앱 </span>설치</span></button><button type="button" class="ys-chip" data-qr aria-label="QR 코드로 접속"><span class="header-btn-icon" aria-hidden="true">📱</span><span>QR</span></button></div>
         <button type="button" id="btn-share-site-url" class="btn btn-outline btn-sm" title="동료 선생님께 이 사이트 주소를 메신저로 바로 공유합니다">
-          🔗 동료 교사 공유
+          <span class="header-btn-icon" aria-hidden="true">🔗</span><span>동료 교사 공유</span>
         </button>
         <button type="button" id="btn-open-manual" class="btn btn-guide" aria-haspopup="dialog" aria-controls="manual-modal">
-          📘 1분 설명서
+          <span class="header-btn-icon" aria-hidden="true">📘</span><span>1분 설명서</span>
         </button>
       </div>
     </div>
@@ -1019,7 +1019,7 @@
                   id="case-input-author"
                   class="case-quick-author"
                   maxlength="30"
-                  placeholder="작성자 별칭 (선택 · 기본: 익명 선생님)"
+                  placeholder="작성자 (예: 김** 교사, 햇살반쌤)"
                   aria-label="작성자 별칭 (선택)"
                 />
               </div>
@@ -1096,7 +1096,7 @@
             <option value="bn">벵골어</option>
           </select>
 
-          <input type="text" id="filter-case-subject" class="drawer-input case-simple-search-input" placeholder="🔍 후기 내용 검색 (예: 과학, 가정통신문, 병기)" aria-label="후기 키워드 검색" />
+          <input type="text" id="filter-case-subject" class="drawer-input case-simple-search-input" placeholder="🔍 후기 내용 검색" aria-label="후기 키워드 검색" />
         </div>
 
         <!-- 승인된 공개 후기 목록 -->

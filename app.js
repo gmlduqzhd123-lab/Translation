@@ -107,6 +107,7 @@ function cacheElements() {
   els.stepperBarNav = document.getElementById('stepper-bar-nav');
   els.casesCountPill = document.getElementById('cases-count-pill');
   els.btnShareSiteUrl = document.getElementById('btn-share-site-url');
+  els.brandHomeTrigger = document.getElementById('brand-home-trigger');
 
   els.chkEnableAutosave = document.getElementById('chk-enable-autosave');
   els.labelAutosaveToggle = document.getElementById('label-autosave-toggle');
@@ -960,16 +961,35 @@ function bindEvents() {
     });
   });
 
+  // Header Brand Logo / Title click -> Return to Main Screen (Step 1)
+  const handleGoHome = () => {
+    if (state.isTranslating) return;
+    closeManualModal();
+    closeStudentQrModal();
+    if (state.activeMainView !== 'translator') {
+      switchMainView('translator');
+    }
+    goToStep(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  els.brandHomeTrigger?.addEventListener('click', handleGoHome);
+  els.brandHomeTrigger?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleGoHome();
+    }
+  });
+
   // Header: Peer Teacher Site Share (Idea #5)
   els.btnShareSiteUrl?.addEventListener('click', async () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}`;
     const shareText = `[다국어 수업자료 변환기] 한국어 PPT·한글·워드·엑셀 수업자료를 다국어로 서식 유지 변환하는 선생님용 도구: ${shareUrl}`;
     try {
       await navigator.clipboard.writeText(shareText);
-      const prev = els.btnShareSiteUrl.textContent;
-      els.btnShareSiteUrl.textContent = '✓ 공유 주소 복사됨!';
+      const prevHtml = els.btnShareSiteUrl.innerHTML;
+      els.btnShareSiteUrl.innerHTML = '<span class="header-btn-icon" aria-hidden="true">✓</span><span>공유 주소 복사됨!</span>';
       setTimeout(() => {
-        if (els.btnShareSiteUrl) els.btnShareSiteUrl.textContent = prev;
+        if (els.btnShareSiteUrl) els.btnShareSiteUrl.innerHTML = prevHtml;
       }, 2200);
     } catch {
       window.prompt('동료 선생님께 전달할 주소를 복사하세요:', shareUrl);
@@ -4594,6 +4614,24 @@ function buildUnifiedCaseText(item) {
   return [goal, proc, rev, res].filter((v, idx, arr) => v && v !== '-' && arr.indexOf(v) === idx).join('\n\n');
 }
 
+function formatTeacherAuthorDisplay(rawName) {
+  const s = String(rawName || '').trim();
+  if (!s || s === '익명 교사' || s === '익명 선생님') return '익명쌤';
+  // Convert single-masked names like '김*현 선생님' or '박*영 교사' or '최*아 보건교사' to '성** 교사'
+  const singleMaskMatch = s.match(/^([가-힣])\*[가-힣]?\s*(?:선생님|교사|보건교사|담임|전담)?$/);
+  if (singleMaskMatch) return `${singleMaskMatch[1]}** 교사`;
+  // Convert 3-char real Korean names like '김영희' or '김영희 선생님' to '김** 교사'
+  const fullNameMatch = s.match(/^([가-힣])[가-힣]{2}(?:\s+(?:선생님|교사))?$/);
+  if (fullNameMatch && !s.endsWith('쌤')) return `${fullNameMatch[1]}** 교사`;
+  // Convert generic role titles to teacher nicknames or masked names
+  if (/담임|전담|담당|부장|교사$/.test(s) && !s.includes('**') && !s.endsWith('쌤')) {
+    const firstSurname = s.match(/^([김이박최정강조윤장임한오서신권황안송류전홍고문양손배백허유남심노하곽성차주우구])[가-힣*\s]/);
+    if (firstSurname) return `${firstSurname[1]}** 교사`;
+    return '늘품교실쌤';
+  }
+  return s;
+}
+
 function renderCaseBodySectionsHtml(item) {
   const reviewText = buildUnifiedCaseText(item) || (item?.title || '').trim();
   return `<p class="case-simple-review-text">${escapeHtml(reviewText)}</p>`;
@@ -4686,7 +4724,7 @@ async function handleSubmitCaseForm(e) {
     subject: (els.caseInputSubject?.value || '').trim() || '수업·학급 활용',
     target_language: (els.caseInputLang?.value || '').trim() || state.selectedLangKey || 'vi',
     file_format: autoFileFormat,
-    author_display_name: (els.caseInputAuthor?.value || '').trim() || '익명 선생님',
+    author_display_name: formatTeacherAuthorDisplay((els.caseInputAuthor?.value || '').trim()),
     lesson_goal: unifiedContent,
     tool_usage_process: unifiedContent,
     teacher_review_notes: unifiedContent,
@@ -4801,7 +4839,7 @@ function renderPublicCasesList() {
       <div class="case-simple-card-top">
         <div class="case-badge-row">
           <span class="badge badge-context case-lang-badge">🌐 ${escapeHtml(langMeta.label)}</span>
-          <span class="case-simple-author">${escapeHtml(item.author_display_name || '익명 선생님')}</span>
+          <span class="case-simple-author">${escapeHtml(formatTeacherAuthorDisplay(item.author_display_name))}</span>
           <span class="case-simple-date">· ${escapeHtml(item.used_date || '-')}</span>
         </div>
       </div>

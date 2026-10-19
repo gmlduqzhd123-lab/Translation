@@ -57,7 +57,7 @@ export const FALLBACK_SAMPLE_CASES = [
     observed_results_limits: '-',
     aggregate_metrics: '',
     improvement_suggestions: '',
-    author_display_name: '3학년 담임',
+    author_display_name: '김** 교사',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-18T09:00:00Z'
@@ -77,7 +77,7 @@ export const FALLBACK_SAMPLE_CASES = [
     observed_results_limits: '-',
     aggregate_metrics: '',
     improvement_suggestions: '',
-    author_display_name: '김*현 선생님',
+    author_display_name: '햇살반쌤',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-17T09:00:00Z'
@@ -97,7 +97,7 @@ export const FALLBACK_SAMPLE_CASES = [
     observed_results_limits: '-',
     aggregate_metrics: '',
     improvement_suggestions: '',
-    author_display_name: '다문화학급 담당',
+    author_display_name: '박** 교사',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-15T09:00:00Z'
@@ -117,7 +117,7 @@ export const FALLBACK_SAMPLE_CASES = [
     observed_results_limits: '-',
     aggregate_metrics: '',
     improvement_suggestions: '',
-    author_display_name: '5학년 과학전담',
+    author_display_name: '다문화멘토쌤',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-14T09:00:00Z'
@@ -137,7 +137,7 @@ export const FALLBACK_SAMPLE_CASES = [
     observed_results_limits: '-',
     aggregate_metrics: '',
     improvement_suggestions: '',
-    author_display_name: '박*영 교사',
+    author_display_name: '이** 교사',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-12T09:00:00Z'
@@ -157,7 +157,7 @@ export const FALLBACK_SAMPLE_CASES = [
     observed_results_limits: '-',
     aggregate_metrics: '',
     improvement_suggestions: '',
-    author_display_name: '초등 2학년 담임',
+    author_display_name: '늘품교실쌤',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-10T09:00:00Z'
@@ -177,7 +177,7 @@ export const FALLBACK_SAMPLE_CASES = [
     observed_results_limits: '-',
     aggregate_metrics: '',
     improvement_suggestions: '',
-    author_display_name: '이*진 선생님',
+    author_display_name: '최** 교사',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-08T09:00:00Z'
@@ -197,7 +197,7 @@ export const FALLBACK_SAMPLE_CASES = [
     observed_results_limits: '-',
     aggregate_metrics: '',
     improvement_suggestions: '',
-    author_display_name: '중등 학년부장',
+    author_display_name: '초록칠판쌤',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-05T09:00:00Z'
@@ -217,7 +217,7 @@ export const FALLBACK_SAMPLE_CASES = [
     observed_results_limits: '-',
     aggregate_metrics: '',
     improvement_suggestions: '',
-    author_display_name: '4학년 담임',
+    author_display_name: '정** 교사',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-02T09:00:00Z'
@@ -237,7 +237,7 @@ export const FALLBACK_SAMPLE_CASES = [
     observed_results_limits: '-',
     aggregate_metrics: '',
     improvement_suggestions: '',
-    author_display_name: '최*아 보건교사',
+    author_display_name: '조** 교사',
     status: 'approved',
     is_sample: false,
     created_at: '2026-09-29T09:00:00Z'
@@ -394,7 +394,7 @@ export async function submitLessonCase(formData) {
       p_improvement_suggestions:
         formData.improvement_suggestions ?? formData.improvementSuggestions ?? '',
       p_author_display_name:
-        (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '익명 교사',
+        (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '김** 교사',
       p_confirmed_factual: confirmedAll,
       p_confirmed_no_pii: Boolean(
         formData.confirmed_no_pii ?? formData.confirmedNoPii ?? confirmedAll
@@ -503,7 +503,7 @@ export async function resubmitLessonCase(caseId, authorPasscode, formData) {
       p_improvement_suggestions:
         formData.improvement_suggestions ?? formData.improvementSuggestions ?? '',
       p_author_display_name:
-        (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '익명 교사'
+        (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '김** 교사'
     });
     const status = result?.status || 'pending';
     return {

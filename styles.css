@@ -173,6 +173,15 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 12px;
+  transition: opacity 0.15s ease;
+}
+
+.brand-group:hover .brand-icon {
+  background: #bfdbfe;
+  transform: scale(1.03);
 }
 
 .brand-icon {
@@ -185,6 +194,7 @@ body {
   justify-content: center;
   font-size: 1.6rem;
   flex-shrink: 0;
+  transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
 .brand-title-row {
@@ -697,8 +707,7 @@ body {
 
 .ext-accent {
   color: var(--primary);
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  text-decoration: none;
 }
 
 .focused-upload-cta {
@@ -1535,7 +1544,7 @@ body {
   cursor: pointer;
   padding: 2px 4px;
   flex-shrink: 0;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* ==================== Step 5: Final Summary & Download ==================== */
@@ -1723,8 +1732,10 @@ body {
 
 .modal-title {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.32rem;
   font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #0f172a;
 }
 
 .modal-close-btn {
@@ -1746,40 +1757,61 @@ body {
 .modal-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   padding: 12px 26px;
   background: var(--bg-subtle);
   border-bottom: 1px solid var(--border-light);
 }
 
 .modal-tab {
-  font-family: inherit;
+  font-family: var(--font-sans);
   background: #ffffff;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  padding: 9px 14px;
+  border-radius: 10px;
+  padding: 9px 15px;
   font-size: 0.9rem;
   font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--text-secondary);
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .modal-tab.active {
   background: var(--primary);
   border-color: var(--primary);
   color: #ffffff;
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.22);
 }
 
 .modal-body {
   padding: 24px 26px;
   overflow-y: auto;
   flex: 1;
+  font-family: var(--font-sans);
+  letter-spacing: -0.015em;
+}
+
+.modal-body code,
+.convert-step-box code,
+.data-transparency-list code {
+  font-family: var(--font-sans);
+  font-size: 0.9em;
+  font-weight: 700;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 1px 7px;
+  border-radius: 6px;
+  letter-spacing: -0.01em;
 }
 
 .manual-intro {
   margin: 0 0 18px;
-  font-size: 1rem;
-  color: var(--text-secondary);
+  font-size: 0.98rem;
+  line-height: 1.68;
+  color: #334155;
+  font-weight: 500;
 }
 
 .manual-step-list {
@@ -1795,7 +1827,7 @@ body {
   background: var(--bg-subtle);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  padding: 16px 18px;
+  padding: 16px 20px;
 }
 
 .manual-step-badge {
@@ -1806,17 +1838,24 @@ body {
   padding: 5px 11px;
   border-radius: 8px;
   flex-shrink: 0;
+  letter-spacing: -0.01em;
 }
 
 .manual-step-item h3 {
-  margin: 0 0 4px;
-  font-size: 1.02rem;
+  margin: 0 0 6px;
+  font-size: 1.03rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.45;
 }
 
 .manual-step-item p {
   margin: 0;
   font-size: 0.93rem;
-  color: var(--text-secondary);
+  line-height: 1.68;
+  color: #334155;
+  letter-spacing: -0.01em;
 }
 
 .modal-footer {
@@ -2400,24 +2439,43 @@ body {
 
 
 
-/* ==================== 📲 앱 설치 · 📱 QR (엽쌤 앱 공통 상단 버튼) ==================== */
-.ys-key { display: flex; gap: 6px; }
-.ys-chip {
-  display: inline-block;
-  padding: 7px 12px;
-  border: 1px solid var(--border-light);
+/* ==================== 📲 앱 설치 · 📱 QR · 🔗 공유 · 📘 설명서 (상단 우측 버튼·아이콘 크기 통일) ==================== */
+.ys-key { display: inline-flex; align-items: center; gap: 8px; }
+.header-right-group .ys-chip,
+.header-right-group > .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
   border-radius: 999px;
-  background: var(--bg-surface);
-  color: var(--primary);
-  font: inherit;
-  font-size: 0.86rem;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
   font-weight: 700;
+  line-height: 1;
   white-space: nowrap;
   cursor: pointer;
+  box-sizing: border-box;
+}
+.ys-chip {
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--primary);
 }
 .ys-chip:hover { background: var(--primary-soft); }
+.header-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
 .ys-credit { margin: 6px 0 0; font-size: 0.8rem; }
-.ys-credit a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+.ys-credit a { color: var(--primary); text-decoration: none; }
 /* PC: 설치·QR이 들어가도 한 줄에 맞도록 안내 문구를 줄임(넓은 화면에서는 전체 표시) */
 @media (min-width: 641px) and (max-width: 1399px) { .privacy-more { display: none; } }
 /* 휴대폰: 맨 윗줄 = 앱 이름 + 설치·QR, 아랫줄 = 안내·설명서 */
@@ -4117,8 +4175,7 @@ body {
   font-size: 0.88rem;
   font-weight: 700;
   color: #2563eb;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -4146,8 +4203,7 @@ body {
   font-size: 0.84rem;
   font-weight: 600;
   color: #475569;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -4413,7 +4469,7 @@ body {
 }
 
 .case-quick-author {
-  width: 220px;
+  width: 255px;
 }
 
 .case-quick-body-row {
