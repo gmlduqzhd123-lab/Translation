@@ -4582,7 +4582,8 @@ body {
   .app-subtitle { font-size: 0.86rem; line-height: 1.5; margin-top: 6px; word-break: keep-all; }
   .ys-key { flex: 0 0 auto; }
   .header-right-group > .btn {
-    flex: 1 1 0;
+    /* 반반 너비라 첫 줄(앱 이름+QR)에 절대 끼어들지 못하고 항상 아랫줄로 내려감 */
+    flex: 1 1 calc(50% - 4px);
     min-width: 0;
     min-height: 44px;
     justify-content: center;
