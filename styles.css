@@ -52,10 +52,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Multilingual font fallbacks for clear diacritics, Hanzi, Kana, and Cyrillic */
+/* Multilingual font fallbacks & RTL direction support across all 25 languages */
+[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
 [lang="zh-Hans"],
 [lang="zh"] {
   font-family: "Pretendard Variable", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+  line-height: 1.7;
+}
+
+[lang="zh-Hant"] {
+  font-family: "Pretendard Variable", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
   line-height: 1.7;
 }
 
@@ -69,9 +79,35 @@ body {
   line-height: 1.72;
 }
 
-[lang="ru"] {
+[lang="ru"],
+[lang="mn"],
+[lang="uz"],
+[lang="kk"],
+[lang="ky"],
+[lang="uk"] {
   font-family: "Segoe UI", "Pretendard Variable", "Noto Sans", Roboto, Arial, sans-serif;
   line-height: 1.65;
+}
+
+[lang="ar"],
+[lang="ur"] {
+  font-family: "Segoe UI", "Tahoma", "Geeza Pro", "Noto Naskh Arabic", "Noto Nastaliq Urdu", "Noto Sans Arabic", Arial, sans-serif;
+  line-height: 1.85;
+}
+
+[lang="th"],
+[lang="km"],
+[lang="my"] {
+  font-family: "Leelawadee UI", "Thonburi", "Myanmar Text", "Noto Sans Thai", "Noto Sans Khmer", "Noto Sans Myanmar", "Segoe UI", sans-serif;
+  line-height: 1.85;
+}
+
+[lang="hi"],
+[lang="bn"],
+[lang="ne"],
+[lang="si"] {
+  font-family: "Nirmala UI", "Kohinoor Devanagari", "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Sinhala", "Segoe UI", sans-serif;
+  line-height: 1.8;
 }
 
 .sr-only {

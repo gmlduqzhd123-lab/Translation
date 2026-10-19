@@ -583,6 +583,10 @@ async function rebuildPptxUint8(originalBuffer, items, resolvedMap) {
   });
 }
 
+function sanitizeXml10Text(str) {
+  return String(str ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '');
+}
+
 function replacePptxParagraphText(doc, pEl, newText) {
   const aNs = pEl.namespaceURI || 'http://schemas.openxmlformats.org/drawingml/2006/main';
   const prefix = pEl.prefix ? `${pEl.prefix}:` : 'a:';
@@ -612,7 +616,7 @@ function replacePptxParagraphText(doc, pEl, newText) {
     pEl.removeChild(node);
   }
 
-  const lines = String(newText ?? '').split(/\r?\n/);
+  const lines = sanitizeXml10Text(newText).split(/\r?\n/);
   for (let idx = 0; idx < lines.length; idx++) {
     if (idx > 0) {
       const brEl = doc.createElementNS(aNs, `${prefix}br`);
@@ -731,7 +735,7 @@ function replaceHwpxParagraphText(doc, pEl, newText) {
     firstT.removeChild(firstT.firstChild);
   }
 
-  const lines = String(newText ?? '').split(/\r?\n/);
+  const lines = sanitizeXml10Text(newText).split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     if (i > 0) {
       const lb = doc.createElementNS(hpNs, `${prefix}lineBreak`);

@@ -26,12 +26,15 @@ export function isAutoSaveEnabled() {
   }
 }
 
-export function setAutoSaveEnabled(enabled) {
+export async function setAutoSaveEnabled(enabled) {
   const next = Boolean(enabled);
   try {
     localStorage.setItem(AUTO_SAVE_PREF_KEY, next ? 'true' : 'false');
   } catch {
     // ignore storage errors
+  }
+  if (!next) {
+    await clearWorkSessionFromBrowser();
   }
   return next;
 }
@@ -79,6 +82,11 @@ export async function saveWorkSessionToBrowser(sessionData) {
         db.close();
         reject(err);
       };
+      tx.onabort = () => {
+        const err = tx.error || new Error('QuotaExceededError');
+        db.close();
+        reject(err);
+      };
     });
   } catch (err) {
     const isQuota =
@@ -87,6 +95,7 @@ export async function saveWorkSessionToBrowser(sessionData) {
       /quota/i.test(String(err?.message || ''));
     lastStorageError = {
       type: isQuota ? 'quota' : 'unavailable',
+      code: isQuota ? 'QUOTA_EXCEEDED' : 'STORAGE_UNAVAILABLE',
       message: isQuota
         ? '브라우저 저장 공간(IndexedDB)이 부족하여 임시 저장을 완료하지 못했습니다. 불필요한 브라우저 데이터를 비우거나 임시 저장을 끄고 작업 후 바로 다운로드해 주세요.'
         : '현재 브라우저 환경(시크릿 모드 또는 저장소 제한)에서 임시 저장을 사용할 수 없습니다. 작업 완료 후 바로 결과 파일을 다운로드해 주세요.'
@@ -132,6 +141,10 @@ export async function clearWorkSessionFromBrowser() {
         resolve(true);
       };
       tx.onerror = () => {
+        db.close();
+        resolve(false);
+      };
+      tx.onabort = () => {
         db.close();
         resolve(false);
       };

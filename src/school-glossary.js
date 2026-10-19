@@ -657,6 +657,41 @@ export function getAllGlossaryEntries() {
   return [...custom, ...BUILTIN_SCHOOL_GLOSSARY];
 }
 
+function isGlossaryTermApplied(lowerTrans, targetTerm) {
+  if (!lowerTrans || !targetTerm) return false;
+  const fullTarget = String(targetTerm).toLowerCase().trim();
+  if (!fullTarget) return false;
+  if (lowerTrans.includes(fullTarget)) return true;
+
+  const variants = fullTarget
+    .split(/[\/()（）]/)
+    .map((part) => part.trim())
+    .filter((part) => part.length >= 2 || /[\u4E00-\u9FFF\u3040-\u30FF]/.test(part));
+  return variants.some((v) => lowerTrans.includes(v));
+}
+
+function normalizeNumeralsToAscii(str) {
+  const ranges = [
+    0xff10, // Fullwidth ０-９
+    0x0660, // Arabic-Indic ٠-٩
+    0x06f0, // Extended Arabic-Indic (Urdu) ۰-۹
+    0x0966, // Devanagari ०-९
+    0x09e6, // Bengali ০-৯
+    0x0e50, // Thai ๐-๙
+    0x1040, // Myanmar ၀-၉
+    0x17e0  // Khmer ០-៩
+  ];
+  return String(str ?? '').replace(/[\uFF10-\uFF19\u0660-\u0669\u06F0-\u06F9\u0966-\u096F\u09E6-\u09EF\u0E50-\u0E59\u1040-\u1049\u17E0-\u17E9]/g, (ch) => {
+    const code = ch.charCodeAt(0);
+    for (const base of ranges) {
+      if (code >= base && code <= base + 9) {
+        return String(code - base);
+      }
+    }
+    return ch;
+  });
+}
+
 /**
  * Find glossary entries whose Korean term appears in sourceText
  * Also checks whether currentTranslation already contains the target glossary term.
@@ -673,8 +708,7 @@ export function findMatchingGlossaryTerms(sourceText, langKey, currentTranslatio
     const targetTerm = entry.translations?.[langKey];
     if (!targetTerm) continue;
     if (raw.includes(entry.ko)) {
-      const isApplied =
-        lowerTrans.length > 0 && lowerTrans.includes(String(targetTerm).toLowerCase());
+      const isApplied = isGlossaryTermApplied(lowerTrans, targetTerm);
       matches.push({
         ko: entry.ko,
         target: targetTerm,
@@ -772,11 +806,16 @@ export function evaluateTranslationAccuracyIssues(sourceText, translatedText, ke
   }
 
   if (srcNumbers.length > 0) {
-    const dstNoComma = dst.replace(/(\d),[,\s]*(\d)/g, '$1$2');
+    const normalizedDst = normalizeNumeralsToAscii(dst);
+    const dstNoComma = normalizedDst.replace(/(\d),[,\s]*(\d)/g, '$1$2');
     const missingNums = srcNumbers.filter((num) => {
       const normalized = num.replace(/,/g, '');
       const altDecimal = num.includes('.') ? num.replace('.', ',') : num;
-      return !dst.includes(num) && !dstNoComma.includes(normalized) && !dst.includes(altDecimal);
+      return (
+        !normalizedDst.includes(num) &&
+        !dstNoComma.includes(normalized) &&
+        !normalizedDst.includes(altDecimal)
+      );
     });
     if (missingNums.length > 0) {
       issues.push({
@@ -811,9 +850,9 @@ export function evaluateTranslationAccuracyIssues(sourceText, translatedText, ke
     }
   }
 
-  // 3. Check question mark mismatch (supports ?, ？, Arabic/Urdu ؟, Myanmar ՞/？, etc.)
-  const srcIsQuestion = /[?？]\s*$/.test(src);
-  const dstIsQuestion = /[?？؟¿]\s*$/.test(dst);
+  // 3. Check question mark mismatch (supports ?, ？, Arabic/Urdu ؟, Spanish ¿, with optional trailing quote/bracket)
+  const srcIsQuestion = /[?？]['"”’)\]]*\s*$/.test(src);
+  const dstIsQuestion = /[?？؟¿]['"”’)\]]*\s*$/.test(dst);
   if (srcIsQuestion && !dstIsQuestion) {
     issues.push({
       code: 'missing-question',

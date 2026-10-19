@@ -442,7 +442,11 @@ async function handleToggleAutoSave() {
   syncStorageControlUI();
 
   if (!enabled) {
-    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = null;
+    }
+    await clearWorkSessionFromBrowser();
     state.pendingRestorableSession = null;
     els.sessionRestoreBanner?.classList.add('hidden');
     showStorageControlFeedback('⏸️ 임시 저장을 껐으며 브라우저에 남아 있던 임시 데이터를 삭제했습니다.');
@@ -571,11 +575,13 @@ function scheduleAutoSave() {
       els.autosaveStatusBadge.textContent = `💾 브라우저 임시저장 완료 (${t})`;
     } else if (!savedAt) {
       const err = getLastStorageError();
-      if (err && err.code === 'QUOTA_EXCEEDED') {
+      if (err && (err.code === 'QUOTA_EXCEEDED' || err.type === 'quota')) {
         if (els.autosaveStatusBadge) {
           els.autosaveStatusBadge.textContent = '⚠️ 저장 공간 부족 (임시저장 생략됨 · 작업 계속 가능)';
         }
         showStorageControlFeedback('⚠️ 브라우저 저장 공간이 부족하여 임시저장을 건너뛰었습니다. 번역·다운로드는 정상 진행됩니다.');
+      } else if (err && els.autosaveStatusBadge) {
+        els.autosaveStatusBadge.textContent = '⚠️ 브라우저 임시저장 제한 환경 (수동 다운로드만 사용)';
       }
     }
   }, 350);
@@ -1197,6 +1203,11 @@ function renderLanguageCards() {
   if (els.languageOptionsGrid) els.languageOptionsGrid.innerHTML = '';
   if (els.extendedLanguageOptionsGrid) els.extendedLanguageOptionsGrid.innerHTML = '';
 
+  const selectedMeta = getTargetLanguageMeta(state.selectedLangKey);
+  if (selectedMeta?.tier === 'extended' && els.extendedLanguagesDetails) {
+    els.extendedLanguagesDetails.open = true;
+  }
+
   for (const lang of TARGET_LANGUAGES) {
     const cardEl = createLanguageCardElement(lang);
     if (lang.tier === 'extended' && els.extendedLanguageOptionsGrid) {
@@ -1228,25 +1239,27 @@ function renderLanguageCards() {
 }
 
 async function refreshAllLanguageSupport() {
-  for (const lang of TARGET_LANGUAGES) {
-    const info = await checkLanguagePairSupport(lang.key);
-    state.langSupportMap.set(lang.key, info);
-    const cardBadge = document.getElementById(`lang-card-badge-${lang.key}`);
-    if (cardBadge) {
-      cardBadge.textContent = info.supported
-        ? info.status === 'available'
-          ? '자동 번역 가능'
-          : '모델 다운로드 가능'
-        : '용어집·수동 입력';
-      cardBadge.className = `badge ${
-        info.supported
+  await Promise.all(
+    TARGET_LANGUAGES.map(async (lang) => {
+      const info = await checkLanguagePairSupport(lang.key);
+      state.langSupportMap.set(lang.key, info);
+      const cardBadge = document.getElementById(`lang-card-badge-${lang.key}`);
+      if (cardBadge) {
+        cardBadge.textContent = info.supported
           ? info.status === 'available'
-            ? 'badge-available'
-            : 'badge-downloadable'
-          : 'badge-unavailable'
-      }`;
-    }
-  }
+            ? '자동 번역 가능'
+            : '모델 다운로드 가능'
+          : '용어집·수동 입력';
+        cardBadge.className = `badge ${
+          info.supported
+            ? info.status === 'available'
+              ? 'badge-available'
+              : 'badge-downloadable'
+            : 'badge-unavailable'
+        }`;
+      }
+    })
+  );
   updateSelectedLanguageStatusUI();
 }
 
