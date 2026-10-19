@@ -203,17 +203,26 @@
         </div>
 
         <!-- 파일 선택 전 데이터 처리 및 임시 저장 투명성 안내 (PRD 3.1, 3.2) -->
-        <div id="data-privacy-notice-step1" class="data-transparency-box" role="region" aria-label="파일 처리 및 데이터 보관 안내">
-          <div class="data-transparency-header">
-            <strong>🔐 파일 선택 전 데이터 처리·임시 저장 안내</strong>
-            <span id="step1-storage-state-pill" class="storage-state-pill">임시 저장: 켜짐 (IndexedDB)</span>
-          </div>
+        <details id="data-privacy-notice-step1" class="data-transparency-box data-transparency-collapsible">
+          <summary class="data-transparency-header">
+            <div class="data-transparency-title-wrap">
+              <strong>🔐 파일 선택 전 데이터 처리·임시 저장 안내</strong>
+              <span class="data-transparency-summary-sub">외부 서버 미전송 · 브라우저 내부 저장</span>
+            </div>
+            <div class="data-transparency-header-right">
+              <span id="step1-storage-state-pill" class="storage-state-pill">임시 저장: 켜짐 (IndexedDB)</span>
+              <span class="data-transparency-toggle-btn" aria-hidden="true">
+                <span class="toggle-text-closed">상세 보기 ▼</span>
+                <span class="toggle-text-open">상세 닫기 ▲</span>
+              </span>
+            </div>
+          </summary>
           <ul class="data-transparency-list">
             <li><strong>브라우저 임시 저장:</strong> 작업 중 실수로 창이 닫혀도 이어서 작업할 수 있도록 원본 파일과 번역 상태가 <strong>현재 브라우저 내부 저장소(IndexedDB)에만 임시 저장</strong>됩니다. 원하지 않으시면 상단 <strong>[💾 브라우저 임시 저장]</strong> 체크를 해제해 끌 수 있습니다.</li>
             <li><strong>외부 서버 전송 여부:</strong> 업로드한 수업자료(<code>.pptx</code>·<code>.hwpx</code>)와 추출 문장·번역문은 <strong>외부 서버나 외부 번역 API로 전송되지 않으며</strong>, 자동 번역은 브라우저 내장 온디바이스 API(<code>window.Translator</code>)로만 수행됩니다. <em>(단, ‘수업 활용 사례’ 탭에서 직접 작성·제출하는 게시글만 사례 공유 DB 서버로 전송됩니다.)</em></li>
             <li><strong>작업 내용 삭제 방법:</strong> 화면 상단 <strong>[🗑️ 이 브라우저의 작업 내용 삭제]</strong> 버튼을 누르면 저장된 원본과 번역 내용이 즉시 삭제되며 새로고침해도 복원되지 않습니다. <strong>공용 PC에서는 작업 종료 시 반드시 삭제</strong>해 주세요.</li>
           </ul>
-        </div>
+        </details>
 
         <!-- 이전 임시 저장 작업 복구 배너 (아이디어 4) -->
         <div id="session-restore-banner" class="session-restore-banner hidden" role="region" aria-label="이전 작업 이어서 하기">
