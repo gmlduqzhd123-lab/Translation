@@ -354,34 +354,68 @@ export async function translateSingleText(translator, sourceText) {
   return translatedLines.join('\n');
 }
 
+let activeTtsResetCallback = null;
+
 /**
  * Speak foreign text using browser-native Web Speech API (window.speechSynthesis)
  */
-export function speakTextWithBrowserTTS(text, langKey, onStateChange) {
+export function speakTextWithBrowserTTS(text, langKey, onStateChange, forceStop = false) {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    if (typeof onStateChange === 'function') onStateChange('unsupported');
     return false;
   }
   const synth = window.speechSynthesis;
-  const trimmed = String(text ?? '').trim();
-  if (!trimmed) return false;
 
-  synth.cancel();
+  if (forceStop && synth.speaking) {
+    synth.cancel();
+    if (typeof activeTtsResetCallback === 'function') {
+      const prev = activeTtsResetCallback;
+      activeTtsResetCallback = null;
+      prev('idle');
+    }
+    if (typeof onStateChange === 'function') onStateChange('idle');
+    return false;
+  }
+
+  const trimmed = String(text ?? '').trim();
+  if (!trimmed) {
+    if (typeof onStateChange === 'function') onStateChange('empty');
+    return false;
+  }
+
+  if (synth.speaking) {
+    synth.cancel();
+  }
+  if (typeof activeTtsResetCallback === 'function') {
+    const prev = activeTtsResetCallback;
+    activeTtsResetCallback = null;
+    prev('idle');
+  }
+
   const langMeta = getTargetLanguageMeta(langKey);
   const utter = new SpeechSynthesisUtterance(trimmed);
   utter.lang = langMeta.speechLang || langMeta.candidates[0] || 'en-US';
   utter.rate = 0.95;
 
+  activeTtsResetCallback = onStateChange || null;
   if (typeof onStateChange === 'function') {
-    onStateChange(true);
+    onStateChange('speaking');
   }
   utter.onend = () => {
-    if (typeof onStateChange === 'function') onStateChange(false);
+    if (activeTtsResetCallback === onStateChange) {
+      activeTtsResetCallback = null;
+    }
+    if (typeof onStateChange === 'function') onStateChange('idle');
   };
   utter.onerror = () => {
-    if (typeof onStateChange === 'function') onStateChange(false);
+    if (activeTtsResetCallback === onStateChange) {
+      activeTtsResetCallback = null;
+    }
+    if (typeof onStateChange === 'function') onStateChange('idle');
   };
 
   synth.speak(utter);
   return true;
 }
+
 

@@ -88,7 +88,7 @@ export const BUILTIN_SCHOOL_GLOSSARY = [
       mn: 'Бие даасан ажил',
       th: 'กิจกรรมเดี่ยว',
       km: 'សកម្មភាពបុគ្គល',
-      tl: 'orn-Indibidwal na Gawain'
+      tl: 'Indibidwal na Gawain'
     }
   },
   {
@@ -370,7 +370,7 @@ export function findMatchingGlossaryTerms(sourceText, langKey, currentTranslatio
 
   for (const entry of entries) {
     if (!entry.ko) continue;
-    const targetTerm = entry.translations?.[langKey] || entry.translations?.all;
+    const targetTerm = entry.translations?.[langKey];
     if (!targetTerm) continue;
     if (raw.includes(entry.ko)) {
       const isApplied =
@@ -456,10 +456,28 @@ export function evaluateTranslationAccuracyIssues(sourceText, translatedText, ke
     return issues;
   }
 
-  // 1. Check numbers present in source
-  const srcNumbers = src.match(/\d+(?:[.,]\d+)?/g) || [];
+  // 1. Check numbers present in source (handle dotted dates like 2026.10.19 and thousand commas like 1,000)
+  const rawNumberTokens = src.match(/\d+(?:[.,]\d+)*/g) || [];
+  const srcNumbers = [];
+  for (const token of rawNumberTokens) {
+    const dotParts = token.split('.');
+    if (dotParts.length > 2) {
+      // Multi-dot sequence (e.g. 2026.10.19) -> check each integer part separately
+      for (const p of dotParts) {
+        if (p) srcNumbers.push(p.replace(/,/g, ''));
+      }
+    } else {
+      srcNumbers.push(token);
+    }
+  }
+
   if (srcNumbers.length > 0) {
-    const missingNums = srcNumbers.filter((num) => !dst.includes(num));
+    const dstNoComma = dst.replace(/(\d),[,\s]*(\d)/g, '$1$2');
+    const missingNums = srcNumbers.filter((num) => {
+      const normalized = num.replace(/,/g, '');
+      const altDecimal = num.includes('.') ? num.replace('.', ',') : num;
+      return !dst.includes(num) && !dstNoComma.includes(normalized) && !dst.includes(altDecimal);
+    });
     if (missingNums.length > 0) {
       issues.push({
         type: 'missing-number',
@@ -471,9 +489,16 @@ export function evaluateTranslationAccuracyIssues(sourceText, translatedText, ke
   }
 
   // 2. Check leftover Hangul characters in foreign translation
-  if (dst !== src) {
-    const leftoverHangul = dst.match(/[가-힣]{2,}/g) || [];
-    if (leftoverHangul.length > 0) {
+  const leftoverHangul = dst.match(/[가-힣]{2,}/g) || [];
+  if (leftoverHangul.length > 0) {
+    if (dst === src) {
+      issues.push({
+        type: 'untranslated-source',
+        severity: 'red',
+        level: 'error',
+        message: '미번역 한글 상태: 번역문이 한국어 원문 그대로입니다. (원문을 유지하려면 [⏭️ 원문 그대로 유지]를 켜 주세요.)'
+      });
+    } else {
       issues.push({
         type: 'leftover-hangul',
         severity: 'red',

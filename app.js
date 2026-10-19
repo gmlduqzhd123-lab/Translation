@@ -35,8 +35,9 @@ const state = {
   maxUnlockedStep: 1,
   parsedDoc: null,
   selectedLangKey: 'en',
+  translatedLangKey: null,
   langSupportMap: new Map(),
-  // id -> { draftText, finalText, backTranslatedKo, verified, autoFailed, errorMessage, keepOriginal }
+  // id -> { draftText, draftBackTranslatedKo, finalText, backTranslatedKo, verified, autoFailed, errorMessage, keepOriginal }
   itemStates: new Map(),
   activeFilter: 'all',
   collapsedGroups: new Set(),
@@ -255,11 +256,23 @@ async function handleRestoreSession() {
     const parsed = await extractDocumentFromBuffer(saved.fileName, saved.originalBuffer);
     state.parsedDoc = parsed;
     state.selectedLangKey = saved.selectedLangKey || 'en';
+    state.translatedLangKey = saved.translatedLangKey || saved.selectedLangKey || 'en';
+    if (saved.outputMode) {
+      state.outputMode = saved.outputMode;
+      els.outputModeRadios?.forEach((radio) => {
+        radio.checked = radio.value === state.outputMode;
+      });
+      document.querySelectorAll('.output-mode-card').forEach((card) => {
+        const r = card.querySelector('input[type="radio"]');
+        card.classList.toggle('selected', Boolean(r && r.checked));
+      });
+    }
     state.itemStates = new Map(saved.itemStatesEntries);
     state.collapsedGroups.clear();
     state.activeFilter = 'all';
     state.hasUnsavedWork = true;
     state.maxUnlockedStep = 5;
+    state.pendingRestorableSession = null;
     els.sessionRestoreBanner?.classList.add('hidden');
     renderLanguageCards();
     refreshAllLanguageSupport();
@@ -279,6 +292,8 @@ function scheduleAutoSave() {
       fileType: state.parsedDoc.fileType,
       originalBuffer: state.parsedDoc.originalBuffer,
       selectedLangKey: state.selectedLangKey,
+      translatedLangKey: state.translatedLangKey,
+      outputMode: state.outputMode,
       itemStatesEntries: Array.from(state.itemStates.entries())
     });
     if (savedAt && els.autosaveStatusBadge) {
@@ -435,6 +450,10 @@ function bindEvents() {
   els.btnStartAutoTranslate.addEventListener('click', handleStartAutoTranslate);
   els.btnSkipToManual.addEventListener('click', () => {
     if (state.isTranslating) return;
+    if (state.translatedLangKey && state.translatedLangKey !== state.selectedLangKey) {
+      resetItemStatesForLanguageChange();
+    }
+    state.translatedLangKey = state.selectedLangKey;
     scheduleAutoSave();
     unlockAndGoToStep(4);
   });
@@ -467,6 +486,7 @@ function bindEvents() {
       const st = state.itemStates.get(item.id);
       if (st && st.finalText.trim().length === 0) {
         st.finalText = item.sourceText;
+        st.backTranslatedKo = '';
         changed++;
       }
     }
@@ -552,6 +572,7 @@ function bindEvents() {
     }
     state.hasUnsavedWork = false;
     state.parsedDoc = null;
+    state.translatedLangKey = null;
     state.itemStates.clear();
     state.collapsedGroups.clear();
     state.maxUnlockedStep = 1;
@@ -567,6 +588,7 @@ function bindEvents() {
           card.classList.toggle('selected', card.contains(radio));
         });
         updateStep5FilenameDisplay();
+        scheduleAutoSave();
       }
     });
   });
@@ -579,6 +601,24 @@ function bindEvents() {
   });
 }
 
+function resetItemStatesForLanguageChange() {
+  if (!state.parsedDoc) return;
+  for (const item of state.parsedDoc.items) {
+    const prev = state.itemStates.get(item.id);
+    const keepOrig = Boolean(prev?.keepOriginal) || isNonTranslatableText(item.sourceText);
+    state.itemStates.set(item.id, {
+      draftText: keepOrig ? item.sourceText : null,
+      draftBackTranslatedKo: keepOrig ? item.sourceText : '',
+      finalText: keepOrig ? item.sourceText : '',
+      backTranslatedKo: keepOrig ? item.sourceText : '',
+      verified: keepOrig,
+      autoFailed: false,
+      errorMessage: null,
+      keepOriginal: keepOrig
+    });
+  }
+}
+
 function unlockAndGoToStep(stepNum) {
   if (stepNum > state.maxUnlockedStep) {
     state.maxUnlockedStep = stepNum;
@@ -587,6 +627,12 @@ function unlockAndGoToStep(stepNum) {
 }
 
 function goToStep(stepNum) {
+  if (stepNum >= 4 && state.translatedLangKey && state.translatedLangKey !== state.selectedLangKey) {
+    resetItemStatesForLanguageChange();
+    state.translatedLangKey = state.selectedLangKey;
+    scheduleAutoSave();
+  }
+
   state.currentStep = stepNum;
   for (let s = 1; s <= 5; s++) {
     const panel = els.stepPanels[s];
@@ -687,6 +733,9 @@ async function loadSampleDocument(url, displayFileName) {
 async function processLoadedBuffer(fileName, arrayBuffer) {
   const parsed = await extractDocumentFromBuffer(fileName, arrayBuffer);
   state.parsedDoc = parsed;
+  state.translatedLangKey = null;
+  state.pendingRestorableSession = null;
+  els.sessionRestoreBanner?.classList.add('hidden');
   state.itemStates.clear();
   state.collapsedGroups.clear();
 
@@ -694,6 +743,7 @@ async function processLoadedBuffer(fileName, arrayBuffer) {
     const autoSkip = isNonTranslatableText(item.sourceText);
     state.itemStates.set(item.id, {
       draftText: autoSkip ? item.sourceText : null,
+      draftBackTranslatedKo: autoSkip ? item.sourceText : '',
       finalText: autoSkip ? item.sourceText : '',
       backTranslatedKo: autoSkip ? item.sourceText : '',
       verified: autoSkip,
@@ -967,6 +1017,11 @@ async function handleStartAutoTranslate() {
     return;
   }
 
+  if (state.translatedLangKey && state.translatedLangKey !== langKey) {
+    resetItemStatesForLanguageChange();
+  }
+  state.translatedLangKey = langKey;
+
   let successCount = 0;
   let failCount = 0;
   const translationCache = new Map();
@@ -987,6 +1042,7 @@ async function handleStartAutoTranslate() {
     if (itemState.keepOriginal || isNonTranslatableText(item.sourceText)) {
       itemState.keepOriginal = true;
       itemState.draftText = item.sourceText;
+      itemState.draftBackTranslatedKo = item.sourceText;
       itemState.finalText = item.sourceText;
       itemState.backTranslatedKo = item.sourceText;
       itemState.verified = true;
@@ -1005,6 +1061,7 @@ async function handleStartAutoTranslate() {
         }
         itemState.draftText = translated;
         itemState.finalText = translated;
+        itemState.backTranslatedKo = '';
 
         if (reverseTranslator && translated.trim().length > 0) {
           if (reverseCache.has(translated)) {
@@ -1019,12 +1076,17 @@ async function handleStartAutoTranslate() {
             }
           }
         }
+        itemState.draftBackTranslatedKo = itemState.backTranslatedKo;
 
         itemState.verified = false; // Never auto-mark translated sentences as verified
         itemState.autoFailed = false;
         itemState.errorMessage = null;
         successCount++;
       } catch (itemErr) {
+        itemState.draftText = null;
+        itemState.draftBackTranslatedKo = '';
+        itemState.finalText = '';
+        itemState.backTranslatedKo = '';
         itemState.autoFailed = true;
         itemState.errorMessage = itemErr?.message || '자동 번역 실패';
         failCount++;
@@ -1178,7 +1240,7 @@ function renderGlossaryDrawer() {
   els.glossaryTermsGrid.innerHTML = '';
 
   for (const entry of entries) {
-    const targetTerm = entry.translations?.[state.selectedLangKey] || entry.translations?.all;
+    const targetTerm = entry.translations?.[state.selectedLangKey];
     if (!targetTerm) continue;
     const chip = document.createElement('div');
     chip.className = 'glossary-term-chip';
@@ -1207,8 +1269,7 @@ function handleAddCustomGlossary() {
       ko,
       category: '내 단어장',
       translations: {
-        [state.selectedLangKey]: target,
-        all: target
+        [state.selectedLangKey]: target
       }
     });
   }
@@ -1231,16 +1292,23 @@ function handleApplyGlossaryAll() {
     const st = state.itemStates.get(item.id);
     if (!st || st.keepOriginal) continue;
     const srcTrimmed = item.sourceText.trim();
+    const srcCore = srcTrimmed.replace(/^[\d.\-•()\s]+|[:：.\s]+$/g, '').trim();
 
     for (const entry of entries) {
-      const targetTerm = entry.translations?.[state.selectedLangKey] || entry.translations?.all;
+      const targetTerm = entry.translations?.[state.selectedLangKey];
       if (!targetTerm) continue;
-      if (srcTrimmed === entry.ko && st.finalText.trim() !== targetTerm) {
+      if ((srcTrimmed === entry.ko || srcCore === entry.ko) && st.finalText.trim() !== targetTerm) {
         st.finalText = targetTerm;
+        st.backTranslatedKo = '';
         updatedCount++;
         break;
-      } else if (st.finalText.trim().length === 0 && srcTrimmed.includes(entry.ko)) {
+      } else if (
+        st.finalText.trim().length === 0 &&
+        srcTrimmed.includes(entry.ko) &&
+        srcTrimmed.length <= entry.ko.length + 4
+      ) {
         st.finalText = targetTerm;
+        st.backTranslatedKo = '';
         updatedCount++;
         break;
       }
@@ -1277,6 +1345,7 @@ function handleRunFindReplaceAll() {
     if (!st || !st.finalText) continue;
     if (st.finalText.includes(findStr)) {
       st.finalText = st.finalText.split(findStr).join(replaceStr);
+      st.backTranslatedKo = '';
       changedItems++;
     }
   }
@@ -1383,6 +1452,7 @@ function handleApplyBulkPaste() {
       // If pasted from TSV (source \t translation), take the last tab column
       const parts = lines[i].split('\t');
       st.finalText = parts[parts.length - 1].trim();
+      st.backTranslatedKo = '';
       st.keepOriginal = false;
       applied++;
     }
@@ -1428,12 +1498,59 @@ function autoResizeTextarea(textarea) {
   textarea.style.height = `${nextHeight}px`;
 }
 
+function getItemNavGroup(item) {
+  return item.fileType === 'pptx' ? item.groupNumber : Math.ceil(item.groupNumber / 5);
+}
+
+function expandGroupInDOM(gNum) {
+  state.collapsedGroups.delete(gNum);
+  const groupCards = els.reviewItemsContainer.querySelectorAll(
+    `.review-card[data-nav-group="${gNum}"]`
+  );
+  groupCards.forEach((c) => c.classList.remove('group-collapsed'));
+  const divider = els.reviewItemsContainer.querySelector(
+    `.review-group-divider[data-divider-group="${gNum}"]`
+  );
+  const collapseBtn = divider?.querySelector('[data-role="group-collapse-btn"]');
+  if (collapseBtn) {
+    collapseBtn.textContent = '접기 ▲';
+  }
+}
+
+function updateGroupDividerStatusUI() {
+  if (!state.parsedDoc) return;
+  const groups = getDocumentGroups();
+  for (const [gNum, gItems] of groups.entries()) {
+    const divider = els.reviewItemsContainer.querySelector(
+      `.review-group-divider[data-divider-group="${gNum}"]`
+    );
+    if (!divider) continue;
+    const doneCount = gItems.filter((it) => state.itemStates.get(it.id)?.verified).length;
+    const isAllDone = doneCount === gItems.length;
+    const groupTitle =
+      state.parsedDoc.fileType === 'pptx'
+        ? `슬라이드 ${gNum}`
+        : gItems.length === 1
+          ? `문단 ${gItems[0].groupNumber}`
+          : `문단 ${gItems[0].groupNumber} ~ ${gItems[gItems.length - 1].groupNumber}`;
+    divider.classList.toggle('group-all-verified', isAllDone);
+    const titleWrap = divider.querySelector('.review-group-title');
+    if (titleWrap) {
+      titleWrap.innerHTML = `
+        <span>${isAllDone ? '✅' : '📂'} ${escapeHtml(groupTitle)}</span>
+        <span class="badge ${isAllDone ? 'badge-available' : 'badge-context'}">${doneCount} / ${gItems.length} 확인 완료</span>
+      `;
+    }
+  }
+}
+
 function jumpToNextUnverified() {
   if (!state.parsedDoc) return;
   for (const item of state.parsedDoc.items) {
     const st = state.itemStates.get(item.id);
     if (st && !st.verified) {
-      state.collapsedGroups.delete(item.groupNumber);
+      const gNum = getItemNavGroup(item);
+      state.collapsedGroups.delete(gNum);
       focusReviewItem(item.id);
       return;
     }
@@ -1581,7 +1698,7 @@ function computeReviewCounters() {
     if (evaluateLengthOverflowRisk(item.sourceText, st.finalText, item.contextLabel)) {
       overflow++;
     }
-    const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
+    const signal = evaluateTranslationTrafficLight(item, st);
     if (signal.level === 'red' || signal.level === 'yellow') {
       attention++;
     }
@@ -1624,7 +1741,7 @@ function getDocumentGroups() {
   const groups = new Map();
   if (!state.parsedDoc) return groups;
   for (const item of state.parsedDoc.items) {
-    const gNum = item.fileType === 'pptx' ? item.groupNumber : Math.ceil(item.groupNumber / 5);
+    const gNum = getItemNavGroup(item);
     if (!groups.has(gNum)) groups.set(gNum, []);
     groups.get(gNum).push(item);
   }
@@ -1653,12 +1770,12 @@ function renderReviewJumpNav() {
     btn.textContent = `${isAllDone ? '✓ ' : ''}${labelPrefix} (${doneCount}/${gItems.length})`;
 
     btn.addEventListener('click', () => {
-      state.collapsedGroups.delete(gNum);
+      expandGroupInDOM(gNum);
+      applyReviewFilter();
       const firstCard = els.reviewItemsContainer.querySelector(
         `.review-card[data-item-id="${gItems[0].id}"]`
       );
       if (firstCard) {
-        firstCard.classList.remove('group-collapsed');
         firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
         els.currentPositionIndicator.textContent = `현재 위치: ${labelPrefix}`;
       }
@@ -1705,7 +1822,7 @@ function renderAccuracyIssuesHtml(accuracyIssues) {
   return accuracyIssues
     .map(
       (iss) =>
-        `<div class="accuracy-issue-item ${iss.level === 'error' ? 'issue-error' : 'issue-warn'}">
+        `<div class="accuracy-issue-item ${iss.level === 'error' ? 'accuracy-issue-red issue-error' : 'accuracy-issue-yellow issue-warn'}">
           <span>${iss.level === 'error' ? '🚨' : '⚠️'}</span>
           <span>${escapeHtml(iss.message)}</span>
         </div>`
@@ -1789,7 +1906,7 @@ function renderReviewStep() {
         st.finalText,
         st.keepOriginal
       );
-      const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
+      const signal = evaluateTranslationTrafficLight(item, st);
       const glossaryMatches = findMatchingGlossaryTerms(
         item.sourceText,
         state.selectedLangKey,
@@ -1912,7 +2029,7 @@ function renderReviewStep() {
               >${
                 st.backTranslatedKo
                   ? `“${escapeHtml(st.backTranslatedKo)}”`
-                  : '역번역 대기 중 — 상단 [🔄 전체 한국어 역번역 실행] 또는 우측 [🔄 역번역 다시 확인]을 누르면 외국어 번역문의 한국어 뜻이 표시됩니다.'
+                  : '역번역 대기 중 — 상단 [🔄 전체 문장 한국어 역번역 검증] 또는 우측 [🔄 역번역 다시 확인]을 누르면 외국어 번역문의 한국어 뜻이 표시됩니다.'
               }</div>
             </div>
 
@@ -1957,10 +2074,14 @@ function renderReviewStep() {
         chip.addEventListener('click', () => {
           const term = chip.getAttribute('data-term') || '';
           if (!term) return;
+          const prevText = st.finalText;
           if (st.finalText.trim().length === 0 || item.sourceText.trim().length <= 10) {
             st.finalText = term;
           } else if (!st.finalText.toLowerCase().includes(term.toLowerCase())) {
             st.finalText = `${st.finalText.trim()} (${term})`;
+          }
+          if (st.finalText !== prevText) {
+            st.backTranslatedKo = '';
           }
           st.keepOriginal = false;
           textarea.value = st.finalText;
@@ -1975,25 +2096,33 @@ function renderReviewStep() {
 
       if (ttsBtn) {
         ttsBtn.addEventListener('click', () => {
-          speakTextWithBrowserTTS(st.finalText, state.selectedLangKey, (status) => {
-            if (status === 'speaking') {
-              ttsBtn.classList.add('is-active');
-              ttsBtn.textContent = '⏹️ 읽는 중 (중지)';
-            } else if (status === 'empty') {
-              ttsBtn.textContent = '⚠️ 번역문 없음';
-              setTimeout(() => {
+          const isSpeakingNow = ttsBtn.classList.contains('is-active');
+          speakTextWithBrowserTTS(
+            st.finalText,
+            state.selectedLangKey,
+            (status) => {
+              if (status === 'speaking' || status === true) {
+                ttsBtn.classList.add('is-active');
+                ttsBtn.textContent = '⏹️ 읽는 중 (중지)';
+              } else if (status === 'empty') {
+                ttsBtn.classList.remove('is-active');
+                ttsBtn.textContent = '⚠️ 번역문 없음';
+                setTimeout(() => {
+                  ttsBtn.textContent = '🔊 발음 듣기';
+                }, 1200);
+              } else if (status === 'unsupported') {
+                ttsBtn.classList.remove('is-active');
+                ttsBtn.textContent = '⚠️ 음성 미지원';
+                setTimeout(() => {
+                  ttsBtn.textContent = '🔊 발음 듣기';
+                }, 1500);
+              } else {
+                ttsBtn.classList.remove('is-active');
                 ttsBtn.textContent = '🔊 발음 듣기';
-              }, 1200);
-            } else if (status === 'unsupported') {
-              ttsBtn.textContent = '⚠️ 음성 미지원';
-              setTimeout(() => {
-                ttsBtn.textContent = '🔊 발음 듣기';
-              }, 1500);
-            } else {
-              ttsBtn.classList.remove('is-active');
-              ttsBtn.textContent = '🔊 발음 듣기';
-            }
-          });
+              }
+            },
+            isSpeakingNow
+          );
         });
       }
 
@@ -2037,9 +2166,13 @@ function renderReviewStep() {
       });
 
       textarea.addEventListener('input', () => {
+        const prevText = st.finalText;
         st.finalText = textarea.value;
         if (st.finalText !== item.sourceText) {
           st.keepOriginal = false;
+        }
+        if (st.finalText !== prevText) {
+          st.backTranslatedKo = st.keepOriginal ? item.sourceText : '';
         }
         state.hasUnsavedWork = true;
         autoResizeTextarea(textarea);
@@ -2057,6 +2190,7 @@ function renderReviewStep() {
           syncSingleCardUI(card, item, st);
           propagateIdenticalSourceText(item, st);
           updateReviewCountersUI();
+          updateGroupDividerStatusUI();
           renderReviewJumpNav();
           scheduleAutoSave();
           jumpToNextUnverified();
@@ -2071,11 +2205,14 @@ function renderReviewStep() {
           st.verified = true;
           textarea.value = st.finalText;
           autoResizeTextarea(textarea);
+        } else if (st.finalText === item.sourceText) {
+          st.backTranslatedKo = '';
         }
         state.hasUnsavedWork = true;
         syncSingleCardUI(card, item, st);
         propagateIdenticalSourceText(item, st);
         updateReviewCountersUI();
+        updateGroupDividerStatusUI();
         renderReviewJumpNav();
         scheduleAutoSave();
       });
@@ -2086,6 +2223,7 @@ function renderReviewStep() {
         syncSingleCardUI(card, item, st);
         propagateIdenticalSourceText(item, st);
         updateReviewCountersUI();
+        updateGroupDividerStatusUI();
         renderReviewJumpNav();
         scheduleAutoSave();
         if (state.activeFilter !== 'all') {
@@ -2095,6 +2233,7 @@ function renderReviewStep() {
 
       copySourceBtn.addEventListener('click', () => {
         st.finalText = item.sourceText;
+        st.backTranslatedKo = st.keepOriginal ? item.sourceText : '';
         textarea.value = st.finalText;
         state.hasUnsavedWork = true;
         autoResizeTextarea(textarea);
@@ -2108,6 +2247,7 @@ function renderReviewStep() {
         restoreDraftBtn.addEventListener('click', () => {
           if (st.draftText !== null) {
             st.finalText = st.draftText;
+            st.backTranslatedKo = st.draftBackTranslatedKo || '';
             st.keepOriginal = false;
             textarea.value = st.finalText;
             state.hasUnsavedWork = true;
@@ -2141,7 +2281,7 @@ function syncSingleCardUI(card, item, st) {
     st.finalText,
     st.keepOriginal
   );
-  const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
+  const signal = evaluateTranslationTrafficLight(item, st);
 
   card.classList.toggle('verified', st.verified);
   card.classList.toggle('is-empty', isEmpty);
@@ -2183,7 +2323,7 @@ function syncSingleCardUI(card, item, st) {
       btTextEl.classList.remove('is-empty');
     } else {
       btTextEl.textContent =
-        '역번역 대기 중 — 상단 [🔄 전체 한국어 역번역 실행] 또는 우측 [🔄 역번역 다시 확인]을 누르면 외국어 번역문의 한국어 뜻이 표시됩니다.';
+        '역번역 대기 중 — 상단 [🔄 전체 문장 한국어 역번역 검증] 또는 우측 [🔄 역번역 다시 확인]을 누르면 외국어 번역문의 한국어 뜻이 표시됩니다.';
       btTextEl.classList.add('is-empty');
     }
   }
@@ -2237,9 +2377,11 @@ function syncSingleCardUI(card, item, st) {
 function applyReviewFilter() {
   const filter = state.activeFilter;
   const cards = els.reviewItemsContainer.querySelectorAll('.review-card');
+  const visibleCountByGroup = new Map();
 
   cards.forEach((card) => {
     const id = card.getAttribute('data-item-id');
+    const gNum = parseInt(card.getAttribute('data-nav-group') || '0', 10);
     const st = state.itemStates.get(id);
     const item = state.parsedDoc?.items.find((it) => it.id === id);
     if (!st || !item) return;
@@ -2252,7 +2394,7 @@ function applyReviewFilter() {
     const isOverflow = Boolean(
       evaluateLengthOverflowRisk(item.sourceText, st.finalText, item.contextLabel)
     );
-    const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
+    const signal = evaluateTranslationTrafficLight(item, st);
     const isAttention = signal.level === 'red' || signal.level === 'yellow';
 
     let visible = true;
@@ -2264,6 +2406,25 @@ function applyReviewFilter() {
     else if (filter === 'failed') visible = isFailed;
 
     card.classList.toggle('hidden', !visible);
+    if (filter === 'all') {
+      card.classList.toggle('group-collapsed', state.collapsedGroups.has(gNum));
+    } else {
+      card.classList.remove('group-collapsed');
+    }
+
+    if (visible) {
+      visibleCountByGroup.set(gNum, (visibleCountByGroup.get(gNum) || 0) + 1);
+    }
+  });
+
+  const dividers = els.reviewItemsContainer.querySelectorAll('.review-group-divider');
+  dividers.forEach((div) => {
+    const gNum = parseInt(div.getAttribute('data-divider-group') || '0', 10);
+    if (filter === 'all') {
+      div.classList.remove('hidden');
+    } else {
+      div.classList.toggle('hidden', (visibleCountByGroup.get(gNum) || 0) === 0);
+    }
   });
 }
 
@@ -2272,11 +2433,16 @@ export function focusReviewItem(itemId) {
   els.filterBtns.forEach((b) =>
     b.classList.toggle('active', b.getAttribute('data-filter') === 'all')
   );
+  const targetItem = state.parsedDoc?.items.find((it) => it.id === itemId);
+  if (targetItem) {
+    state.collapsedGroups.delete(getItemNavGroup(targetItem));
+  }
   goToStep(4);
   setTimeout(() => {
     const card = els.reviewItemsContainer.querySelector(`.review-card[data-item-id="${itemId}"]`);
     if (card) {
-      card.classList.remove('group-collapsed');
+      const gNum = parseInt(card.getAttribute('data-nav-group') || '0', 10);
+      if (gNum) expandGroupInDOM(gNum);
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
       const ta = card.querySelector('textarea');
       if (ta) ta.focus();

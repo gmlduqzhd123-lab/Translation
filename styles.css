@@ -8,6 +8,7 @@
   --border-light: #e2e8f0;
   --border-strong: #94a3b8;
   --text-main: #0f172a;
+  --text-primary: #0f172a;
   --text-secondary: #334155;
   --text-muted: #64748b;
   --primary: #1d4ed8;
@@ -2468,7 +2469,8 @@ body {
   background: #eff6ff;
 }
 
-.mini-tool-btn.is-speaking {
+.mini-tool-btn.is-speaking,
+.mini-tool-btn.is-active {
   background: #dbeafe;
   border-color: #2563eb;
   color: #1d4ed8;
@@ -2505,7 +2507,8 @@ body {
   word-break: keep-all;
 }
 
-.back-translation-empty {
+.back-translation-empty,
+.back-translation-text.is-empty {
   color: #64748b;
   font-weight: 500;
   font-style: italic;
@@ -2522,19 +2525,24 @@ body {
 }
 
 .accuracy-issue-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
   padding: 6px 10px;
   border-radius: 7px;
   font-size: 0.82rem;
   font-weight: 700;
 }
 
-.accuracy-issue-red {
+.accuracy-issue-red,
+.accuracy-issue-item.issue-error {
   background: #fef2f2;
   border: 1px solid #fca5a5;
   color: #991b1b;
 }
 
-.accuracy-issue-yellow {
+.accuracy-issue-yellow,
+.accuracy-issue-item.issue-warn {
   background: #fffbeb;
   border: 1px solid #fcd34d;
   color: #92400e;
