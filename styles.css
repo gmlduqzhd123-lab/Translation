@@ -4364,4 +4364,179 @@ body {
   }
 }
 
+/* ==================== 수업 활용 간단 후기 (대폭 간소화 UI) ==================== */
+.case-simple-header-row {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.case-quick-write-box {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.case-quick-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.case-quick-title {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.case-quick-meta-inputs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.case-quick-select,
+.case-quick-author {
+  padding: 7px 11px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.86rem;
+  color: #1e293b;
+}
+
+.case-quick-author {
+  width: 220px;
+}
+
+.case-quick-body-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.case-quick-textarea {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #0f172a;
+  resize: vertical;
+  min-height: 64px;
+}
+
+.case-quick-textarea:focus,
+.case-quick-select:focus,
+.case-quick-author:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.case-quick-submit-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+}
+
+.case-quick-submit-btn {
+  height: 100%;
+  min-height: 52px;
+  padding: 0 20px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.case-quick-hint {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.case-simple-filter-bar {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.case-simple-search-input {
+  flex: 1 1 240px;
+}
+
+.cases-simple-list {
+  gap: 10px;
+}
+
+.case-simple-card {
+  padding: 14px 16px;
+  border-radius: 12px;
+}
+
+.case-simple-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.case-simple-author {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.case-simple-date {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.case-simple-review-text {
+  margin: 0;
+  font-size: 0.93rem;
+  line-height: 1.55;
+  color: #0f172a;
+  white-space: pre-wrap;
+}
+
+.case-mini-report-btn {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.case-mini-report-btn:hover {
+  color: #475569;
+}
+
+@media (max-width: 640px) {
+  .case-quick-body-row {
+    grid-template-columns: 1fr;
+  }
+  .case-quick-author {
+    width: 100%;
+  }
+  .case-quick-submit-btn {
+    min-height: 44px;
+    width: 100%;
+  }
+}
+
+
 

@@ -27,9 +27,9 @@
   <script src="./ys-install.js" defer></script>
   <script src="./ys-qr.js" defer></script>
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="./styles.css?v=20261020-6" />
+  <link rel="stylesheet" href="./styles.css?v=20261020-7" />
   <script src="./vendor/jszip.min.js" defer></script>
-  <script type="module" src="./app.js?v=20261020-6"></script>
+  <script type="module" src="./app.js?v=20261020-7"></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">본문으로 바로 건너뛰기</a>
@@ -950,225 +950,152 @@
     </section>
     </div><!-- /#view-translator -->
 
-    <!-- ==================== 신규 기능 1: 수업 활용 사례 탭 (PRD 5) ==================== -->
+    <!-- ==================== 신규 기능 1: 수업 활용 사례·후기 탭 (간소화) ==================== -->
     <section id="view-cases" class="step-panel hidden" role="tabpanel" aria-labelledby="tab-view-cases">
       <div class="panel-card">
-        <div class="panel-header-row">
+        <div class="panel-header-row case-simple-header-row">
           <div>
-            <span class="step-tag">교사 현장 기록 · 공유</span>
-            <h2 id="cases-heading">💡 수업 활용 사례 공유</h2>
-            <p class="panel-desc">
-              다국어 수업자료 변환기를 실제 수업·학급 운영에 활용한 과정을 기록하고, 관리자 승인을 거친 사례를 다른 선생님과 공유합니다.
+            <h2 id="cases-heading" style="margin: 0 0 4px;">💡 수업 활용 간단 후기</h2>
+            <p class="panel-desc" style="margin: 0;">
+              수업자료나 가정통신문을 번역해 써보신 간단한 소감이나 팁을 편하게 남겨 주세요.
             </p>
           </div>
           <div class="header-actions">
-            <button type="button" id="btn-open-case-form" class="btn btn-primary">✏️ 수업 활용 사례 작성하기</button>
-            <button type="button" id="btn-open-my-cases" class="btn btn-secondary">📋 내 제출 글 상태 확인</button>
+            <button type="button" id="btn-open-my-cases" class="btn btn-outline btn-sm">📋 내 후기 상태 확인</button>
+            <button type="button" id="btn-refresh-cases" class="btn btn-surface btn-sm">🔄 새로고침</button>
           </div>
-        </div>
-
-        <!-- 안내 및 면책 고지 (PRD 5.1, 5.2) -->
-        <div class="alert-box alert-info" style="margin-bottom: 18px;">
-          <div class="alert-title">📌 수업 활용 사례 열람 및 작성 안내</div>
-          <p class="alert-message">
-            • 작성된 사례는 제출 직후 <strong>“관리자 승인중”</strong> 상태로 저장되며, 관리자가 개인정보 미포함 여부 등을 검토해 <strong>승인한 사례만 공개 목록에 게시</strong>됩니다.<br />
-            • 게시된 사례라는 사실만으로 수업 실적이 공식 검증된 것을 뜻하지 않으며, <strong>[예시 사례]</strong> 배지가 붙은 글은 기능 이해를 돕기 위한 샘플이므로 실제 수업 실적과 구분됩니다.
-          </p>
         </div>
 
         <div id="cases-server-status-banner" class="alert-box alert-warn hidden" role="status"></div>
 
-        <!-- 사례 작성 / 재제출 폼 영역 (간소화 폼) -->
-        <div id="case-write-panel" class="case-sub-panel hidden" role="region" aria-labelledby="case-form-title">
-          <div class="case-sub-panel-header">
-            <div>
-              <h3 id="case-form-title">✏️ 수업 활용 사례 간편 등록</h3>
-              <p class="panel-desc">제목과 활용 후기만 간단히 적어 주시면 됩니다. (※ 학생 이름·연락처 등 개인정보는 입력하지 마세요)</p>
-            </div>
-            <button type="button" id="btn-close-case-form" class="btn btn-outline btn-sm">닫기 ✕</button>
-          </div>
-
-          <form id="case-submit-form" class="case-form" novalidate>
+        <!-- 항상 열려 있는 초간단 한줄·간단 후기 작성 박스 -->
+        <div id="case-write-panel" class="case-quick-write-box" role="region" aria-labelledby="case-form-title">
+          <form id="case-submit-form" class="case-quick-form" novalidate>
             <input type="hidden" id="case-edit-id" value="" />
+            <input type="hidden" id="case-input-title" value="" />
+            <input type="hidden" id="case-input-grade" value="현장 교사" />
+            <input type="hidden" id="case-input-subject" value="수업·학급 활용" />
+            <input type="hidden" id="case-input-passcode" value="" />
+            <input type="checkbox" id="chk-case-factual" checked class="hidden" aria-hidden="true" />
 
-            <div class="case-form-grid">
-              <div class="form-field full-span">
-                <label for="case-input-title">제목 <span class="req-mark">*필수</span></label>
-                <input type="text" id="case-input-title" required maxlength="120" placeholder="예: 4학년 과학 실험 관찰지 베트남어 병기 수업 활용" />
-              </div>
-
-              <div class="case-form-compact-row full-span">
-                <div class="form-field">
-                  <label for="case-input-grade">학교급 · 학년</label>
-                  <select id="case-input-grade">
-                    <option value="초등 전학년·학급운영" selected>초등 전학년·학급운영</option>
-                    <option value="초등 1학년">초등 1학년</option>
-                    <option value="초등 2학년">초등 2학년</option>
-                    <option value="초등 3학년">초등 3학년</option>
-                    <option value="초등 4학년">초등 4학년</option>
-                    <option value="초등 5학년">초등 5학년</option>
-                    <option value="초등 6학년">초등 6학년</option>
-                    <option value="초등 다문화특별학급">초등 다문화특별학급</option>
-                    <option value="중·고등 / 기타">중·고등 / 기타</option>
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label for="case-input-subject">교과 / 활동 <span class="opt-mark">(선택)</span></label>
-                  <input type="text" id="case-input-subject" list="case-subject-presets" maxlength="40" placeholder="미입력 시 ‘수업·학급자료’ (예: 과학, 가정통신문)" />
-                  <datalist id="case-subject-presets">
-                    <option value="과학"></option>
-                    <option value="사회"></option>
-                    <option value="국어"></option>
-                    <option value="수학"></option>
-                    <option value="창의적 체험활동"></option>
-                    <option value="가정통신문·학급안내"></option>
-                    <option value="다문화 한국어(KSL)"></option>
-                  </datalist>
-                </div>
-
-                <div class="form-field">
-                  <label for="case-input-lang">번역 언어</label>
-                  <select id="case-input-lang">
-                    <option value="vi" selected>베트남어 (Tiếng Việt)</option>
-                    <option value="zh-Hans">중국어 간체 (中文(简体))</option>
-                    <option value="en">영어 (English)</option>
-                    <option value="ru">러시아어 (Русский)</option>
-                    <option value="ja">일본어 (日本語)</option>
-                    <option value="zh-Hant">중국어 번체 (中文(繁體))</option>
-                    <option value="uz">우즈베크어 (Oʻzbekcha)</option>
-                    <option value="mn">몽골어 (Монгол)</option>
-                    <option value="th">태국어 (ภาษาไทย)</option>
-                    <option value="km">캄보디아어 (ភាសាខ្មែរ)</option>
-                    <option value="tl">필리핀어 (Tagalog)</option>
-                    <option value="id">인도네시아어 (Bahasa Indonesia)</option>
-                    <option value="my">미얀마어 (မြန်မာဘာသာ)</option>
-                    <option value="ne">네팔어 (नेपाली)</option>
-                    <option value="si">스리랑카어 (සිංහල)</option>
-                    <option value="hi">힌디어 (हिन्दी)</option>
-                    <option value="bn">벵골어 (বাংলা)</option>
-                    <option value="ur">파키스탄어 (اردو)</option>
-                    <option value="kk">카자흐어 (Қазақша)</option>
-                    <option value="ky">키르기스어 (Кыргызча)</option>
-                    <option value="ar">아랍어 (العربية)</option>
-                    <option value="es">스페인어 (Español)</option>
-                    <option value="fr">프랑스어 (Français)</option>
-                    <option value="pt">포르투갈어 (Português)</option>
-                    <option value="tr">튀르키예어 (Türkçe)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-field full-span">
-                <label for="case-input-goal">수업 활용 내용 및 한줄 후기 <span class="req-mark">*필수</span></label>
-                <textarea id="case-input-goal" rows="4" required placeholder="어떤 수업자료나 안내문을 어떻게 번역해 활용하셨나요? 수업 적용 방법이나 좋았던 점·아쉬웠던 점을 1~3줄로 편하게 적어 주세요."></textarea>
-              </div>
-
-              <div class="form-field">
-                <label for="case-input-passcode">수정·삭제용 비밀번호 (4자 이상) <span class="req-mark">*필수</span></label>
-                <input type="password" id="case-input-passcode" required minlength="4" maxlength="30" autocomplete="new-password" placeholder="내 글 상태 조회·수정용 비밀번호 (4자 이상)" />
-              </div>
-
-              <div class="form-field">
-                <label for="case-input-author">작성자 표시명 <span class="opt-mark">(선택 · 미입력 시 ‘익명 교사’)</span></label>
-                <input type="text" id="case-input-author" maxlength="40" placeholder="미입력 시 ‘익명 교사’로 표시" />
+            <div class="case-quick-top-row">
+              <strong id="case-form-title" class="case-quick-title">✏️ 간단 후기 남기기</strong>
+              <div class="case-quick-meta-inputs">
+                <label for="case-input-lang" class="sr-only">번역 언어</label>
+                <select id="case-input-lang" class="case-quick-select" aria-label="활용한 번역 언어 선택">
+                  <option value="vi" selected>베트남어 (Tiếng Việt)</option>
+                  <option value="zh-Hans">중국어 간체 (中文(简体))</option>
+                  <option value="tl">필리핀어 (Tagalog)</option>
+                  <option value="km">캄보디아어 (ភាសាខ្មែរ)</option>
+                  <option value="ru">러시아어 (Русский)</option>
+                  <option value="uz">우즈베크어 (Oʻzbekcha)</option>
+                  <option value="kk">카자흐어 (Қазақша)</option>
+                  <option value="ky">키르기스어 (Кыргызча)</option>
+                  <option value="ja">일본어 (日本語)</option>
+                  <option value="mn">몽골어 (Монгол)</option>
+                  <option value="th">태국어 (ภาษาไทย)</option>
+                  <option value="en">영어 (English)</option>
+                  <option value="fr">프랑스어 (Français)</option>
+                  <option value="es">스페인어 (Español)</option>
+                  <option value="pt">포르투갈어 (Português)</option>
+                  <option value="ar">아랍어 (العربية)</option>
+                  <option value="tr">튀르키예어 (Türkçe)</option>
+                  <option value="zh-Hant">중국어 번체 (中文(繁體))</option>
+                  <option value="id">인도네시아어 (Bahasa Indonesia)</option>
+                  <option value="my">미얀마어 (မြန်မာဘာသာ)</option>
+                  <option value="ne">네팔어 (नेपाली)</option>
+                  <option value="hi">힌디어 (हिन्दी)</option>
+                  <option value="ur">파키스탄어 (اردو)</option>
+                  <option value="si">스리랑카어 (සිංහල)</option>
+                  <option value="bn">벵골어 (বাংলা)</option>
+                </select>
+                <input
+                  type="text"
+                  id="case-input-author"
+                  class="case-quick-author"
+                  maxlength="30"
+                  placeholder="작성자 별칭 (선택 · 기본: 익명 선생님)"
+                  aria-label="작성자 별칭 (선택)"
+                />
               </div>
             </div>
 
-            <!-- 제출 전 필수 확인란 (1개로 통합) -->
-            <div class="case-confirm-checks">
-              <label class="check-row">
-                <input type="checkbox" id="chk-case-factual" required checked />
-                <span><strong>[필수 확인]</strong> 실제 수업·학급 운영 활용 사례이며, 학생 개인정보를 포함하지 않았고 관리자 승인 후 공개 공유에 동의합니다.</span>
-              </label>
+            <div class="case-quick-body-row">
+              <textarea
+                id="case-input-goal"
+                class="case-quick-textarea"
+                rows="2"
+                required
+                maxlength="500"
+                placeholder="어떤 수업자료나 안내문을 번역해 써보셨나요? 좋았던 점이나 간단한 활용 팁을 1~2줄로 편하게 남겨 주세요. (학생 개인정보 제외)"
+              ></textarea>
+              <div class="case-quick-submit-col">
+                <button type="submit" id="btn-submit-case" class="btn btn-primary case-quick-submit-btn">💬 후기 등록</button>
+                <button type="button" id="btn-cancel-case-form" class="btn btn-outline btn-sm hidden">수정 취소</button>
+              </div>
             </div>
 
-            <div id="case-submit-feedback" class="alert-box hidden" role="status" aria-live="polite"></div>
-
-            <div class="case-form-actions">
-              <button type="submit" id="btn-submit-case" class="btn btn-primary btn-lg">📤 간편 제출하기</button>
-              <button type="button" id="btn-cancel-case-form" class="btn btn-outline">취소</button>
-            </div>
+            <p class="case-quick-hint">
+              ※ 학생 개인정보를 제외한 간단 후기를 남겨 주시면 관리자 확인 후 아래 목록에 게시됩니다.
+            </p>
+            <div id="case-submit-feedback" class="alert-box hidden" role="status" aria-live="polite" style="margin-top: 8px;"></div>
           </form>
         </div>
 
-        <!-- 내가 제출한 사례 상태 확인 및 수정·재제출 패널 (PRD 5.3) -->
+        <!-- 내가 제출한 후기 상태 확인 패널 (버튼 클릭 시에만 열림) -->
         <div id="my-cases-panel" class="case-sub-panel hidden" role="region" aria-labelledby="my-cases-title">
           <div class="case-sub-panel-header">
             <div>
-              <h3 id="my-cases-title">📋 내가 제출한 사례 및 승인 상태 확인</h3>
-              <p class="panel-desc">이 브라우저에서 제출한 글 또는 작성 시 입력한 확인 비밀번호로 <strong>관리자 승인중 / 승인됨 / 반려됨(사유 확인 및 재제출)</strong> 상태를 확인합니다.</p>
+              <h3 id="my-cases-title">📋 내가 남긴 후기 상태 확인</h3>
+              <p class="panel-desc">이 브라우저에서 남긴 후기의 승인 상태를 바로 확인하거나 수정·삭제할 수 있습니다.</p>
             </div>
             <button type="button" id="btn-close-my-cases" class="btn btn-outline btn-sm">닫기 ✕</button>
           </div>
 
-          <div class="my-cases-lookup-bar">
-            <input type="password" id="my-cases-passcode-input" class="drawer-input" placeholder="작성 시 설정한 비밀번호 입력 (다른 PC에서 조회하거나 수정·삭제 시 필요)" />
-            <button type="button" id="btn-lookup-my-cases" class="btn btn-secondary btn-sm">🔍 내 제출 글 조회</button>
+          <div class="my-cases-lookup-bar hidden">
+            <input type="password" id="my-cases-passcode-input" class="drawer-input" placeholder="비밀번호 입력" />
+            <button type="button" id="btn-lookup-my-cases" class="btn btn-secondary btn-sm">🔍 조회</button>
           </div>
 
           <div id="my-cases-list" class="cases-card-list"></div>
         </div>
 
-        <!-- 공개 사례 검색 및 필터 바 (PRD 5.1) -->
-        <div class="case-filter-bar" role="search" aria-label="공개된 수업 활용 사례 검색 필터">
-          <select id="filter-case-lang" aria-label="대상 언어별 필터">
-            <option value="all">🌐 전체 언어</option>
-            <option value="en">영어 (English)</option>
-            <option value="zh-Hans">중국어 간체</option>
+        <!-- 초간단 1줄 필터 바 -->
+        <div class="case-filter-bar case-simple-filter-bar" role="search" aria-label="수업 활용 후기 검색 필터">
+          <select id="filter-case-lang" aria-label="언어별 후기 필터">
+            <option value="all">🌐 전체 언어 후기 보기</option>
             <option value="vi">베트남어</option>
-            <option value="ja">일본어</option>
+            <option value="zh-Hans">중국어 간체</option>
+            <option value="tl">필리핀어</option>
+            <option value="km">캄보디아어</option>
             <option value="ru">러시아어</option>
-            <option value="zh-Hant">중국어 번체</option>
             <option value="uz">우즈베크어</option>
+            <option value="kk">카자흐어</option>
+            <option value="ky">키르기스어</option>
+            <option value="ja">일본어</option>
             <option value="mn">몽골어</option>
             <option value="th">태국어</option>
-            <option value="km">캄보디아어</option>
-            <option value="tl">필리핀어</option>
+            <option value="en">영어 (English)</option>
+            <option value="fr">프랑스어</option>
+            <option value="es">스페인어</option>
+            <option value="pt">포르투갈어</option>
+            <option value="ar">아랍어</option>
+            <option value="tr">튀르키예어</option>
+            <option value="zh-Hant">중국어 번체</option>
             <option value="id">인도네시아어</option>
             <option value="my">미얀마어</option>
             <option value="ne">네팔어</option>
-            <option value="si">스리랑카어</option>
             <option value="hi">힌디어</option>
-            <option value="bn">벵골어</option>
             <option value="ur">파키스탄어</option>
-            <option value="kk">카자흐어</option>
-            <option value="ky">키르기스어</option>
-            <option value="ar">아랍어</option>
-            <option value="es">스페인어</option>
-            <option value="fr">프랑스어</option>
-            <option value="pt">포르투갈어</option>
-            <option value="tr">튀르키예어</option>
+            <option value="si">스리랑카어</option>
+            <option value="bn">벵골어</option>
           </select>
 
-          <select id="filter-case-grade" aria-label="학년별 필터">
-            <option value="all">🏫 전체 학년</option>
-            <option value="초등 1학년">초등 1학년</option>
-            <option value="초등 2학년">초등 2학년</option>
-            <option value="초등 3학년">초등 3학년</option>
-            <option value="초등 4학년">초등 4학년</option>
-            <option value="초등 5학년">초등 5학년</option>
-            <option value="초등 6학년">초등 6학년</option>
-            <option value="초등 다문화특별학급">초등 다문화특별학급</option>
-            <option value="초등 전학년·학급운영">초등 전학년·학급운영</option>
-            <option value="중·고등 / 기타">중·고등 / 기타</option>
-          </select>
-
-          <select id="filter-case-format" aria-label="자료 형식별 필터">
-            <option value="all">📄 전체 자료 형식</option>
-            <option value="pptx">PPTX (슬라이드)</option>
-            <option value="hwpx">HWPX (한글 문서)</option>
-            <option value="both">PPTX + HWPX</option>
-          </select>
-
-          <input type="text" id="filter-case-subject" class="drawer-input" placeholder="교과·키워드 검색 (예: 과학, 가정통신문)" aria-label="교과 또는 제목 키워드 검색" />
-
-          <button type="button" id="btn-reset-case-filters" class="btn btn-outline btn-sm">필터 초기화</button>
-          <button type="button" id="btn-refresh-cases" class="btn btn-surface btn-sm">🔄 새로고침</button>
+          <input type="text" id="filter-case-subject" class="drawer-input case-simple-search-input" placeholder="🔍 후기 내용 검색 (예: 과학, 가정통신문, 병기)" aria-label="후기 키워드 검색" />
         </div>
 
-        <!-- 승인된 공개 사례 목록 -->
-        <div id="cases-public-list" class="cases-card-list" aria-live="polite"></div>
+        <!-- 승인된 공개 후기 목록 -->
+        <div id="cases-public-list" class="cases-card-list cases-simple-list" aria-live="polite"></div>
       </div>
     </section>
 

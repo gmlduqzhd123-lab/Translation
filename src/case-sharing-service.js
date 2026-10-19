@@ -39,54 +39,64 @@ export const CASE_STATUS_META = {
   }
 };
 
+const MY_CASE_PASSCODE_STORAGE_KEY = 'multilingual_translator_my_case_pw_v1';
+
 export const FALLBACK_SAMPLE_CASES = [
   {
     id: '00000000-0000-0000-0000-000000000001',
-    title: '[예시] 4학년 과학 식물의 한살이 관찰 슬라이드(PPTX) 베트남어 병기 자료 제작 예시',
+    title: '4학년 과학 관찰 슬라이드(PPTX) 베트남어 병기 활용 후기',
     used_date: '2026-04-10',
     school_grade: '초등 4학년',
     subject: '과학',
     target_language: 'vi',
     file_format: 'pptx',
     lesson_goal:
-      '강낭콩의 싹트기와 자람 과정을 설명하는 수업에서 다문화 학생이 실험 준비물과 관찰 순서를 모국어와 한국어로 동시에 이해하도록 지원',
-    tool_usage_process:
-      '1단계에서 예시 과학 수업 PPTX를 불러온 뒤, 3단계에서 베트남어(Tiếng Việt)를 선택해 브라우저 내장 Translator API로 초안을 생성하고 5단계에서 [한국어 원문 + 번역문 함께 표기(병기)] 모드로 다운로드함',
-    teacher_review_notes:
-      '학교 표준 용어집을 활용해 준비물, 모둠 활동, 실험 관찰 용어를 표준 베트남어 표현으로 통일하고, 역번역 검증으로 관찰 순서 문장의 의미가 정확한지 확인함',
-    observed_results_limits:
-      '원문과 번역문이 한 슬라이드에 함께 표시되어 교사가 한국어로 설명할 때 학생이 해당 부분을 쉽게 따라왔으나, 슬라이드 제목 상자는 2줄로 늘어나 PowerPoint에서 글자 크기를 2pt 줄여 조정함',
-    aggregate_metrics: '시연용 예시 자료 (실제 수업 실적 집계 제외)',
-    improvement_suggestions: '표 안의 텍스트가 길어질 때 줄바꿈 미리보기 경고가 도움이 되었음',
-    author_display_name: '작성 예시 안내용 (시스템 제공)',
+      '강낭콩 관찰 PPT를 베트남어 병기 모드로 변환해 수업했습니다. 원문과 베트남어가 한 슬라이드에 같이 나와서 다문화 학생이 실험 순서를 바로 따라올 수 있어 편리했습니다.',
+    tool_usage_process: '-',
+    teacher_review_notes: '-',
+    observed_results_limits: '-',
+    aggregate_metrics: '',
+    improvement_suggestions: '',
+    author_display_name: '4학년 담임교사 (예시)',
     status: 'approved',
     is_sample: true,
     created_at: '2026-04-10T09:00:00Z'
   },
   {
     id: '00000000-0000-0000-0000-000000000002',
-    title: '[예시] 과학 탐구 활동지 및 실험 안전 안내문(HWPX) 러시아어 변환 예시',
+    title: '학급 안내문·실험 활동지(HWPX) 러시아어 변환 후기',
     used_date: '2026-04-12',
     school_grade: '초등 5학년',
-    subject: '과학',
+    subject: '학급안내',
     target_language: 'ru',
     file_format: 'hwpx',
     lesson_goal:
-      '온도와 열 단원 실험 활동지의 안전 수칙과 탐구 기록 방법을 러시아어권 학생에게 정확히 안내',
-    tool_usage_process:
-      '한컴오피스 한글에서 .hwpx 표준 문서로 저장한 활동지를 업로드하고 러시아어(Русский) 자동 번역 초안 생성 후 문단별 검수를 거쳐 .hwpx 파일로 다운로드함',
-    teacher_review_notes:
-      '신호등 자동 진단에서 실험 온도 숫자(℃)와 번호가 누락되지 않았는지 점검하고, 고유명사(교실 명칭)는 [원문 그대로 유지]로 설정함',
-    observed_results_limits:
-      '한글(HWPX) 표 서식이 그대로 유지되어 별도 편집 시간을 줄였으며, 러시아어 문장 길이가 한국어보다 약 1.8배 길어져 한컴오피스에서 표 셀 여백을 한 번 확인함',
-    aggregate_metrics: '시연용 예시 자료 (실제 수업 실적 집계 제외)',
-    improvement_suggestions: '교과별 자주 쓰는 안전 수칙 표현을 사용자 단어장에 등록해 재사용함',
-    author_display_name: '작성 예시 안내용 (시스템 제공)',
+      '한글(HWPX)로 된 실험 안전 안내문을 러시아어로 번역했는데 표 서식이 그대로 유지되어 편집 시간을 크게 줄였습니다.',
+    tool_usage_process: '-',
+    teacher_review_notes: '-',
+    observed_results_limits: '-',
+    aggregate_metrics: '',
+    improvement_suggestions: '',
+    author_display_name: '5학년 담임교사 (예시)',
     status: 'approved',
     is_sample: true,
     created_at: '2026-04-12T09:00:00Z'
   }
 ];
+
+export function getOrCreateAutoCasePasscode() {
+  try {
+    if (typeof localStorage === 'undefined') return 'teacher2026';
+    let pw = localStorage.getItem(MY_CASE_PASSCODE_STORAGE_KEY);
+    if (!pw || pw.trim().length < 4) {
+      pw = 'tc-' + Math.random().toString(36).slice(2, 8);
+      localStorage.setItem(MY_CASE_PASSCODE_STORAGE_KEY, pw);
+    }
+    return pw;
+  } catch {
+    return 'teacher2026';
+  }
+}
 
 async function callSupabaseRpc(rpcName, params = {}) {
   const controller = new AbortController();
