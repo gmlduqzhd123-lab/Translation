@@ -427,21 +427,8 @@ function init() {
 }
 
 function getSavedRecentLanguages() {
-  const defaultList = ['vi', 'zh-Hans', 'tl', 'km'];
-  try {
-    if (typeof localStorage === 'undefined') return defaultList;
-    const raw = localStorage.getItem(PREF_RECENT_LANGS_STORAGE_KEY);
-    if (!raw) return defaultList;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) return defaultList;
-    const valid = parsed.filter((k) => TARGET_LANGUAGES.some((l) => l.key === k));
-    for (const d of defaultList) {
-      if (valid.length < 4 && !valid.includes(d)) valid.push(d);
-    }
-    return valid.slice(0, 4);
-  } catch {
-    return defaultList;
-  }
+  // 고정 순서: 1위 베트남어, 2·4위 중국어 간체, 3위 필리핀어, 5위 캄보디아어
+  return ['vi', 'zh-Hans', 'tl', 'km'];
 }
 
 function loadSavedTeacherPreferences() {
@@ -470,9 +457,6 @@ function rememberSelectedLanguage(langKey) {
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(PREF_LANG_STORAGE_KEY, langKey);
-      const currentRecent = getSavedRecentLanguages().filter((k) => k !== langKey);
-      currentRecent.unshift(langKey);
-      localStorage.setItem(PREF_RECENT_LANGS_STORAGE_KEY, JSON.stringify(currentRecent.slice(0, 4)));
     }
   } catch {
     // ignore
@@ -535,7 +519,7 @@ function applySelectedLanguageEverywhere(langKey) {
 function renderRecentLanguageBars() {
   const recentKeys = getSavedRecentLanguages();
 
-  // Step 1 Card ① & Toolkit top bar: Clean language pill buttons
+  // Step 1 Card ① & Toolkit top bar: Clean language pill buttons (고정 위치)
   const pillContainers = [els.step1RecentLangsBar, els.toolkitRecentLangsBar].filter(Boolean);
   for (const pillContainer of pillContainers) {
     pillContainer.innerHTML = '';
@@ -546,7 +530,7 @@ function renderRecentLanguageBars() {
       btn.type = 'button';
       btn.className = `step1-lang-pill${isSelected ? ' is-current' : ''}`;
       btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-      btn.textContent = `${meta.label}${isSelected ? ' ✓' : ''}`;
+      btn.textContent = meta.label;
       btn.addEventListener('click', () => {
         applySelectedLanguageEverywhere(key);
         scheduleAutoSave();
