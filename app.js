@@ -4804,24 +4804,10 @@ function renderPublicCasesList() {
           <span class="case-simple-author">${escapeHtml(item.author_display_name || '익명 선생님')}</span>
           <span class="case-simple-date">· ${escapeHtml(item.used_date || '-')}</span>
         </div>
-        <button type="button" class="link-btn case-mini-report-btn" data-role="toggle-report-box">
-          신고·삭제요청
-        </button>
       </div>
 
       ${renderCaseBodySectionsHtml(item)}
 
-      <div class="case-report-drawer hidden" data-role="report-drawer">
-        <div class="case-report-row">
-          <select class="drawer-input" data-role="report-type" aria-label="요청 유형 선택">
-            <option value="report">부적절·개인정보 신고</option>
-            <option value="delete_request">후기 삭제 요청</option>
-          </select>
-          <input type="text" class="drawer-input" data-role="report-reason" placeholder="요청 사유를 간단히 입력해 주세요" />
-          <button type="button" class="btn btn-secondary btn-sm" data-role="submit-report-btn">접수</button>
-        </div>
-        <span class="drawer-feedback" data-role="report-feedback"></span>
-      </div>
     `;
 
     const toggleReportBtn = card.querySelector('[data-role="toggle-report-box"]');
