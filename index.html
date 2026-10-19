@@ -1024,12 +1024,12 @@
 
         <div id="cases-server-status-banner" class="alert-box alert-warn hidden" role="status"></div>
 
-        <!-- 사례 작성 / 재제출 폼 영역 (기본 접힘 또는 버튼 클릭 시 열림) -->
+        <!-- 사례 작성 / 재제출 폼 영역 (간소화 폼) -->
         <div id="case-write-panel" class="case-sub-panel hidden" role="region" aria-labelledby="case-form-title">
           <div class="case-sub-panel-header">
             <div>
-              <h3 id="case-form-title">✏️ 수업 활용 사례 작성 및 제출</h3>
-              <p class="panel-desc">학생의 이름·연락처·사진·개별 학습 이력·학생별 평가 결과 등 개인정보는 절대 입력하지 마세요. (이미지·파일 첨부 제외)</p>
+              <h3 id="case-form-title">✏️ 수업 활용 사례 간편 등록</h3>
+              <p class="panel-desc">제목과 활용 후기만 간단히 적어 주시면 됩니다. (※ 학생 이름·연락처 등 개인정보는 입력하지 마세요)</p>
             </div>
             <button type="button" id="btn-close-case-form" class="btn btn-outline btn-sm">닫기 ✕</button>
           </div>
@@ -1040,138 +1040,99 @@
             <div class="case-form-grid">
               <div class="form-field full-span">
                 <label for="case-input-title">제목 <span class="req-mark">*필수</span></label>
-                <input type="text" id="case-input-title" required maxlength="120" placeholder="예: 4학년 과학 식물의 한살이 실험 관찰지 베트남어·한국어 병기 수업 적용" />
+                <input type="text" id="case-input-title" required maxlength="120" placeholder="예: 4학년 과학 실험 관찰지 베트남어 병기 수업 활용" />
               </div>
 
-              <div class="form-field">
-                <label for="case-input-date">활용 날짜 <span class="req-mark">*필수</span></label>
-                <input type="date" id="case-input-date" required />
-              </div>
+              <div class="case-form-compact-row full-span">
+                <div class="form-field">
+                  <label for="case-input-grade">학교급 · 학년</label>
+                  <select id="case-input-grade">
+                    <option value="초등 전학년·학급운영" selected>초등 전학년·학급운영</option>
+                    <option value="초등 1학년">초등 1학년</option>
+                    <option value="초등 2학년">초등 2학년</option>
+                    <option value="초등 3학년">초등 3학년</option>
+                    <option value="초등 4학년">초등 4학년</option>
+                    <option value="초등 5학년">초등 5학년</option>
+                    <option value="초등 6학년">초등 6학년</option>
+                    <option value="초등 다문화특별학급">초등 다문화특별학급</option>
+                    <option value="중·고등 / 기타">중·고등 / 기타</option>
+                  </select>
+                </div>
 
-              <div class="form-field">
-                <label for="case-input-grade">학교급 · 학년 <span class="req-mark">*필수</span></label>
-                <select id="case-input-grade" required>
-                  <option value="">선택해 주세요</option>
-                  <option value="초등 1학년">초등 1학년</option>
-                  <option value="초등 2학년">초등 2학년</option>
-                  <option value="초등 3학년">초등 3학년</option>
-                  <option value="초등 4학년">초등 4학년</option>
-                  <option value="초등 5학년">초등 5학년</option>
-                  <option value="초등 6학년">초등 6학년</option>
-                  <option value="초등 다문화특별학급">초등 다문화특별학급</option>
-                  <option value="초등 전학년·학급운영">초등 전학년·학급운영</option>
-                  <option value="중·고등 / 기타">중·고등 / 기타</option>
-                </select>
-              </div>
+                <div class="form-field">
+                  <label for="case-input-subject">교과 / 활동 <span class="opt-mark">(선택)</span></label>
+                  <input type="text" id="case-input-subject" list="case-subject-presets" maxlength="40" placeholder="미입력 시 ‘수업·학급자료’ (예: 과학, 가정통신문)" />
+                  <datalist id="case-subject-presets">
+                    <option value="과학"></option>
+                    <option value="사회"></option>
+                    <option value="국어"></option>
+                    <option value="수학"></option>
+                    <option value="창의적 체험활동"></option>
+                    <option value="가정통신문·학급안내"></option>
+                    <option value="다문화 한국어(KSL)"></option>
+                  </datalist>
+                </div>
 
-              <div class="form-field">
-                <label for="case-input-subject">교과 / 영역 <span class="req-mark">*필수</span></label>
-                <input type="text" id="case-input-subject" required maxlength="40" placeholder="예: 과학, 사회, 국어, 창체, 가정통신문" />
-              </div>
-
-              <div class="form-field">
-                <label for="case-input-lang">대상 언어 <span class="req-mark">*필수</span></label>
-                <select id="case-input-lang" required>
-                  <option value="">선택해 주세요</option>
-                  <option value="en">영어 (English)</option>
-                  <option value="zh-Hans">중국어 간체 (中文(简体))</option>
-                  <option value="vi">베트남어 (Tiếng Việt)</option>
-                  <option value="ja">일본어 (日本語)</option>
-                  <option value="ru">러시아어 (Русский)</option>
-                  <option value="zh-Hant">중국어 번체 (中文(繁體))</option>
-                  <option value="uz">우즈베크어 (Oʻzbekcha)</option>
-                  <option value="mn">몽골어 (Монгол)</option>
-                  <option value="th">태국어 (ภาษาไทย)</option>
-                  <option value="km">캄보디아어 (ភាសាខ្មែរ)</option>
-                  <option value="tl">필리핀어 (Tagalog)</option>
-                  <option value="id">인도네시아어 (Bahasa Indonesia)</option>
-                  <option value="my">미얀마어 (မြန်မာဘာသာ)</option>
-                  <option value="ne">네팔어 (नेपाली)</option>
-                  <option value="si">스리랑카어 (සිංහල)</option>
-                  <option value="hi">힌디어 (हिन्दी)</option>
-                  <option value="bn">벵골어 (বাংলা)</option>
-                  <option value="ur">파키스탄어 (اردو)</option>
-                  <option value="kk">카자흐어 (Қазақша)</option>
-                  <option value="ky">키르기스어 (Кыргызча)</option>
-                  <option value="ar">아랍어 (العربية)</option>
-                  <option value="es">스페인어 (Español)</option>
-                  <option value="fr">프랑스어 (Français)</option>
-                  <option value="pt">포르투갈어 (Português)</option>
-                  <option value="tr">튀르키예어 (Türkçe)</option>
-                </select>
-              </div>
-
-              <div class="form-field">
-                <label for="case-input-format">자료 형식 <span class="req-mark">*필수</span></label>
-                <select id="case-input-format" required>
-                  <option value="pptx">PPTX (파워포인트 슬라이드)</option>
-                  <option value="hwpx">HWPX (한글 표준 문서·활동지)</option>
-                  <option value="both">PPTX + HWPX 모두 활용</option>
-                </select>
-              </div>
-
-              <div class="form-field">
-                <label for="case-input-author">공개 표시 이름 <span class="opt-mark">(선택)</span></label>
-                <input type="text" id="case-input-author" maxlength="40" placeholder="미입력 시 ‘익명 교사’로 표시 (예: 서울 ○○초 교사)" />
+                <div class="form-field">
+                  <label for="case-input-lang">번역 언어</label>
+                  <select id="case-input-lang">
+                    <option value="vi" selected>베트남어 (Tiếng Việt)</option>
+                    <option value="zh-Hans">중국어 간체 (中文(简体))</option>
+                    <option value="en">영어 (English)</option>
+                    <option value="ru">러시아어 (Русский)</option>
+                    <option value="ja">일본어 (日本語)</option>
+                    <option value="zh-Hant">중국어 번체 (中文(繁體))</option>
+                    <option value="uz">우즈베크어 (Oʻzbekcha)</option>
+                    <option value="mn">몽골어 (Монгол)</option>
+                    <option value="th">태국어 (ภาษาไทย)</option>
+                    <option value="km">캄보디아어 (ភាសាខ្មែរ)</option>
+                    <option value="tl">필리핀어 (Tagalog)</option>
+                    <option value="id">인도네시아어 (Bahasa Indonesia)</option>
+                    <option value="my">미얀마어 (မြန်မာဘာသာ)</option>
+                    <option value="ne">네팔어 (नेपाली)</option>
+                    <option value="si">스리랑카어 (සිංහල)</option>
+                    <option value="hi">힌디어 (हिन्दी)</option>
+                    <option value="bn">벵골어 (বাংলা)</option>
+                    <option value="ur">파키스탄어 (اردو)</option>
+                    <option value="kk">카자흐어 (Қазақша)</option>
+                    <option value="ky">키르기스어 (Кыргызча)</option>
+                    <option value="ar">아랍어 (العربية)</option>
+                    <option value="es">스페인어 (Español)</option>
+                    <option value="fr">프랑스어 (Français)</option>
+                    <option value="pt">포르투갈어 (Português)</option>
+                    <option value="tr">튀르키예어 (Türkçe)</option>
+                  </select>
+                </div>
               </div>
 
               <div class="form-field full-span">
-                <label for="case-input-goal">수업 목표 <span class="req-mark">*필수</span></label>
-                <textarea id="case-input-goal" rows="2" required placeholder="해당 차시 또는 활동에서 다국어 수업자료를 통해 달성하고자 한 수업 목표를 적어 주세요."></textarea>
-              </div>
-
-              <div class="form-field full-span">
-                <label for="case-input-process">도구 사용 과정 <span class="req-mark">*필수</span></label>
-                <textarea id="case-input-process" rows="3" required placeholder="파일 준비, 대상 언어 선택, 자동 번역 또는 수동 입력, 단독/병기 출력 등 변환기를 사용한 구체적인 과정을 적어 주세요."></textarea>
-              </div>
-
-              <div class="form-field full-span">
-                <label for="case-input-review">교사의 번역 검수 · 수정 내용 <span class="req-mark">*필수</span></label>
-                <textarea id="case-input-review" rows="3" required placeholder="역번역 대조, 숫자·단위 확인, 학교 표준 용어집 적용, 원문 유지 설정 등 선생님이 직접 검수·수정한 내용을 적어 주세요."></textarea>
-              </div>
-
-              <div class="form-field full-span">
-                <label for="case-input-results">관찰한 결과와 한계 <span class="req-mark">*필수</span></label>
-                <textarea id="case-input-results" rows="3" required placeholder="수업 중 관찰한 긍정적 변화와 함께, 번역 표현이나 문서 레이아웃 등에서 아쉬웠던 한계점을 솔직하게 적어 주세요."></textarea>
+                <label for="case-input-goal">수업 활용 내용 및 한줄 후기 <span class="req-mark">*필수</span></label>
+                <textarea id="case-input-goal" rows="4" required placeholder="어떤 수업자료나 안내문을 어떻게 번역해 활용하셨나요? 수업 적용 방법이나 좋았던 점·아쉬웠던 점을 1~3줄로 편하게 적어 주세요."></textarea>
               </div>
 
               <div class="form-field">
-                <label for="case-input-metrics">학급 수 · 교원 수 등 집계 수치 <span class="opt-mark">(선택)</span></label>
-                <input type="text" id="case-input-metrics" maxlength="100" placeholder="예: 1개 학급(22명 중 다문화 학생 2명), 동학년 교사 3명 공동 활용 (학생 개인 식별 정보 제외)" />
+                <label for="case-input-passcode">수정·삭제용 비밀번호 (4자 이상) <span class="req-mark">*필수</span></label>
+                <input type="password" id="case-input-passcode" required minlength="4" maxlength="30" autocomplete="new-password" placeholder="내 글 상태 조회·수정용 비밀번호 (4자 이상)" />
               </div>
 
               <div class="form-field">
-                <label for="case-input-improvements">향후 개선 아이디어 <span class="opt-mark">(선택)</span></label>
-                <input type="text" id="case-input-improvements" maxlength="150" placeholder="도구나 수업 적용 측면에서 개선되었으면 하는 점" />
-              </div>
-
-              <div class="form-field full-span">
-                <label for="case-input-passcode">작성자 본인 확인·수정용 비밀번호 (4자 이상) <span class="req-mark">*필수</span></label>
-                <input type="password" id="case-input-passcode" required minlength="4" maxlength="30" autocomplete="new-password" placeholder="내 제출 글 상태 조회 및 반려 후 수정·삭제 시 사용할 비밀번호 (4자 이상)" />
+                <label for="case-input-author">작성자 표시명 <span class="opt-mark">(선택 · 미입력 시 ‘익명 교사’)</span></label>
+                <input type="text" id="case-input-author" maxlength="40" placeholder="미입력 시 ‘익명 교사’로 표시" />
               </div>
             </div>
 
-            <!-- 제출 전 필수 확인란 3종 (PRD 7) -->
+            <!-- 제출 전 필수 확인란 (1개로 통합) -->
             <div class="case-confirm-checks">
-              <h4>✅ 제출 전 필수 확인 사항</h4>
               <label class="check-row">
-                <input type="checkbox" id="chk-case-factual" required />
-                <span><strong>[필수] 실제 활용 사실 확인:</strong> 허위 생성이 아닌 실제 수업·학급 운영에서 도구를 활용한 사실에 기반하여 작성했습니다.</span>
-              </label>
-              <label class="check-row">
-                <input type="checkbox" id="chk-case-nopii" required />
-                <span><strong>[필수] 학생 개인정보 제거 확인:</strong> 본문에 학생의 실명, 연락처, 사진, 개별 학습 이력이나 개인별 평가 결과가 일체 포함되지 않았음을 확인했습니다.</span>
-              </label>
-              <label class="check-row">
-                <input type="checkbox" id="chk-case-rights" required />
-                <span><strong>[필수] 공개 및 저작권 확인:</strong> 작성한 사례 내용이 타인의 저작권을 침해하지 않으며, 관리자 승인 후 공개 목록에 공유되는 것에 동의합니다.</span>
+                <input type="checkbox" id="chk-case-factual" required checked />
+                <span><strong>[필수 확인]</strong> 실제 수업·학급 운영 활용 사례이며, 학생 개인정보를 포함하지 않았고 관리자 승인 후 공개 공유에 동의합니다.</span>
               </label>
             </div>
 
             <div id="case-submit-feedback" class="alert-box hidden" role="status" aria-live="polite"></div>
 
             <div class="case-form-actions">
-              <button type="submit" id="btn-submit-case" class="btn btn-primary btn-lg">📤 사례 제출하기 (제출 후 ‘관리자 승인중’)</button>
+              <button type="submit" id="btn-submit-case" class="btn btn-primary btn-lg">📤 간편 제출하기</button>
               <button type="button" id="btn-cancel-case-form" class="btn btn-outline">취소</button>
             </div>
           </form>

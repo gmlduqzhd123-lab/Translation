@@ -2995,6 +2995,19 @@ body {
   gap: 14px;
 }
 
+.case-form-compact-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 760px) {
+  .case-form-compact-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .form-field {
   display: flex;
   flex-direction: column;
@@ -3042,9 +3055,9 @@ body {
 }
 
 .case-confirm-checks {
-  margin-top: 16px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
+  margin-top: 14px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
@@ -3176,6 +3189,10 @@ body {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 11px 14px;
+}
+
+.case-section-box.full-span {
+  grid-column: 1 / -1;
 }
 
 .case-section-box h4 {

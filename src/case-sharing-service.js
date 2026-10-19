@@ -187,33 +187,47 @@ export async function fetchApprovedCases() {
 
 export async function submitLessonCase(formData) {
   try {
+    const unifiedBody = (formData.lesson_goal ?? formData.lessonGoal ?? '').trim();
+    const confirmedAll = Boolean(
+      formData.confirmed_factual ?? formData.confirmedFactual ?? formData.confirmed_authentic
+    );
     const result = await callSupabaseRpc('submit_translation_case', {
       p_title: formData.title,
-      p_used_date: formData.used_date ?? formData.usedDate,
-      p_school_grade: formData.school_grade ?? formData.schoolGrade ?? formData.school_level,
-      p_subject: formData.subject,
-      p_target_language: formData.target_language ?? formData.targetLanguage,
+      p_used_date: formData.used_date ?? formData.usedDate ?? new Date().toISOString().slice(0, 10),
+      p_school_grade:
+        (formData.school_grade ?? formData.schoolGrade ?? formData.school_level) ||
+        '초등 전학년·학급운영',
+      p_subject: (formData.subject || '').trim() || '수업·학급자료',
+      p_target_language: (formData.target_language ?? formData.targetLanguage) || 'vi',
       p_file_format: formData.file_format ?? formData.fileFormat ?? 'pptx',
-      p_lesson_goal: formData.lesson_goal ?? formData.lessonGoal,
-      p_tool_usage_process: formData.tool_usage_process ?? formData.toolUsageProcess,
+      p_lesson_goal: unifiedBody,
+      p_tool_usage_process:
+        (formData.tool_usage_process ?? formData.toolUsageProcess ?? '').trim() || unifiedBody,
       p_teacher_review_notes:
-        formData.teacher_review_notes ?? formData.teacherReviewNotes ?? formData.review_modifications,
+        (
+          formData.teacher_review_notes ??
+          formData.teacherReviewNotes ??
+          formData.review_modifications ??
+          ''
+        ).trim() || unifiedBody,
       p_observed_results_limits:
-        formData.observed_results_limits ?? formData.observedResultsLimits,
+        (formData.observed_results_limits ?? formData.observedResultsLimits ?? '').trim() ||
+        unifiedBody,
       p_aggregate_metrics:
         formData.aggregate_metrics ?? formData.aggregateMetrics ?? formData.metrics_summary ?? '',
       p_improvement_suggestions:
         formData.improvement_suggestions ?? formData.improvementSuggestions ?? '',
       p_author_display_name:
-        formData.author_display_name ?? formData.authorDisplayName ?? '익명 교사',
-      p_confirmed_factual: Boolean(
-        formData.confirmed_factual ?? formData.confirmedFactual ?? formData.confirmed_authentic
+        (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '익명 교사',
+      p_confirmed_factual: confirmedAll,
+      p_confirmed_no_pii: Boolean(
+        formData.confirmed_no_pii ?? formData.confirmedNoPii ?? confirmedAll
       ),
-      p_confirmed_no_pii: Boolean(formData.confirmed_no_pii ?? formData.confirmedNoPii),
       p_confirmed_public_rights: Boolean(
         formData.confirmed_public_rights ??
           formData.confirmedPublicRights ??
-          formData.confirmed_copyright
+          formData.confirmed_copyright ??
+          confirmedAll
       ),
       p_author_passcode: formData.author_passcode ?? formData.authorPasscode
     });
@@ -283,27 +297,37 @@ export const fetchMySubmittedCases = fetchMyCases;
 
 export async function resubmitLessonCase(caseId, authorPasscode, formData) {
   try {
+    const unifiedBody = (formData.lesson_goal ?? formData.lessonGoal ?? '').trim();
     const result = await callSupabaseRpc('resubmit_translation_case', {
       p_case_id: caseId,
       p_author_passcode: authorPasscode,
       p_title: formData.title,
-      p_used_date: formData.used_date ?? formData.usedDate,
-      p_school_grade: formData.school_grade ?? formData.schoolGrade ?? formData.school_level,
-      p_subject: formData.subject,
-      p_target_language: formData.target_language ?? formData.targetLanguage,
+      p_used_date: formData.used_date ?? formData.usedDate ?? new Date().toISOString().slice(0, 10),
+      p_school_grade:
+        (formData.school_grade ?? formData.schoolGrade ?? formData.school_level) ||
+        '초등 전학년·학급운영',
+      p_subject: (formData.subject || '').trim() || '수업·학급자료',
+      p_target_language: (formData.target_language ?? formData.targetLanguage) || 'vi',
       p_file_format: formData.file_format ?? formData.fileFormat ?? 'pptx',
-      p_lesson_goal: formData.lesson_goal ?? formData.lessonGoal,
-      p_tool_usage_process: formData.tool_usage_process ?? formData.toolUsageProcess,
+      p_lesson_goal: unifiedBody,
+      p_tool_usage_process:
+        (formData.tool_usage_process ?? formData.toolUsageProcess ?? '').trim() || unifiedBody,
       p_teacher_review_notes:
-        formData.teacher_review_notes ?? formData.teacherReviewNotes ?? formData.review_modifications,
+        (
+          formData.teacher_review_notes ??
+          formData.teacherReviewNotes ??
+          formData.review_modifications ??
+          ''
+        ).trim() || unifiedBody,
       p_observed_results_limits:
-        formData.observed_results_limits ?? formData.observedResultsLimits,
+        (formData.observed_results_limits ?? formData.observedResultsLimits ?? '').trim() ||
+        unifiedBody,
       p_aggregate_metrics:
         formData.aggregate_metrics ?? formData.aggregateMetrics ?? formData.metrics_summary ?? '',
       p_improvement_suggestions:
         formData.improvement_suggestions ?? formData.improvementSuggestions ?? '',
       p_author_display_name:
-        formData.author_display_name ?? formData.authorDisplayName ?? '익명 교사'
+        (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '익명 교사'
     });
     const status = result?.status || 'pending';
     return {

@@ -4210,38 +4210,103 @@ function bindCaseSharingEvents() {
   });
 }
 
+function buildUnifiedCaseText(item) {
+  if (!item) return '';
+  const goal = (item.lesson_goal || '').trim();
+  const proc = (item.tool_usage_process || '').trim();
+  const rev = (item.teacher_review_notes || '').trim();
+  const res = (item.observed_results_limits || '').trim();
+  if (!proc || proc === '-' || proc === goal) {
+    return goal;
+  }
+  return [goal, proc, rev, res].filter((v, idx, arr) => v && v !== '-' && arr.indexOf(v) === idx).join('\n\n');
+}
+
+function renderCaseBodySectionsHtml(item) {
+  const goal = (item.lesson_goal || '').trim();
+  const proc = (item.tool_usage_process || '').trim();
+  const rev = (item.teacher_review_notes || '').trim();
+  const res = (item.observed_results_limits || '').trim();
+  const isUnified = !proc || proc === '-' || (proc === goal && (!rev || rev === goal) && (!res || res === goal));
+
+  if (isUnified) {
+    return `
+      <div class="case-sections-grid">
+        <div class="case-section-box full-span">
+          <h4>📝 수업 활용 내용 및 후기</h4>
+          <p>${escapeHtml(goal)}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="case-sections-grid">
+      <div class="case-section-box">
+        <h4>🎯 수업 목표</h4>
+        <p>${escapeHtml(goal)}</p>
+      </div>
+      <div class="case-section-box">
+        <h4>🛠️ 도구 사용 과정</h4>
+        <p>${escapeHtml(proc)}</p>
+      </div>
+      <div class="case-section-box">
+        <h4>🔎 교사의 번역 검수 · 수정 내용</h4>
+        <p>${escapeHtml(rev)}</p>
+      </div>
+      <div class="case-section-box">
+        <h4>📌 관찰한 결과와 한계</h4>
+        <p>${escapeHtml(res)}</p>
+      </div>
+    </div>
+  `;
+}
+
 function openCaseWritePanel(editItem = null) {
   if (!els.caseWritePanel || !els.caseSubmitForm) return;
   els.caseSubmitFeedback?.classList.add('hidden');
 
   if (editItem) {
-    els.caseFormTitle.textContent = '✏️ 반려된 수업 활용 사례 수정 및 재제출';
-    els.btnSubmitCase.textContent = '📤 수정 내용 다시 제출하기 (제출 후 ‘관리자 승인중’)';
+    els.caseFormTitle.textContent = '✏️ 수업 활용 사례 수정 및 재제출';
+    els.btnSubmitCase.textContent = '📤 수정 내용 다시 제출하기';
     els.caseEditId.value = editItem.id;
+    els.caseEditId.dataset.usedDate = editItem.used_date || new Date().toISOString().slice(0, 10);
+    els.caseEditId.dataset.fileFormat = editItem.file_format || state.parsedDoc?.fileType || 'pptx';
     els.caseInputTitle.value = editItem.title || '';
-    els.caseInputDate.value = editItem.used_date || new Date().toISOString().slice(0, 10);
-    els.caseInputGrade.value = editItem.school_grade || '';
-    els.caseInputSubject.value = editItem.subject || '';
-    els.caseInputLang.value = editItem.target_language || '';
-    els.caseInputFormat.value = editItem.file_format || 'pptx';
-    els.caseInputAuthor.value = editItem.author_display_name || '';
-    els.caseInputGoal.value = editItem.lesson_goal || '';
-    els.caseInputProcess.value = editItem.tool_usage_process || '';
-    els.caseInputReview.value = editItem.teacher_review_notes || '';
-    els.caseInputResults.value = editItem.observed_results_limits || '';
-    els.caseInputMetrics.value = editItem.aggregate_metrics || '';
-    els.caseInputImprovements.value = editItem.improvement_suggestions || '';
-    els.caseInputPasscode.value = els.myCasesPasscodeInput?.value || '';
-    els.chkCaseFactual.checked = true;
-    els.chkCaseNopii.checked = true;
-    els.chkCaseRights.checked = true;
+    if (els.caseInputDate) els.caseInputDate.value = editItem.used_date || new Date().toISOString().slice(0, 10);
+    if (els.caseInputGrade) els.caseInputGrade.value = editItem.school_grade || '초등 전학년·학급운영';
+    if (els.caseInputSubject) els.caseInputSubject.value = editItem.subject || '';
+    if (els.caseInputLang) els.caseInputLang.value = editItem.target_language || state.selectedLangKey || 'vi';
+    if (els.caseInputFormat) els.caseInputFormat.value = editItem.file_format || 'pptx';
+    if (els.caseInputAuthor) els.caseInputAuthor.value = editItem.author_display_name === '익명 교사' ? '' : editItem.author_display_name || '';
+    if (els.caseInputGoal) els.caseInputGoal.value = buildUnifiedCaseText(editItem);
+    if (els.caseInputProcess) els.caseInputProcess.value = '';
+    if (els.caseInputReview) els.caseInputReview.value = '';
+    if (els.caseInputResults) els.caseInputResults.value = '';
+    if (els.caseInputMetrics) els.caseInputMetrics.value = editItem.aggregate_metrics || '';
+    if (els.caseInputImprovements) els.caseInputImprovements.value = editItem.improvement_suggestions || '';
+    if (els.caseInputPasscode) els.caseInputPasscode.value = els.myCasesPasscodeInput?.value || '';
+    if (els.chkCaseFactual) els.chkCaseFactual.checked = true;
+    if (els.chkCaseNopii) els.chkCaseNopii.checked = true;
+    if (els.chkCaseRights) els.chkCaseRights.checked = true;
   } else {
-    els.caseFormTitle.textContent = '✏️ 수업 활용 사례 작성 및 제출';
-    els.btnSubmitCase.textContent = '📤 사례 제출하기 (제출 후 ‘관리자 승인중’)';
+    els.caseFormTitle.textContent = '✏️ 수업 활용 사례 간편 등록';
+    els.btnSubmitCase.textContent = '📤 간편 제출하기';
     els.caseSubmitForm.reset();
     els.caseEditId.value = '';
+    delete els.caseEditId.dataset.usedDate;
+    delete els.caseEditId.dataset.fileFormat;
     if (els.caseInputDate) {
       els.caseInputDate.value = new Date().toISOString().slice(0, 10);
+    }
+    if (els.caseInputGrade && !els.caseInputGrade.value) {
+      els.caseInputGrade.value = '초등 전학년·학급운영';
+    }
+    if (els.caseInputLang) {
+      els.caseInputLang.value = state.selectedLangKey || 'vi';
+    }
+    if (els.chkCaseFactual) {
+      els.chkCaseFactual.checked = true;
     }
   }
 
@@ -4255,54 +4320,58 @@ async function handleSubmitCaseForm(e) {
   if (!els.caseSubmitFeedback) return;
 
   const editId = (els.caseEditId?.value || '').trim();
+  const unifiedContent = (els.caseInputGoal?.value || '').trim();
+  const confirmed = Boolean(els.chkCaseFactual?.checked);
+  const autoUsedDate =
+    (els.caseInputDate?.value || '').trim() ||
+    els.caseEditId?.dataset?.usedDate ||
+    new Date().toISOString().slice(0, 10);
+  const autoFileFormat =
+    (els.caseInputFormat?.value || '').trim() ||
+    els.caseEditId?.dataset?.fileFormat ||
+    state.parsedDoc?.fileType ||
+    'pptx';
+
   const payload = {
     title: (els.caseInputTitle?.value || '').trim(),
-    used_date: (els.caseInputDate?.value || '').trim(),
-    school_grade: (els.caseInputGrade?.value || '').trim(),
-    subject: (els.caseInputSubject?.value || '').trim(),
-    target_language: (els.caseInputLang?.value || '').trim(),
-    file_format: (els.caseInputFormat?.value || 'pptx').trim(),
+    used_date: autoUsedDate,
+    school_grade: (els.caseInputGrade?.value || '').trim() || '초등 전학년·학급운영',
+    subject: (els.caseInputSubject?.value || '').trim() || '수업·학급자료',
+    target_language: (els.caseInputLang?.value || '').trim() || state.selectedLangKey || 'vi',
+    file_format: autoFileFormat,
     author_display_name: (els.caseInputAuthor?.value || '').trim() || '익명 교사',
-    lesson_goal: (els.caseInputGoal?.value || '').trim(),
-    tool_usage_process: (els.caseInputProcess?.value || '').trim(),
-    teacher_review_notes: (els.caseInputReview?.value || '').trim(),
-    observed_results_limits: (els.caseInputResults?.value || '').trim(),
+    lesson_goal: unifiedContent,
+    tool_usage_process: (els.caseInputProcess?.value || '').trim() || unifiedContent,
+    teacher_review_notes: (els.caseInputReview?.value || '').trim() || unifiedContent,
+    observed_results_limits: (els.caseInputResults?.value || '').trim() || unifiedContent,
     aggregate_metrics: (els.caseInputMetrics?.value || '').trim(),
     improvement_suggestions: (els.caseInputImprovements?.value || '').trim(),
     author_passcode: els.caseInputPasscode?.value || '',
-    confirmed_factual: Boolean(els.chkCaseFactual?.checked),
-    confirmed_no_pii: Boolean(els.chkCaseNopii?.checked),
-    confirmed_public_rights: Boolean(els.chkCaseRights?.checked)
+    confirmed_factual: confirmed,
+    confirmed_no_pii: els.chkCaseNopii ? Boolean(els.chkCaseNopii.checked) : confirmed,
+    confirmed_public_rights: els.chkCaseRights ? Boolean(els.chkCaseRights.checked) : confirmed
   };
 
-  if (
-    !payload.title ||
-    !payload.used_date ||
-    !payload.school_grade ||
-    !payload.subject ||
-    !payload.target_language ||
-    !payload.lesson_goal ||
-    !payload.tool_usage_process ||
-    !payload.teacher_review_notes ||
-    !payload.observed_results_limits
-  ) {
-    showCaseFormFeedback('error', '필수 입력 항목(*필수)을 모두 작성해 주세요.');
+  if (!payload.title || !payload.lesson_goal) {
+    showCaseFormFeedback('error', '제목과 수업 활용 내용(후기)을 입력해 주세요.');
+    if (!payload.title) els.caseInputTitle?.focus();
+    else els.caseInputGoal?.focus();
     return;
   }
 
   if (payload.author_passcode.trim().length < 4) {
-    showCaseFormFeedback('error', '작성자 본인 확인·수정용 비밀번호를 4자 이상 입력해 주세요.');
+    showCaseFormFeedback('error', '수정·삭제용 비밀번호를 4자 이상 입력해 주세요.');
     els.caseInputPasscode?.focus();
     return;
   }
 
-  if (!payload.confirmed_factual || !payload.confirmed_no_pii || !payload.confirmed_public_rights) {
-    showCaseFormFeedback('error', '제출 전 필수 확인란 3개(실제 활용, 학생 개인정보 제거, 공개 권한 확인)에 모두 체크해 주세요.');
+  if (!payload.confirmed_factual) {
+    showCaseFormFeedback('error', '필수 확인 사항(실제 활용 및 학생 개인정보 미포함 동의)에 체크해 주세요.');
     return;
   }
 
   // Client-side PII pattern check (phone number / resident registration pattern)
-  const combinedText = `${payload.title} ${payload.lesson_goal} ${payload.tool_usage_process} ${payload.teacher_review_notes} ${payload.observed_results_limits} ${payload.aggregate_metrics}`;
+  const combinedText = `${payload.title} ${payload.lesson_goal} ${payload.aggregate_metrics}`;
   if (/01[016789][-\s]?\d{3,4}[-\s]?\d{4}/.test(combinedText)) {
     showCaseFormFeedback('error', '본문에 전화번호 형태로 보이는 숫자가 포함되어 있습니다. 학생·학부모 연락처 등 개인정보를 제거한 뒤 제출해 주세요.');
     return;
@@ -4423,24 +4492,7 @@ function renderPublicCasesList() {
 
       <h3 class="case-card-title">${escapeHtml(item.title)}</h3>
 
-      <div class="case-sections-grid">
-        <div class="case-section-box">
-          <h4>🎯 수업 목표</h4>
-          <p>${escapeHtml(item.lesson_goal)}</p>
-        </div>
-        <div class="case-section-box">
-          <h4>🛠️ 도구 사용 과정</h4>
-          <p>${escapeHtml(item.tool_usage_process)}</p>
-        </div>
-        <div class="case-section-box">
-          <h4>🔎 교사의 번역 검수 · 수정 내용</h4>
-          <p>${escapeHtml(item.teacher_review_notes)}</p>
-        </div>
-        <div class="case-section-box">
-          <h4>📌 관찰한 결과와 한계</h4>
-          <p>${escapeHtml(item.observed_results_limits)}</p>
-        </div>
-      </div>
+      ${renderCaseBodySectionsHtml(item)}
 
       ${
         item.aggregate_metrics || item.improvement_suggestions
@@ -4812,24 +4864,7 @@ function renderAdminDashboardLists() {
         <span class="badge ${item.confirmed_public_rights ? 'badge-available' : 'badge-unavailable'}">공개·저작권 확인: ${item.confirmed_public_rights ? '예' : '아니오'}</span>
       </div>
 
-      <div class="case-sections-grid">
-        <div class="case-section-box">
-          <h4>🎯 수업 목표</h4>
-          <p>${escapeHtml(item.lesson_goal)}</p>
-        </div>
-        <div class="case-section-box">
-          <h4>🛠️ 도구 사용 과정</h4>
-          <p>${escapeHtml(item.tool_usage_process)}</p>
-        </div>
-        <div class="case-section-box">
-          <h4>🔎 교사의 번역 검수 · 수정 내용</h4>
-          <p>${escapeHtml(item.teacher_review_notes)}</p>
-        </div>
-        <div class="case-section-box">
-          <h4>📌 관찰한 결과와 한계</h4>
-          <p>${escapeHtml(item.observed_results_limits)}</p>
-        </div>
-      </div>
+      ${renderCaseBodySectionsHtml(item)}
 
       ${
         item.rejection_reason
