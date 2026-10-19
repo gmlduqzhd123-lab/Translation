@@ -519,38 +519,6 @@ function applySelectedLanguageEverywhere(langKey) {
   updateSelectedLanguageStatusUI();
 }
 
-const LANGUAGE_FLAG_MAP = {
-  vi: '🇻🇳',
-  'zh-Hans': '🇨🇳',
-  'zh-Hant': '🇹🇼',
-  en: '🇺🇸',
-  ru: '🇷🇺',
-  ja: '🇯🇵',
-  uz: '🇺🇿',
-  mn: '🇲🇳',
-  th: '🇹🇭',
-  km: '🇰🇭',
-  tl: '🇵🇭',
-  id: '🇮🇩',
-  my: '🇲🇲',
-  ne: '🇳🇵',
-  si: '🇱🇰',
-  hi: '🇮🇳',
-  bn: '🇧🇩',
-  ur: '🇵🇰',
-  kk: '🇰🇿',
-  ky: '🇰🇬',
-  ar: '🇸🇦',
-  es: '🇪🇸',
-  fr: '🇫🇷',
-  pt: '🇧🇷',
-  tr: '🇹🇷'
-};
-
-function getLanguageFlag(key) {
-  return LANGUAGE_FLAG_MAP[key] || '🌐';
-}
-
 function renderRecentLanguageBars() {
   const recentKeys = getSavedRecentLanguages();
 
@@ -564,7 +532,7 @@ function renderRecentLanguageBars() {
       btn.type = 'button';
       btn.className = `step1-lang-pill${isSelected ? ' is-current' : ''}`;
       btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-      btn.textContent = `${getLanguageFlag(key)} ${meta.label}${isSelected ? ' ✓' : ''}`;
+      btn.textContent = `${meta.label}${isSelected ? ' ✓' : ''}`;
       btn.addEventListener('click', () => {
         applySelectedLanguageEverywhere(key);
         scheduleAutoSave();
@@ -581,7 +549,7 @@ function renderRecentLanguageBars() {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = `recent-lang-chip${state.selectedLangKey === key ? ' is-current' : ''}`;
-      btn.textContent = `${getLanguageFlag(key)} ${meta.label} (${meta.nativeLabel})`;
+      btn.textContent = `${meta.label} (${meta.nativeLabel})`;
       btn.addEventListener('click', () => {
         applySelectedLanguageEverywhere(key);
         scheduleAutoSave();
@@ -1677,12 +1645,12 @@ function renderLanguageCards() {
   }
 
   const langOptionsHtml = TARGET_LANGUAGES.map(
-    (l) => `<option value="${escapeHtml(l.key)}">${getLanguageFlag(l.key)} ${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
+    (l) => `<option value="${escapeHtml(l.key)}">${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
   ).join('');
 
   if (els.selectQuickTargetLang) {
     els.selectQuickTargetLang.innerHTML = TARGET_LANGUAGES.map(
-      (l) => `<option value="${escapeHtml(l.key)}">🌐 25개국: ${getLanguageFlag(l.key)} ${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
+      (l) => `<option value="${escapeHtml(l.key)}">🌐 ${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
     ).join('');
     els.selectQuickTargetLang.value = state.selectedLangKey || 'vi';
   }
