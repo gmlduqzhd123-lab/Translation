@@ -27,10 +27,29 @@ import {
 import {
   saveWorkSessionToBrowser,
   loadWorkSessionFromBrowser,
-  clearWorkSessionFromBrowser
+  clearWorkSessionFromBrowser,
+  isAutoSaveEnabled,
+  setAutoSaveEnabled,
+  getLastStorageError
 } from './src/storage-service.js';
+import {
+  fetchApprovedCases,
+  submitLessonCase,
+  fetchMyCases,
+  resubmitLessonCase,
+  removeMyLessonCase,
+  reportLessonCase,
+  getSavedMyCaseIds,
+  verifyAdminPasswordOnServer,
+  adminFetchAllCases,
+  adminReviewCase,
+  adminChangePassword,
+  adminFetchCaseReports,
+  adminResolveCaseReport
+} from './src/case-sharing-service.js';
 
 const state = {
+  activeMainView: 'translator',
   currentStep: 1,
   maxUnlockedStep: 1,
   parsedDoc: null,
@@ -41,12 +60,22 @@ const state = {
   itemStates: new Map(),
   activeFilter: 'all',
   collapsedGroups: new Set(),
+  warningListExpanded: true,
   autoSyncIdentical: true,
   outputMode: 'replace',
   isTranslating: false,
   cancelTranslationRequested: false,
   hasUnsavedWork: false,
-  pendingRestorableSession: null
+  pendingRestorableSession: null,
+  // Case sharing & Admin state
+  publicCases: [],
+  myCases: [],
+  highlightedCaseId: null,
+  adminAuthenticated: false,
+  adminPasswordSession: '',
+  adminCases: [],
+  adminReports: [],
+  adminActiveFilter: 'all'
 };
 
 let autoSaveTimer = null;
@@ -55,6 +84,20 @@ let autoSaveTimer = null;
 const els = {};
 
 function cacheElements() {
+  // Main Workspace Tabs & Browser Storage Controls (PRD 3.2, 5, 6)
+  els.mainViewTabs = document.querySelectorAll('.main-view-tab');
+  els.viewTranslator = document.getElementById('view-translator');
+  els.viewCases = document.getElementById('view-cases');
+  els.viewAdmin = document.getElementById('view-admin');
+  els.stepperBarNav = document.getElementById('stepper-bar-nav');
+  els.casesCountPill = document.getElementById('cases-count-pill');
+
+  els.chkEnableAutosave = document.getElementById('chk-enable-autosave');
+  els.labelAutosaveToggle = document.getElementById('label-autosave-toggle');
+  els.btnClearBrowserStorage = document.getElementById('btn-clear-browser-storage');
+  els.storageControlFeedback = document.getElementById('storage-control-feedback');
+  els.step1StorageStatePill = document.getElementById('step1-storage-state-pill');
+
   els.stepperItems = document.querySelectorAll('.stepper-item');
   els.stepperBtns = document.querySelectorAll('.stepper-btn');
   els.stepPanels = {
@@ -144,7 +187,7 @@ function cacheElements() {
   els.reviewOverflowCount = document.getElementById('review-overflow-count');
   els.reviewFailedChip = document.getElementById('review-failed-chip');
   els.reviewFailedCount = document.getElementById('review-failed-count');
-  els.filterBtns = document.querySelectorAll('.filter-btn');
+  els.filterBtns = document.querySelectorAll('#step-4 .filter-btn');
   els.btnNextUnverified = document.getElementById('btn-next-unverified');
   els.btnFillEmptyWithSource = document.getElementById('btn-fill-empty-with-source');
   els.btnVerifyAllVisible = document.getElementById('btn-verify-all-visible');
@@ -181,6 +224,13 @@ function cacheElements() {
   els.currentPositionIndicator = document.getElementById('current-position-indicator');
   els.btnCollapseVerifiedGroups = document.getElementById('btn-collapse-verified-groups');
   els.reviewJumpNav = document.getElementById('review-jump-nav');
+
+  // Step 4 Unified Warning Summary Panel (PRD 4.1)
+  els.unifiedWarningSummaryPanel = document.getElementById('unified-warning-summary-panel');
+  els.unifiedWarningTotalBadge = document.getElementById('unified-warning-total-badge');
+  els.btnToggleWarningList = document.getElementById('btn-toggle-warning-list');
+  els.unifiedWarningList = document.getElementById('unified-warning-list');
+
   els.reviewItemsContainer = document.getElementById('review-items-container');
 
   // Step 5
@@ -191,6 +241,7 @@ function cacheElements() {
   els.finalTargetLang = document.getElementById('final-target-lang');
   els.finalVerifiedSummary = document.getElementById('final-verified-summary');
   els.finalUnverifiedSummary = document.getElementById('final-unverified-summary');
+  els.finalWarningSummary = document.getElementById('final-warning-summary');
   els.finalEmptySummary = document.getElementById('final-empty-summary');
   els.finalModifiedSummary = document.getElementById('final-modified-summary');
   els.downloadWarningsPanel = document.getElementById('download-warnings-panel');
@@ -203,20 +254,92 @@ function cacheElements() {
   els.btnDownloadFile = document.getElementById('btn-download-file');
   els.btnPrintComparisonSheet = document.getElementById('btn-print-comparison-sheet');
   els.downloadSuccessMsg = document.getElementById('download-success-msg');
+  els.btnStep5ClearStorage = document.getElementById('btn-step5-clear-storage');
   els.printableComparisonSheet = document.getElementById('printable-comparison-sheet');
   els.printSheetMeta = document.getElementById('print-sheet-meta');
   els.printSheetTbody = document.getElementById('print-sheet-tbody');
   els.btnTriggerWindowPrint = document.getElementById('btn-trigger-window-print');
   els.btnClosePrintSheet = document.getElementById('btn-close-print-sheet');
+
+  // Lesson Utilization Cases View (PRD 5)
+  els.btnOpenCaseForm = document.getElementById('btn-open-case-form');
+  els.btnOpenMyCases = document.getElementById('btn-open-my-cases');
+  els.casesServerStatusBanner = document.getElementById('cases-server-status-banner');
+  els.caseWritePanel = document.getElementById('case-write-panel');
+  els.caseFormTitle = document.getElementById('case-form-title');
+  els.btnCloseCaseForm = document.getElementById('btn-close-case-form');
+  els.btnCancelCaseForm = document.getElementById('btn-cancel-case-form');
+  els.caseSubmitForm = document.getElementById('case-submit-form');
+  els.caseEditId = document.getElementById('case-edit-id');
+  els.caseInputTitle = document.getElementById('case-input-title');
+  els.caseInputDate = document.getElementById('case-input-date');
+  els.caseInputGrade = document.getElementById('case-input-grade');
+  els.caseInputSubject = document.getElementById('case-input-subject');
+  els.caseInputLang = document.getElementById('case-input-lang');
+  els.caseInputFormat = document.getElementById('case-input-format');
+  els.caseInputAuthor = document.getElementById('case-input-author');
+  els.caseInputGoal = document.getElementById('case-input-goal');
+  els.caseInputProcess = document.getElementById('case-input-process');
+  els.caseInputReview = document.getElementById('case-input-review');
+  els.caseInputResults = document.getElementById('case-input-results');
+  els.caseInputMetrics = document.getElementById('case-input-metrics');
+  els.caseInputImprovements = document.getElementById('case-input-improvements');
+  els.caseInputPasscode = document.getElementById('case-input-passcode');
+  els.chkCaseFactual = document.getElementById('chk-case-factual');
+  els.chkCaseNopii = document.getElementById('chk-case-nopii');
+  els.chkCaseRights = document.getElementById('chk-case-rights');
+  els.caseSubmitFeedback = document.getElementById('case-submit-feedback');
+  els.btnSubmitCase = document.getElementById('btn-submit-case');
+
+  els.myCasesPanel = document.getElementById('my-cases-panel');
+  els.btnCloseMyCases = document.getElementById('btn-close-my-cases');
+  els.myCasesPasscodeInput = document.getElementById('my-cases-passcode-input');
+  els.btnLookupMyCases = document.getElementById('btn-lookup-my-cases');
+  els.myCasesList = document.getElementById('my-cases-list');
+
+  els.filterCaseLang = document.getElementById('filter-case-lang');
+  els.filterCaseGrade = document.getElementById('filter-case-grade');
+  els.filterCaseFormat = document.getElementById('filter-case-format');
+  els.filterCaseSubject = document.getElementById('filter-case-subject');
+  els.btnResetCaseFilters = document.getElementById('btn-reset-case-filters');
+  els.btnRefreshCases = document.getElementById('btn-refresh-cases');
+  els.casesPublicList = document.getElementById('cases-public-list');
+
+  // Admin View (PRD 6, 7)
+  els.btnAdminLogout = document.getElementById('btn-admin-logout');
+  els.adminAuthBox = document.getElementById('admin-auth-box');
+  els.adminLoginForm = document.getElementById('admin-login-form');
+  els.adminPasswordInput = document.getElementById('admin-password-input');
+  els.btnAdminLogin = document.getElementById('btn-admin-login');
+  els.adminAuthMsg = document.getElementById('admin-auth-msg');
+  els.adminDashboardBox = document.getElementById('admin-dashboard-box');
+  els.adminFilterBtns = document.querySelectorAll('[data-admin-filter]');
+  els.adminCountAll = document.getElementById('admin-count-all');
+  els.adminCountPending = document.getElementById('admin-count-pending');
+  els.adminCountApproved = document.getElementById('admin-count-approved');
+  els.adminCountRejected = document.getElementById('admin-count-rejected');
+  els.adminCountHidden = document.getElementById('admin-count-hidden');
+  els.adminCountReports = document.getElementById('admin-count-reports');
+  els.btnAdminRefresh = document.getElementById('btn-admin-refresh');
+  els.btnToggleAdminPwChange = document.getElementById('btn-toggle-admin-pw-change');
+  els.adminPwChangePanel = document.getElementById('admin-pw-change-panel');
+  els.inputAdminNewPw = document.getElementById('input-admin-new-pw');
+  els.btnSaveAdminNewPw = document.getElementById('btn-save-admin-new-pw');
+  els.adminPwChangeFeedback = document.getElementById('admin-pw-change-feedback');
+  els.adminActionFeedback = document.getElementById('admin-action-feedback');
+  els.adminCasesList = document.getElementById('admin-cases-list');
+  els.adminReportsList = document.getElementById('admin-reports-list');
 }
 
 function init() {
   cacheElements();
   checkMobileBanner();
+  syncStorageControlUI();
   bindEvents();
   renderLanguageCards();
   refreshAllLanguageSupport();
   checkRestorableSession();
+  handleInitialUrlRouting();
 }
 
 function checkMobileBanner() {
@@ -230,9 +353,146 @@ function checkMobileBanner() {
   }
 }
 
-/* ==================== FEATURE #4: BROWSER AUTO-SAVE & RESTORE ==================== */
+/* ==================== MAIN WORKSPACE NAVIGATION & URL DEEP LINK ==================== */
+
+function switchMainView(viewName) {
+  state.activeMainView = viewName;
+  els.mainViewTabs.forEach((tab) => {
+    const isTarget = tab.getAttribute('data-view-target') === viewName;
+    tab.classList.toggle('active', isTarget);
+    tab.setAttribute('aria-selected', isTarget ? 'true' : 'false');
+  });
+
+  if (els.viewTranslator) {
+    els.viewTranslator.classList.toggle('hidden', viewName !== 'translator');
+  }
+  if (els.stepperBarNav) {
+    els.stepperBarNav.classList.toggle('hidden', viewName !== 'translator');
+  }
+  if (els.viewCases) {
+    els.viewCases.classList.toggle('hidden', viewName !== 'cases');
+    els.viewCases.classList.toggle('active', viewName === 'cases');
+  }
+  if (els.viewAdmin) {
+    els.viewAdmin.classList.toggle('hidden', viewName !== 'admin');
+    els.viewAdmin.classList.toggle('active', viewName === 'admin');
+  }
+
+  if (viewName === 'cases') {
+    loadAndRenderPublicCases();
+  } else if (viewName === 'admin' && state.adminAuthenticated) {
+    loadAndRenderAdminDashboard();
+  }
+}
+
+function handleInitialUrlRouting() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const caseId = params.get('case');
+    const viewParam = params.get('view');
+    if (caseId) {
+      state.highlightedCaseId = caseId;
+      switchMainView('cases');
+    } else if (viewParam === 'cases' || viewParam === 'admin') {
+      switchMainView(viewParam);
+    } else {
+      // Load approved case count quietly in background without blocking translator
+      fetchApprovedCases().then((res) => {
+        if (res && Array.isArray(res.items)) {
+          state.publicCases = res.items;
+          if (els.casesCountPill) {
+            els.casesCountPill.textContent = `${res.items.length}건`;
+          }
+        }
+      }).catch(() => {});
+    }
+  } catch {
+    // ignore URL parsing issues
+  }
+}
+
+/* ==================== FEATURE #4 & PRD 3.2: BROWSER AUTO-SAVE & STORAGE CONTROL ==================== */
+
+function syncStorageControlUI() {
+  const enabled = isAutoSaveEnabled();
+  if (els.chkEnableAutosave) {
+    els.chkEnableAutosave.checked = enabled;
+  }
+  if (els.labelAutosaveToggle) {
+    els.labelAutosaveToggle.textContent = enabled
+      ? '💾 브라우저 임시 저장 켜짐'
+      : '⏸️ 브라우저 임시 저장 꺼짐';
+  }
+  if (els.step1StorageStatePill) {
+    els.step1StorageStatePill.textContent = enabled
+      ? '임시 저장: 켜짐 (IndexedDB)'
+      : '임시 저장: 꺼짐 (저장 안 함)';
+    els.step1StorageStatePill.classList.toggle('is-off', !enabled);
+  }
+  if (els.autosaveStatusBadge) {
+    els.autosaveStatusBadge.textContent = enabled
+      ? '💾 브라우저 자동 임시저장 켜짐'
+      : '⏸️ 브라우저 임시저장 꺼짐 (수동 다운로드만 사용)';
+  }
+}
+
+async function handleToggleAutoSave() {
+  const enabled = Boolean(els.chkEnableAutosave?.checked);
+  await setAutoSaveEnabled(enabled);
+  syncStorageControlUI();
+
+  if (!enabled) {
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    state.pendingRestorableSession = null;
+    els.sessionRestoreBanner?.classList.add('hidden');
+    showStorageControlFeedback('⏸️ 임시 저장을 껐으며 브라우저에 남아 있던 임시 데이터를 삭제했습니다.');
+  } else {
+    showStorageControlFeedback('💾 브라우저 임시 저장이 켜졌습니다.');
+    if (state.parsedDoc && state.parsedDoc.originalBuffer) {
+      scheduleAutoSave();
+    }
+  }
+}
+
+async function handleClearBrowserStorage(resetCurrentScreen = false) {
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = null;
+  }
+  await clearWorkSessionFromBrowser();
+  state.pendingRestorableSession = null;
+  els.sessionRestoreBanner?.classList.add('hidden');
+
+  if (resetCurrentScreen || state.currentStep > 1) {
+    state.hasUnsavedWork = false;
+    state.parsedDoc = null;
+    state.translatedLangKey = null;
+    state.itemStates.clear();
+    state.collapsedGroups.clear();
+    state.maxUnlockedStep = 1;
+    if (state.activeMainView === 'translator') {
+      goToStep(1);
+    }
+  }
+
+  if (els.autosaveStatusBadge) {
+    els.autosaveStatusBadge.textContent = '🗑️ 브라우저 임시저장 내역 삭제됨';
+  }
+  showStorageControlFeedback('✓ 이 브라우저의 작업 내용이 삭제되었습니다. 새로고침해도 복원되지 않습니다.');
+}
+
+function showStorageControlFeedback(msg) {
+  if (!els.storageControlFeedback) return;
+  els.storageControlFeedback.textContent = msg;
+  setTimeout(() => {
+    if (els.storageControlFeedback && els.storageControlFeedback.textContent === msg) {
+      els.storageControlFeedback.textContent = '';
+    }
+  }, 4500);
+}
 
 async function checkRestorableSession() {
+  if (!isAutoSaveEnabled()) return;
   const saved = await loadWorkSessionFromBrowser();
   if (!saved || !saved.originalBuffer || !saved.fileName || !Array.isArray(saved.itemStatesEntries)) {
     return;
@@ -285,6 +545,12 @@ async function handleRestoreSession() {
 
 function scheduleAutoSave() {
   if (!state.parsedDoc || !state.parsedDoc.originalBuffer) return;
+  if (!isAutoSaveEnabled()) {
+    if (els.autosaveStatusBadge) {
+      els.autosaveStatusBadge.textContent = '⏸️ 브라우저 임시저장 꺼짐 (수동 다운로드만 사용)';
+    }
+    return;
+  }
   if (autoSaveTimer) clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(async () => {
     const savedAt = await saveWorkSessionToBrowser({
@@ -303,6 +569,14 @@ function scheduleAutoSave() {
         second: '2-digit'
       });
       els.autosaveStatusBadge.textContent = `💾 브라우저 임시저장 완료 (${t})`;
+    } else if (!savedAt) {
+      const err = getLastStorageError();
+      if (err && err.code === 'QUOTA_EXCEEDED') {
+        if (els.autosaveStatusBadge) {
+          els.autosaveStatusBadge.textContent = '⚠️ 저장 공간 부족 (임시저장 생략됨 · 작업 계속 가능)';
+        }
+        showStorageControlFeedback('⚠️ 브라우저 저장 공간이 부족하여 임시저장을 건너뛰었습니다. 번역·다운로드는 정상 진행됩니다.');
+      }
     }
   }, 350);
 }
@@ -342,12 +616,36 @@ function bindEvents() {
     }
   });
 
+  // Main Workspace View Tabs (PRD 5, 6)
+  els.mainViewTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const targetView = tab.getAttribute('data-view-target') || 'translator';
+      switchMainView(targetView);
+    });
+  });
+
+  // Browser Storage Control Bar (PRD 3.2)
+  els.chkEnableAutosave?.addEventListener('change', handleToggleAutoSave);
+  els.btnClearBrowserStorage?.addEventListener('click', () => {
+    if (
+      state.parsedDoc &&
+      state.currentStep > 1 &&
+      !window.confirm(
+        '이 브라우저에 임시 저장된 작업 내용과 현재 화면의 문서를 모두 삭제하시겠습니까? (삭제 후 새로고침해도 복원되지 않습니다)'
+      )
+    ) {
+      return;
+    }
+    handleClearBrowserStorage(true);
+  });
+  els.btnStep5ClearStorage?.addEventListener('click', () => {
+    handleClearBrowserStorage(true);
+  });
+
   // Session restore buttons (Feature #4)
   els.btnRestoreSession?.addEventListener('click', handleRestoreSession);
   els.btnDiscardSession?.addEventListener('click', async () => {
-    state.pendingRestorableSession = null;
-    await clearWorkSessionFromBrowser();
-    els.sessionRestoreBanner?.classList.add('hidden');
+    await handleClearBrowserStorage(false);
   });
 
   // Manual Modal events
@@ -375,6 +673,9 @@ function bindEvents() {
     btn.addEventListener('click', () => {
       const target = parseInt(btn.getAttribute('data-step-target'), 10);
       if (target <= state.maxUnlockedStep && !state.isTranslating) {
+        if (state.activeMainView !== 'translator') {
+          switchMainView('translator');
+        }
         goToStep(target);
       }
     });
@@ -479,6 +780,13 @@ function bindEvents() {
 
   els.btnNextUnverified?.addEventListener('click', jumpToNextUnverified);
 
+  els.btnToggleWarningList?.addEventListener('click', () => {
+    state.warningListExpanded = !state.warningListExpanded;
+    els.unifiedWarningList?.classList.toggle('hidden', !state.warningListExpanded);
+    els.btnToggleWarningList.setAttribute('aria-expanded', state.warningListExpanded ? 'true' : 'false');
+    els.btnToggleWarningList.textContent = state.warningListExpanded ? '경고 목록 접기 ▲' : '경고 목록 펼치기 ▼';
+  });
+
   els.btnFillEmptyWithSource.addEventListener('click', () => {
     if (!state.parsedDoc) return;
     let changed = 0;
@@ -570,14 +878,7 @@ function bindEvents() {
     ) {
       return;
     }
-    state.hasUnsavedWork = false;
-    state.parsedDoc = null;
-    state.translatedLangKey = null;
-    state.itemStates.clear();
-    state.collapsedGroups.clear();
-    state.maxUnlockedStep = 1;
-    clearWorkSessionFromBrowser();
-    goToStep(1);
+    handleClearBrowserStorage(true);
   });
 
   els.outputModeRadios.forEach((radio) => {
@@ -599,6 +900,12 @@ function bindEvents() {
   els.btnClosePrintSheet?.addEventListener('click', () => {
     els.printableComparisonSheet?.classList.add('hidden');
   });
+
+  // Lesson Utilization Cases Events (PRD 5)
+  bindCaseSharingEvents();
+
+  // Admin Center Events (PRD 6, 7)
+  bindAdminEvents();
 }
 
 function resetItemStatesForLanguageChange() {
@@ -1011,8 +1318,9 @@ async function handleStartAutoTranslate() {
     showTranslationAlert(
       'error',
       `자동 번역 모델을 준비하지 못했습니다 (${err?.name || '오류'})`,
-      `원인: ${err?.message || '브라우저에서 번역 모델 생성을 거부했거나 다운로드에 실패했습니다.'}`,
-      '우측의 [직접 번역문 입력하기] 버튼을 눌러 직접 번역문을 입력해 작업을 계속할 수 있습니다.'
+      `원인: ${err?.message || '브라우저에서 번역 모델 생성을 거부했거나 네트워크·다운로드에 실패했습니다.'}`,
+      '네트워크 연결을 확인한 뒤 [🔄 자동 번역 다시 시도]를 누르거나, [✍️ 직접 번역문 입력으로 이동]을 눌러 기존 작업 손실 없이 수동 번역·용어집·엑셀 붙여넣기로 계속 진행할 수 있습니다.',
+      true
     );
     return;
   }
@@ -1139,7 +1447,8 @@ async function handleStartAutoTranslate() {
       'warning',
       `일부 항목(${failCount}개) 자동 번역 실패`,
       `총 ${total}개 중 ${successCount}개 성공, ${failCount}개 항목은 자동 번역에 실패했습니다.`,
-      '다음 단계(번역 검토)에서 실패 표시된 항목의 번역문을 직접 입력해 주세요.'
+      '다음 단계(번역 검토)에서 실패 표시된 항목의 번역문을 직접 입력해 주세요.',
+      true
     );
   } else {
     showTranslationAlert(
@@ -1153,13 +1462,29 @@ async function handleStartAutoTranslate() {
   unlockAndGoToStep(4);
 }
 
-function showTranslationAlert(type, title, message, actionHint) {
+function showTranslationAlert(type, title, message, actionHint, showRetryActions = false) {
   els.translationResultAlert.className = `alert-box alert-${type}`;
   els.translationResultAlert.innerHTML = `
     <div class="alert-title">${escapeHtml(title)}</div>
     <p class="alert-message">${escapeHtml(message)}</p>
     ${actionHint ? `<p class="alert-action">${escapeHtml(actionHint)}</p>` : ''}
+    ${
+      showRetryActions
+        ? `<div class="alert-inline-actions" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-primary btn-sm" data-role="retry-auto-translate">🔄 자동 번역 다시 시도</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-role="fallback-manual-translate">✍️ 직접 번역문 입력으로 이동 →</button>
+          </div>`
+        : ''
+    }
   `;
+  const retryBtn = els.translationResultAlert.querySelector('[data-role="retry-auto-translate"]');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', handleStartAutoTranslate);
+  }
+  const manualBtn = els.translationResultAlert.querySelector('[data-role="fallback-manual-translate"]');
+  if (manualBtn) {
+    manualBtn.addEventListener('click', () => els.btnSkipToManual?.click());
+  }
   els.translationResultAlert.classList.remove('hidden');
 }
 
@@ -1672,7 +1997,8 @@ function computeReviewCounters() {
       modified: 0,
       failed: 0,
       overflow: 0,
-      attention: 0
+      attention: 0,
+      unverifiedWarnings: 0
     };
   }
   let verified = 0;
@@ -1681,6 +2007,7 @@ function computeReviewCounters() {
   let failed = 0;
   let overflow = 0;
   let attention = 0;
+  let unverifiedWarnings = 0;
 
   for (const item of state.parsedDoc.items) {
     const st = state.itemStates.get(item.id);
@@ -1698,9 +2025,12 @@ function computeReviewCounters() {
     if (evaluateLengthOverflowRisk(item.sourceText, st.finalText, item.contextLabel)) {
       overflow++;
     }
-    const signal = evaluateTranslationTrafficLight(item, st);
+    const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
     if (signal.level === 'red' || signal.level === 'yellow') {
       attention++;
+      if (!st.verified) {
+        unverifiedWarnings++;
+      }
     }
   }
 
@@ -1713,7 +2043,8 @@ function computeReviewCounters() {
     modified,
     failed,
     overflow,
-    attention
+    attention,
+    unverifiedWarnings
   };
 }
 
@@ -1735,6 +2066,112 @@ function updateReviewCountersUI() {
   }
   els.reviewFailedCount.textContent = `${c.failed}개`;
   els.reviewFailedChip.classList.toggle('hidden', c.failed === 0);
+
+  renderUnifiedWarningSummary();
+}
+
+/**
+ * PRD 4.1: Unified Review Warning Summary Panel
+ * Aggregates missing numbers/dates/percentages, leftover Korean, length overflow, and glossary mismatch warnings in one place.
+ */
+function renderUnifiedWarningSummary() {
+  if (!els.unifiedWarningSummaryPanel || !els.unifiedWarningList || !state.parsedDoc) return;
+
+  const warningEntries = [];
+  let unverifiedWarningCount = 0;
+
+  for (const item of state.parsedDoc.items) {
+    const st = state.itemStates.get(item.id);
+    if (!st) continue;
+    const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
+    if (signal.level === 'red' || signal.level === 'yellow') {
+      if (!st.verified) {
+        unverifiedWarningCount++;
+      }
+      warningEntries.push({
+        item,
+        st,
+        signal
+      });
+    }
+  }
+
+  if (els.unifiedWarningTotalBadge) {
+    els.unifiedWarningTotalBadge.textContent = `미확인 경고 ${unverifiedWarningCount}건 (전체 ${warningEntries.length}건)`;
+    els.unifiedWarningTotalBadge.className = `badge ${
+      unverifiedWarningCount > 0 ? 'badge-warn' : 'badge-available'
+    }`;
+  }
+
+  els.unifiedWarningList.innerHTML = '';
+  els.unifiedWarningList.classList.toggle('hidden', !state.warningListExpanded);
+
+  if (warningEntries.length === 0) {
+    const emptyMsg = document.createElement('div');
+    emptyMsg.className = 'unified-warning-empty';
+    emptyMsg.innerHTML =
+      '✅ <strong>현재 자동 감지된 숫자·날짜·퍼센트 누락, 미번역 한글, 길이 넘침, 용어집 불일치 경고가 없습니다.</strong> <span class="text-muted">(자동 경고가 없더라도 문맥과 표현이 자연스러운지 최종 확인해 주세요.)</span>';
+    els.unifiedWarningList.appendChild(emptyMsg);
+    return;
+  }
+
+  for (const { item, st, signal } of warningEntries) {
+    const row = document.createElement('div');
+    row.className = `unified-warning-row ${signal.level === 'red' ? 'is-red' : 'is-yellow'}${
+      st.verified ? ' is-verified' : ''
+    }`;
+
+    const issueMessages =
+      signal.issues && signal.issues.length > 0
+        ? signal.issues.map((iss) => iss.message).join(' · ')
+        : signal.label;
+
+    const srcSnippet =
+      item.sourceText.length > 48 ? `${item.sourceText.slice(0, 48)}…` : item.sourceText;
+
+    row.innerHTML = `
+      <div class="unified-warning-main">
+        <span class="unified-warning-icon" aria-hidden="true">${signal.level === 'red' ? '🚨' : '⚠️'}</span>
+        <span class="location-badge">${escapeHtml(item.locationLabel)}</span>
+        <span class="badge ${st.verified ? 'badge-available' : 'badge-warn'}">${
+          st.verified ? '✓ 교사 확인 완료' : '미확인 경고'
+        }</span>
+        <strong class="unified-warning-reason">${escapeHtml(issueMessages)}</strong>
+        <span class="unified-warning-snippet" title="${escapeHtml(item.sourceText)}">원문: “${escapeHtml(srcSnippet)}”</span>
+      </div>
+      <div class="unified-warning-actions">
+        <button type="button" class="btn btn-outline btn-sm" data-role="warn-jump-btn">
+          🔍 문장으로 이동·수정
+        </button>
+        <button type="button" class="btn ${st.verified ? 'btn-surface' : 'btn-secondary'} btn-sm" data-role="warn-verify-btn">
+          ${st.verified ? '확인 완료 해제' : '✓ 확인 완료 표시'}
+        </button>
+      </div>
+    `;
+
+    row.querySelector('[data-role="warn-jump-btn"]')?.addEventListener('click', () => {
+      focusReviewItem(item.id);
+    });
+
+    row.querySelector('[data-role="warn-verify-btn"]')?.addEventListener('click', () => {
+      st.verified = !st.verified;
+      state.hasUnsavedWork = true;
+      const card = els.reviewItemsContainer.querySelector(`.review-card[data-item-id="${item.id}"]`);
+      if (card) {
+        syncSingleCardUI(card, item, st);
+      }
+      propagateIdenticalSourceText(item, st);
+      updateReviewCountersUI();
+      updateGroupDividerStatusUI();
+      renderReviewJumpNav();
+      scheduleAutoSave();
+      if (state.activeFilter !== 'all') {
+        applyReviewFilter();
+      }
+    });
+
+    els.unifiedWarningList.appendChild(row);
+  }
 }
 
 function getDocumentGroups() {
@@ -1901,12 +2338,10 @@ function renderReviewStep() {
         st.finalText,
         item.contextLabel
       );
-      const accuracyIssues = evaluateTranslationAccuracyIssues(
-        item.sourceText,
-        st.finalText,
-        st.keepOriginal
+      const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
+      const cardIssues = (signal.issues || []).filter(
+        (iss) => iss.code !== 'length-overflow' && iss.code !== 'empty'
       );
-      const signal = evaluateTranslationTrafficLight(item, st);
       const glossaryMatches = findMatchingGlossaryTerms(
         item.sourceText,
         state.selectedLangKey,
@@ -1947,7 +2382,7 @@ function renderReviewStep() {
             <span class="location-badge">${escapeHtml(item.locationLabel)}</span>
             <span class="badge badge-context">${escapeHtml(item.contextLabel)}</span>
             <span class="origin-badge ${origin.cssClass}" data-role="origin-badge">${escapeHtml(origin.label)}</span>
-            <span class="signal-badge ${signal.cssClass}" data-role="signal-badge" title="숫자·부호·길이·역번역 의미를 종합한 자동 안심 신호등">${escapeHtml(signal.label)}</span>
+            <span class="signal-badge ${signal.cssClass}" data-role="signal-badge" title="숫자·부호·길이·용어집·역번역 의미를 종합한 자동 안심 신호등">${escapeHtml(signal.label)}</span>
           </div>
           <div class="review-meta-right">
             <button
@@ -2034,9 +2469,9 @@ function renderReviewStep() {
             </div>
 
             <div
-              class="accuracy-issues-list ${accuracyIssues.length > 0 ? '' : 'hidden'}"
+              class="accuracy-issues-list ${cardIssues.length > 0 ? '' : 'hidden'}"
               data-role="accuracy-issues-list"
-            >${renderAccuracyIssuesHtml(accuracyIssues)}</div>
+            >${renderAccuracyIssuesHtml(cardIssues)}</div>
 
             <div
               class="overflow-warning-bar ${
@@ -2276,12 +2711,10 @@ function syncSingleCardUI(card, item, st) {
     st.finalText,
     item.contextLabel
   );
-  const accuracyIssues = evaluateTranslationAccuracyIssues(
-    item.sourceText,
-    st.finalText,
-    st.keepOriginal
+  const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
+  const cardIssues = (signal.issues || []).filter(
+    (iss) => iss.code !== 'length-overflow' && iss.code !== 'empty'
   );
-  const signal = evaluateTranslationTrafficLight(item, st);
 
   card.classList.toggle('verified', st.verified);
   card.classList.toggle('is-empty', isEmpty);
@@ -2330,9 +2763,9 @@ function syncSingleCardUI(card, item, st) {
 
   const accuracyListEl = card.querySelector('[data-role="accuracy-issues-list"]');
   if (accuracyListEl) {
-    if (accuracyIssues.length > 0) {
+    if (cardIssues.length > 0) {
       accuracyListEl.classList.remove('hidden');
-      accuracyListEl.innerHTML = renderAccuracyIssuesHtml(accuracyIssues);
+      accuracyListEl.innerHTML = renderAccuracyIssuesHtml(cardIssues);
     } else {
       accuracyListEl.classList.add('hidden');
       accuracyListEl.innerHTML = '';
@@ -2394,7 +2827,7 @@ function applyReviewFilter() {
     const isOverflow = Boolean(
       evaluateLengthOverflowRisk(item.sourceText, st.finalText, item.contextLabel)
     );
-    const signal = evaluateTranslationTrafficLight(item, st);
+    const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
     const isAttention = signal.level === 'red' || signal.level === 'yellow';
 
     let visible = true;
@@ -2437,6 +2870,9 @@ export function focusReviewItem(itemId) {
   if (targetItem) {
     state.collapsedGroups.delete(getItemNavGroup(targetItem));
   }
+  if (state.activeMainView !== 'translator') {
+    switchMainView('translator');
+  }
   goToStep(4);
   setTimeout(() => {
     const card = els.reviewItemsContainer.querySelector(`.review-card[data-item-id="${itemId}"]`);
@@ -2475,6 +2911,12 @@ function renderDownloadStep() {
   els.finalVerifiedSummary.textContent = `${c.verified} / ${c.total}개`;
   els.finalUnverifiedSummary.textContent = `${c.unverified}개`;
   els.finalUnverifiedSummary.className = `final-stat-value ${c.unverified > 0 ? 'text-warn' : 'text-ok'}`;
+  if (els.finalWarningSummary) {
+    els.finalWarningSummary.textContent = `${c.unverifiedWarnings}개`;
+    els.finalWarningSummary.className = `final-stat-value ${
+      c.unverifiedWarnings > 0 ? 'text-danger' : 'text-ok'
+    }`;
+  }
   els.finalEmptySummary.textContent = `${c.empty}개`;
   els.finalEmptySummary.className = `final-stat-value ${c.empty > 0 ? 'text-danger' : 'text-ok'}`;
   els.finalModifiedSummary.textContent = `${c.modified}개`;
@@ -2493,6 +2935,13 @@ function renderDownloadStep() {
     return !st || !st.verified;
   });
 
+  const unverifiedWarningItems = doc.items.filter((it) => {
+    const st = state.itemStates.get(it.id);
+    if (!st || st.verified) return false;
+    const sig = evaluateTranslationTrafficLight(it, st, state.selectedLangKey);
+    return sig.level === 'red' || sig.level === 'yellow';
+  });
+
   const overflowItems = doc.items.filter((it) => {
     const st = state.itemStates.get(it.id);
     return st && Boolean(evaluateLengthOverflowRisk(it.sourceText, st.finalText, it.contextLabel));
@@ -2502,10 +2951,39 @@ function renderDownloadStep() {
     const okBox = document.createElement('div');
     okBox.className = 'alert-box alert-success';
     okBox.innerHTML = `
-      <div class="alert-title">✅ 모든 문장의 번역 입력과 확인이 완료되었습니다!</div>
-      <p class="alert-message">총 ${c.total}개 문장 모두 번역문이 입력되었고 ‘확인 완료’로 표시되었습니다. 아래에서 출력 방식을 선택하고 파일을 저장하세요.</p>
+      <div class="alert-title">✅ 모든 문장의 번역 입력과 교사 확인이 완료되었습니다!</div>
+      <p class="alert-message">총 ${c.total}개 문장 모두 번역문이 입력되었고 ‘확인 완료’로 표시되었습니다. (※ 자동 경고가 번역 정확성을 100% 보증하지 않으므로 다운로드 후 원본 프로그램에서 최종 배치를 확인해 주세요.)</p>
     `;
     els.downloadWarningsPanel.appendChild(okBox);
+  }
+
+  if (unverifiedWarningItems.length > 0) {
+    const warnBox = document.createElement('div');
+    warnBox.className = 'alert-box alert-warning';
+    warnBox.innerHTML = `
+      <div class="alert-title">🚦 미확인 검수 경고가 있는 문장이 ${unverifiedWarningItems.length}개 있습니다</div>
+      <p class="alert-message">숫자·날짜·퍼센트 누락, 미번역 한글 잔류, 길이 넘침 또는 학교 용어집 불일치 경고가 발생한 문장 중 아직 ‘확인 완료’로 표시되지 않은 항목입니다. (자동 경고가 번역 정확성을 보증하지 않으므로 선생님의 최종 검토를 권장합니다.)</p>
+      <ul class="issue-list" id="warning-issue-list"></ul>
+    `;
+    const ul = warnBox.querySelector('#warning-issue-list');
+    for (const it of unverifiedWarningItems) {
+      const st = state.itemStates.get(it.id);
+      const sig = evaluateTranslationTrafficLight(it, st, state.selectedLangKey);
+      const li = document.createElement('li');
+      const reasonText =
+        sig.issues && sig.issues.length > 0
+          ? sig.issues.map((i) => i.message).join(' / ')
+          : sig.label;
+      li.innerHTML = `<strong>${escapeHtml(it.locationLabel)} (${escapeHtml(it.contextLabel)}):</strong> ${escapeHtml(reasonText)} `;
+      const jumpBtn = document.createElement('button');
+      jumpBtn.type = 'button';
+      jumpBtn.className = 'link-btn';
+      jumpBtn.textContent = '[해당 문장으로 이동]';
+      jumpBtn.addEventListener('click', () => focusReviewItem(it.id));
+      li.appendChild(jumpBtn);
+      ul.appendChild(li);
+    }
+    els.downloadWarningsPanel.appendChild(warnBox);
   }
 
   if (overflowItems.length > 0) {
@@ -2660,6 +3138,834 @@ async function handleDownloadTranslatedFile() {
     els.downloadErrorBox.classList.remove('hidden');
   } finally {
     els.btnDownloadFile.disabled = false;
+  }
+}
+
+/* ==================== PRD 5: LESSON UTILIZATION CASE SHARING ==================== */
+
+function formatFileFormatLabel(fmt) {
+  if (fmt === 'pptx') return 'PPTX (슬라이드)';
+  if (fmt === 'hwpx') return 'HWPX (한글 문서)';
+  if (fmt === 'both') return 'PPTX + HWPX';
+  return fmt || 'PPTX';
+}
+
+function formatStatusBadgeHtml(status) {
+  if (status === 'approved') {
+    return '<span class="badge badge-available case-status-badge status-approved">🟢 승인됨 (공개 게시)</span>';
+  }
+  if (status === 'rejected') {
+    return '<span class="badge badge-unavailable case-status-badge status-rejected">🔴 반려됨 (사유 확인·재제출 가능)</span>';
+  }
+  if (status === 'hidden') {
+    return '<span class="badge badge-context case-status-badge status-hidden">🙈 비공개 전환됨</span>';
+  }
+  return '<span class="badge badge-downloadable case-status-badge status-pending">🟡 관리자 승인중</span>';
+}
+
+function bindCaseSharingEvents() {
+  if (els.caseInputDate && !els.caseInputDate.value) {
+    els.caseInputDate.value = new Date().toISOString().slice(0, 10);
+  }
+
+  els.btnOpenCaseForm?.addEventListener('click', () => {
+    openCaseWritePanel(null);
+  });
+
+  els.btnCloseCaseForm?.addEventListener('click', () => {
+    els.caseWritePanel?.classList.add('hidden');
+  });
+
+  els.btnCancelCaseForm?.addEventListener('click', () => {
+    els.caseWritePanel?.classList.add('hidden');
+  });
+
+  els.btnOpenMyCases?.addEventListener('click', () => {
+    els.myCasesPanel?.classList.remove('hidden');
+    loadAndRenderMyCases();
+    els.myCasesPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  els.btnCloseMyCases?.addEventListener('click', () => {
+    els.myCasesPanel?.classList.add('hidden');
+  });
+
+  els.btnLookupMyCases?.addEventListener('click', () => {
+    loadAndRenderMyCases();
+  });
+
+  els.caseSubmitForm?.addEventListener('submit', handleSubmitCaseForm);
+
+  // Public filter events
+  els.filterCaseLang?.addEventListener('change', renderPublicCasesList);
+  els.filterCaseGrade?.addEventListener('change', renderPublicCasesList);
+  els.filterCaseFormat?.addEventListener('change', renderPublicCasesList);
+  els.filterCaseSubject?.addEventListener('input', renderPublicCasesList);
+
+  els.btnResetCaseFilters?.addEventListener('click', () => {
+    if (els.filterCaseLang) els.filterCaseLang.value = 'all';
+    if (els.filterCaseGrade) els.filterCaseGrade.value = 'all';
+    if (els.filterCaseFormat) els.filterCaseFormat.value = 'all';
+    if (els.filterCaseSubject) els.filterCaseSubject.value = '';
+    state.highlightedCaseId = null;
+    renderPublicCasesList();
+  });
+
+  els.btnRefreshCases?.addEventListener('click', () => {
+    loadAndRenderPublicCases();
+  });
+}
+
+function openCaseWritePanel(editItem = null) {
+  if (!els.caseWritePanel || !els.caseSubmitForm) return;
+  els.caseSubmitFeedback?.classList.add('hidden');
+
+  if (editItem) {
+    els.caseFormTitle.textContent = '✏️ 반려된 수업 활용 사례 수정 및 재제출';
+    els.btnSubmitCase.textContent = '📤 수정 내용 다시 제출하기 (제출 후 ‘관리자 승인중’)';
+    els.caseEditId.value = editItem.id;
+    els.caseInputTitle.value = editItem.title || '';
+    els.caseInputDate.value = editItem.used_date || new Date().toISOString().slice(0, 10);
+    els.caseInputGrade.value = editItem.school_grade || '';
+    els.caseInputSubject.value = editItem.subject || '';
+    els.caseInputLang.value = editItem.target_language || '';
+    els.caseInputFormat.value = editItem.file_format || 'pptx';
+    els.caseInputAuthor.value = editItem.author_display_name || '';
+    els.caseInputGoal.value = editItem.lesson_goal || '';
+    els.caseInputProcess.value = editItem.tool_usage_process || '';
+    els.caseInputReview.value = editItem.teacher_review_notes || '';
+    els.caseInputResults.value = editItem.observed_results_limits || '';
+    els.caseInputMetrics.value = editItem.aggregate_metrics || '';
+    els.caseInputImprovements.value = editItem.improvement_suggestions || '';
+    els.caseInputPasscode.value = els.myCasesPasscodeInput?.value || '';
+    els.chkCaseFactual.checked = true;
+    els.chkCaseNopii.checked = true;
+    els.chkCaseRights.checked = true;
+  } else {
+    els.caseFormTitle.textContent = '✏️ 수업 활용 사례 작성 및 제출';
+    els.btnSubmitCase.textContent = '📤 사례 제출하기 (제출 후 ‘관리자 승인중’)';
+    els.caseSubmitForm.reset();
+    els.caseEditId.value = '';
+    if (els.caseInputDate) {
+      els.caseInputDate.value = new Date().toISOString().slice(0, 10);
+    }
+  }
+
+  els.caseWritePanel.classList.remove('hidden');
+  els.caseWritePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  els.caseInputTitle?.focus();
+}
+
+async function handleSubmitCaseForm(e) {
+  e.preventDefault();
+  if (!els.caseSubmitFeedback) return;
+
+  const editId = (els.caseEditId?.value || '').trim();
+  const payload = {
+    title: (els.caseInputTitle?.value || '').trim(),
+    used_date: (els.caseInputDate?.value || '').trim(),
+    school_grade: (els.caseInputGrade?.value || '').trim(),
+    subject: (els.caseInputSubject?.value || '').trim(),
+    target_language: (els.caseInputLang?.value || '').trim(),
+    file_format: (els.caseInputFormat?.value || 'pptx').trim(),
+    author_display_name: (els.caseInputAuthor?.value || '').trim() || '익명 교사',
+    lesson_goal: (els.caseInputGoal?.value || '').trim(),
+    tool_usage_process: (els.caseInputProcess?.value || '').trim(),
+    teacher_review_notes: (els.caseInputReview?.value || '').trim(),
+    observed_results_limits: (els.caseInputResults?.value || '').trim(),
+    aggregate_metrics: (els.caseInputMetrics?.value || '').trim(),
+    improvement_suggestions: (els.caseInputImprovements?.value || '').trim(),
+    author_passcode: els.caseInputPasscode?.value || '',
+    confirmed_factual: Boolean(els.chkCaseFactual?.checked),
+    confirmed_no_pii: Boolean(els.chkCaseNopii?.checked),
+    confirmed_public_rights: Boolean(els.chkCaseRights?.checked)
+  };
+
+  if (
+    !payload.title ||
+    !payload.used_date ||
+    !payload.school_grade ||
+    !payload.subject ||
+    !payload.target_language ||
+    !payload.lesson_goal ||
+    !payload.tool_usage_process ||
+    !payload.teacher_review_notes ||
+    !payload.observed_results_limits
+  ) {
+    showCaseFormFeedback('error', '필수 입력 항목(*필수)을 모두 작성해 주세요.');
+    return;
+  }
+
+  if (payload.author_passcode.trim().length < 4) {
+    showCaseFormFeedback('error', '작성자 본인 확인·수정용 비밀번호를 4자 이상 입력해 주세요.');
+    els.caseInputPasscode?.focus();
+    return;
+  }
+
+  if (!payload.confirmed_factual || !payload.confirmed_no_pii || !payload.confirmed_public_rights) {
+    showCaseFormFeedback('error', '제출 전 필수 확인란 3개(실제 활용, 학생 개인정보 제거, 공개 권한 확인)에 모두 체크해 주세요.');
+    return;
+  }
+
+  // Client-side PII pattern check (phone number / resident registration pattern)
+  const combinedText = `${payload.title} ${payload.lesson_goal} ${payload.tool_usage_process} ${payload.teacher_review_notes} ${payload.observed_results_limits} ${payload.aggregate_metrics}`;
+  if (/01[016789][-\s]?\d{3,4}[-\s]?\d{4}/.test(combinedText)) {
+    showCaseFormFeedback('error', '본문에 전화번호 형태로 보이는 숫자가 포함되어 있습니다. 학생·학부모 연락처 등 개인정보를 제거한 뒤 제출해 주세요.');
+    return;
+  }
+
+  if (els.btnSubmitCase) els.btnSubmitCase.disabled = true;
+
+  try {
+    let result;
+    if (editId) {
+      result = await resubmitLessonCase(editId, payload.author_passcode, payload);
+    } else {
+      result = await submitLessonCase(payload);
+    }
+
+    if (!result || !result.ok) {
+      showCaseFormFeedback('error', result?.message || '사례 제출 중 오류가 발생했습니다.');
+      return;
+    }
+
+    if (els.myCasesPasscodeInput) {
+      els.myCasesPasscodeInput.value = payload.author_passcode;
+    }
+
+    showCaseFormFeedback(
+      'success',
+      `✅ 제출 완료 — 현재 상태: [${result.status_label || '관리자 승인중'}]. 관리자가 검토하여 승인한 뒤 공개 목록에 게시됩니다. 아래 ‘내가 제출한 사례’ 목록에서 상태를 확인할 수 있습니다.`
+    );
+
+    els.myCasesPanel?.classList.remove('hidden');
+    await loadAndRenderMyCases();
+  } finally {
+    if (els.btnSubmitCase) els.btnSubmitCase.disabled = false;
+  }
+}
+
+function showCaseFormFeedback(type, msg) {
+  if (!els.caseSubmitFeedback) return;
+  els.caseSubmitFeedback.className = `alert-box alert-${type === 'error' ? 'error' : 'success'}`;
+  els.caseSubmitFeedback.innerHTML = `<div class="alert-title">${escapeHtml(msg)}</div>`;
+  els.caseSubmitFeedback.classList.remove('hidden');
+}
+
+async function loadAndRenderPublicCases() {
+  if (!els.casesPublicList) return;
+  els.casesPublicList.innerHTML = '<div class="cases-empty-state">⏳ 공개된 수업 활용 사례를 불러오는 중입니다...</div>';
+
+  const { items, isOfflineFallback, errorMessage } = await fetchApprovedCases();
+  state.publicCases = items || [];
+
+  if (els.casesCountPill) {
+    els.casesCountPill.textContent = `${state.publicCases.length}건`;
+  }
+
+  if (els.casesServerStatusBanner) {
+    if (isOfflineFallback) {
+      els.casesServerStatusBanner.textContent = `⚠️ 사례 공유 서버에 일시적으로 연결할 수 없어 내장 예시 사례만 표시하고 있습니다 (${errorMessage || '오프라인 모드'}). 기존 수업자료 번역 기능은 서버 상태와 무관하게 100% 정상 작동합니다.`;
+      els.casesServerStatusBanner.classList.remove('hidden');
+    } else {
+      els.casesServerStatusBanner.classList.add('hidden');
+    }
+  }
+
+  renderPublicCasesList();
+}
+
+function renderPublicCasesList() {
+  if (!els.casesPublicList) return;
+  const langFilter = els.filterCaseLang?.value || 'all';
+  const gradeFilter = els.filterCaseGrade?.value || 'all';
+  const formatFilter = els.filterCaseFormat?.value || 'all';
+  const keyword = (els.filterCaseSubject?.value || '').trim().toLowerCase();
+
+  const filtered = state.publicCases.filter((item) => {
+    if (langFilter !== 'all' && item.target_language !== langFilter) return false;
+    if (gradeFilter !== 'all' && item.school_grade !== gradeFilter) return false;
+    if (formatFilter !== 'all' && item.file_format !== formatFilter) return false;
+    if (keyword) {
+      const hay = `${item.title || ''} ${item.subject || ''} ${item.lesson_goal || ''} ${item.tool_usage_process || ''}`.toLowerCase();
+      if (!hay.includes(keyword)) return false;
+    }
+    return true;
+  });
+
+  els.casesPublicList.innerHTML = '';
+
+  if (filtered.length === 0) {
+    els.casesPublicList.innerHTML =
+      '<div class="cases-empty-state">조건에 맞는 승인된 수업 활용 사례가 없습니다. 필터를 초기화하거나 첫 번째 수업 활용 사례를 작성해 보세요!</div>';
+    return;
+  }
+
+  for (const item of filtered) {
+    const langMeta = getTargetLanguageMeta(item.target_language || 'en');
+    const isHighlighted = state.highlightedCaseId && state.highlightedCaseId === item.id;
+    const card = document.createElement('article');
+    card.className = `case-card${isHighlighted ? ' is-highlighted-case' : ''}`;
+    card.setAttribute('data-case-id', item.id);
+
+    const sampleBadgeHtml = item.is_sample
+      ? '<span class="badge badge-warn case-sample-badge" title="기능 안내를 위한 샘플 데이터이며 실제 수업 실적에 포함되지 않습니다">📌 [예시 사례 · 실제 실적 아님]</span>'
+      : '<span class="badge badge-available">✓ 승인된 공개 사례</span>';
+
+    card.innerHTML = `
+      <div class="case-card-header">
+        <div class="case-badge-row">
+          ${sampleBadgeHtml}
+          <span class="badge badge-context">${escapeHtml(item.school_grade || '-')}</span>
+          <span class="badge badge-context">${escapeHtml(item.subject || '-')}</span>
+          <span class="badge badge-context">🌐 ${escapeHtml(langMeta.label)}</span>
+          <span class="badge badge-context">📄 ${escapeHtml(formatFileFormatLabel(item.file_format))}</span>
+        </div>
+        <div class="case-meta-date">
+          <span>활용일: ${escapeHtml(item.used_date || '-')}</span>
+          <span>· 작성: ${escapeHtml(item.author_display_name || '익명 교사')}</span>
+        </div>
+      </div>
+
+      <h3 class="case-card-title">${escapeHtml(item.title)}</h3>
+
+      <div class="case-sections-grid">
+        <div class="case-section-box">
+          <h4>🎯 수업 목표</h4>
+          <p>${escapeHtml(item.lesson_goal)}</p>
+        </div>
+        <div class="case-section-box">
+          <h4>🛠️ 도구 사용 과정</h4>
+          <p>${escapeHtml(item.tool_usage_process)}</p>
+        </div>
+        <div class="case-section-box">
+          <h4>🔎 교사의 번역 검수 · 수정 내용</h4>
+          <p>${escapeHtml(item.teacher_review_notes)}</p>
+        </div>
+        <div class="case-section-box">
+          <h4>📌 관찰한 결과와 한계</h4>
+          <p>${escapeHtml(item.observed_results_limits)}</p>
+        </div>
+      </div>
+
+      ${
+        item.aggregate_metrics || item.improvement_suggestions
+          ? `<div class="case-optional-row">
+              ${item.aggregate_metrics ? `<div><strong>📊 활용 규모(집계):</strong> ${escapeHtml(item.aggregate_metrics)}</div>` : ''}
+              ${item.improvement_suggestions ? `<div><strong>💡 향후 개선 제안:</strong> ${escapeHtml(item.improvement_suggestions)}</div>` : ''}
+            </div>`
+          : ''
+      }
+
+      <div class="case-card-footer">
+        <div class="case-footer-left">
+          <button type="button" class="btn btn-outline btn-sm" data-role="share-case-link">
+            🔗 고유 공유 링크 복사
+          </button>
+          <button type="button" class="link-btn" data-role="toggle-report-box">
+            🚨 신고 · 수정/삭제 요청
+          </button>
+        </div>
+        <span class="case-disclaimer-mini">※ 게시된 사례는 교사 참고용 기록이며 공식 검증된 실적을 의미하지 않습니다.</span>
+      </div>
+
+      <div class="case-report-drawer hidden" data-role="report-drawer">
+        <div class="case-report-row">
+          <select class="drawer-input" data-role="report-type" aria-label="요청 유형 선택">
+            <option value="report">개인정보·부적절 내용 신고</option>
+            <option value="edit_request">내용 수정 요청</option>
+            <option value="delete_request">게시글 삭제 요청</option>
+          </select>
+          <input type="text" class="drawer-input" data-role="report-reason" placeholder="신고 또는 수정·삭제 요청 사유를 구체적으로 입력해 주세요" />
+          <input type="text" class="drawer-input" data-role="report-contact" placeholder="회신 연락처/비고 (선택)" />
+          <button type="button" class="btn btn-secondary btn-sm" data-role="submit-report-btn">요청 접수</button>
+        </div>
+        <span class="drawer-feedback" data-role="report-feedback"></span>
+      </div>
+    `;
+
+    const shareBtn = card.querySelector('[data-role="share-case-link"]');
+    shareBtn?.addEventListener('click', async () => {
+      const shareUrl = `${window.location.origin}${window.location.pathname}?case=${encodeURIComponent(item.id)}`;
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        shareBtn.textContent = '✓ 공유 링크 복사됨!';
+        setTimeout(() => {
+          shareBtn.textContent = '🔗 고유 공유 링크 복사';
+        }, 2000);
+      } catch {
+        window.prompt('아래 고유 링크를 복사해 공유하세요:', shareUrl);
+      }
+    });
+
+    const toggleReportBtn = card.querySelector('[data-role="toggle-report-box"]');
+    const reportDrawer = card.querySelector('[data-role="report-drawer"]');
+    toggleReportBtn?.addEventListener('click', () => {
+      reportDrawer?.classList.toggle('hidden');
+    });
+
+    const submitReportBtn = card.querySelector('[data-role="submit-report-btn"]');
+    submitReportBtn?.addEventListener('click', async () => {
+      const reqType = card.querySelector('[data-role="report-type"]')?.value || 'report';
+      const reason = card.querySelector('[data-role="report-reason"]')?.value || '';
+      const contact = card.querySelector('[data-role="report-contact"]')?.value || '';
+      const fb = card.querySelector('[data-role="report-feedback"]');
+      submitReportBtn.disabled = true;
+      const res = await reportLessonCase({
+        caseId: item.id,
+        requestType: reqType,
+        reason,
+        contactInfo: contact
+      });
+      submitReportBtn.disabled = false;
+      if (fb) {
+        fb.textContent = res.message || (res.ok ? '접수되었습니다.' : '접수 실패');
+      }
+    });
+
+    els.casesPublicList.appendChild(card);
+
+    if (isHighlighted) {
+      setTimeout(() => {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 120);
+    }
+  }
+}
+
+async function loadAndRenderMyCases() {
+  if (!els.myCasesList) return;
+  const savedIds = getSavedMyCaseIds();
+  const passcode = (els.myCasesPasscodeInput?.value || '').trim();
+
+  if (passcode.length < 4) {
+    els.myCasesList.innerHTML =
+      '<div class="cases-empty-state">작성 시 설정한 작성자 비밀번호(4자 이상)를 위 입력란에 넣고 <strong>[내 제출 글 조회]</strong>를 누르면 제출한 글과 승인·반려 상태를 확인할 수 있습니다. (방금 제출한 경우에는 자동으로 표시됩니다.)</div>';
+    return;
+  }
+
+  els.myCasesList.innerHTML = '<div class="cases-empty-state">⏳ 내 제출 글과 승인 상태를 조회하는 중...</div>';
+  const res = await fetchMyCases(savedIds, passcode);
+  state.myCases = res.items || [];
+
+  if (state.myCases.length === 0) {
+    els.myCasesList.innerHTML =
+      '<div class="cases-empty-state">일치하는 제출 글을 찾지 못했습니다. 작성 시 입력한 비밀번호를 확인해 주세요.</div>';
+    return;
+  }
+
+  els.myCasesList.innerHTML = '';
+  for (const item of state.myCases) {
+    const langMeta = getTargetLanguageMeta(item.target_language || 'en');
+    const card = document.createElement('div');
+    card.className = `case-card my-case-card status-card-${item.status}`;
+    card.innerHTML = `
+      <div class="case-card-header">
+        <div class="case-badge-row">
+          ${formatStatusBadgeHtml(item.status)}
+          <span class="badge badge-context">${escapeHtml(item.school_grade || '-')}</span>
+          <span class="badge badge-context">${escapeHtml(item.subject || '-')}</span>
+          <span class="badge badge-context">🌐 ${escapeHtml(langMeta.label)}</span>
+        </div>
+        <div class="case-meta-date">
+          <span>활용일: ${escapeHtml(item.used_date || '-')}</span>
+        </div>
+      </div>
+
+      <h4 class="case-card-title">${escapeHtml(item.title)}</h4>
+
+      ${
+        item.status === 'pending'
+          ? '<p class="my-case-status-note">🕒 <strong>관리자 승인중:</strong> 제출이 정상 접수되었으며, 관리자 승인 전까지 공개 목록과 공유 링크에는 나타나지 않습니다.</p>'
+          : ''
+      }
+      ${
+        item.status === 'rejected'
+          ? `<div class="alert-box alert-error" style="margin: 10px 0;">
+              <div class="alert-title">🔴 관리자 반려 사유</div>
+              <p class="alert-message">${escapeHtml(item.rejection_reason || '사유 미기재')}</p>
+              <p class="alert-action">아래 [✏️ 내용 수정 후 다시 제출하기] 버튼을 눌러 수정한 뒤 재제출할 수 있습니다.</p>
+            </div>`
+          : ''
+      }
+
+      <div class="case-card-footer">
+        <div class="case-footer-left">
+          <button type="button" class="btn btn-secondary btn-sm" data-role="edit-resubmit-btn">
+            ✏️ 내용 수정 후 다시 제출하기
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" data-role="delete-my-case-btn">
+            🗑️ 내 제출 글 삭제
+          </button>
+        </div>
+        <span class="my-case-action-feedback drawer-feedback" data-role="my-case-feedback"></span>
+      </div>
+    `;
+
+    card.querySelector('[data-role="edit-resubmit-btn"]')?.addEventListener('click', () => {
+      openCaseWritePanel(item);
+    });
+
+    card.querySelector('[data-role="delete-my-case-btn"]')?.addEventListener('click', async () => {
+      let pw = (els.myCasesPasscodeInput?.value || '').trim();
+      if (!pw) {
+        pw = (window.prompt('작성 시 설정한 비밀번호를 입력해 주세요:') || '').trim();
+      }
+      if (!pw) return;
+      const fb = card.querySelector('[data-role="my-case-feedback"]');
+      const delRes = await removeMyLessonCase(item.id, pw);
+      if (!delRes.ok) {
+        if (fb) fb.textContent = delRes.message || '삭제에 실패했습니다.';
+        return;
+      }
+      await loadAndRenderMyCases();
+      await loadAndRenderPublicCases();
+    });
+
+    els.myCasesList.appendChild(card);
+  }
+}
+
+/* ==================== PRD 6 & 7: ADMIN TAB & SERVER-VERIFIED APPROVAL ==================== */
+
+function bindAdminEvents() {
+  els.adminLoginForm?.addEventListener('submit', handleAdminLogin);
+
+  els.btnAdminLogout?.addEventListener('click', () => {
+    state.adminAuthenticated = false;
+    state.adminPasswordSession = '';
+    state.adminCases = [];
+    state.adminReports = [];
+    if (els.adminPasswordInput) els.adminPasswordInput.value = '';
+    if (els.adminAuthMsg) els.adminAuthMsg.textContent = '관리자 세션이 잠금(로그아웃)되었습니다.';
+    els.adminAuthBox?.classList.remove('hidden');
+    els.adminDashboardBox?.classList.add('hidden');
+    els.btnAdminLogout?.classList.add('hidden');
+  });
+
+  els.adminFilterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.adminActiveFilter = btn.getAttribute('data-admin-filter') || 'all';
+      els.adminFilterBtns.forEach((b) => b.classList.toggle('active', b === btn));
+      renderAdminDashboardLists();
+    });
+  });
+
+  els.btnAdminRefresh?.addEventListener('click', () => {
+    if (state.adminAuthenticated) {
+      loadAndRenderAdminDashboard();
+    }
+  });
+
+  els.btnToggleAdminPwChange?.addEventListener('click', () => {
+    els.adminPwChangePanel?.classList.toggle('hidden');
+  });
+
+  els.btnSaveAdminNewPw?.addEventListener('click', handleAdminSaveNewPassword);
+}
+
+async function handleAdminLogin(e) {
+  e.preventDefault();
+  const pw = els.adminPasswordInput?.value || '';
+  if (!pw) return;
+
+  if (els.btnAdminLogin) els.btnAdminLogin.disabled = true;
+  if (els.adminAuthMsg) els.adminAuthMsg.textContent = '⏳ 서버에서 관리자 권한을 확인하는 중...';
+
+  const res = await verifyAdminPasswordOnServer(pw);
+  if (els.btnAdminLogin) els.btnAdminLogin.disabled = false;
+
+  if (!res.ok) {
+    state.adminAuthenticated = false;
+    state.adminPasswordSession = '';
+    if (els.adminAuthMsg) {
+      els.adminAuthMsg.textContent = `❌ ${res.message || '관리자 비밀번호가 일치하지 않습니다.'}`;
+    }
+    return;
+  }
+
+  state.adminAuthenticated = true;
+  state.adminPasswordSession = pw;
+  if (els.adminPasswordInput) els.adminPasswordInput.value = '';
+  if (els.adminAuthMsg) els.adminAuthMsg.textContent = '';
+
+  els.adminAuthBox?.classList.add('hidden');
+  els.adminDashboardBox?.classList.remove('hidden');
+  els.btnAdminLogout?.classList.remove('hidden');
+
+  await loadAndRenderAdminDashboard();
+}
+
+async function handleAdminSaveNewPassword() {
+  if (!state.adminAuthenticated || !state.adminPasswordSession) return;
+  const newPw = (els.inputAdminNewPw?.value || '').trim();
+  if (newPw.length < 4) {
+    if (els.adminPwChangeFeedback) {
+      els.adminPwChangeFeedback.textContent = '새 관리자 비밀번호는 4자 이상이어야 합니다.';
+    }
+    return;
+  }
+
+  const res = await adminChangePassword(state.adminPasswordSession, newPw);
+  if (!res.ok) {
+    if (els.adminPwChangeFeedback) {
+      els.adminPwChangeFeedback.textContent = res.message || '비밀번호 변경 실패';
+    }
+    return;
+  }
+
+  state.adminPasswordSession = newPw;
+  if (els.inputAdminNewPw) els.inputAdminNewPw.value = '';
+  if (els.adminPwChangeFeedback) {
+    els.adminPwChangeFeedback.textContent = '✓ 서버 관리자 비밀번호 해시가 변경되었습니다.';
+  }
+}
+
+async function loadAndRenderAdminDashboard() {
+  if (!state.adminAuthenticated || !state.adminPasswordSession) return;
+
+  const [casesRes, reportsRes] = await Promise.all([
+    adminFetchAllCases(state.adminPasswordSession, 'all'),
+    adminFetchCaseReports(state.adminPasswordSession)
+  ]);
+
+  if (!casesRes.ok) {
+    showAdminActionFeedback('error', casesRes.message || '목록을 불러오지 못했습니다.');
+    return;
+  }
+
+  state.adminCases = casesRes.items || [];
+  state.adminReports = reportsRes.ok ? reportsRes.items || [] : [];
+
+  const counts = {
+    all: state.adminCases.length,
+    pending: state.adminCases.filter((c) => c.status === 'pending').length,
+    approved: state.adminCases.filter((c) => c.status === 'approved').length,
+    rejected: state.adminCases.filter((c) => c.status === 'rejected').length,
+    hidden: state.adminCases.filter((c) => c.status === 'hidden').length,
+    reports: state.adminReports.filter((r) => r.status === 'open').length
+  };
+
+  if (els.adminCountAll) els.adminCountAll.textContent = String(counts.all);
+  if (els.adminCountPending) els.adminCountPending.textContent = String(counts.pending);
+  if (els.adminCountApproved) els.adminCountApproved.textContent = String(counts.approved);
+  if (els.adminCountRejected) els.adminCountRejected.textContent = String(counts.rejected);
+  if (els.adminCountHidden) els.adminCountHidden.textContent = String(counts.hidden);
+  if (els.adminCountReports) els.adminCountReports.textContent = String(counts.reports);
+
+  renderAdminDashboardLists();
+}
+
+function showAdminActionFeedback(type, message) {
+  if (!els.adminActionFeedback) return;
+  els.adminActionFeedback.className = `alert-box alert-${type === 'error' ? 'error' : 'success'}`;
+  els.adminActionFeedback.innerHTML = `<div class="alert-title">${escapeHtml(message)}</div>`;
+  els.adminActionFeedback.classList.remove('hidden');
+}
+
+function renderAdminDashboardLists() {
+  if (!els.adminCasesList || !els.adminReportsList) return;
+
+  if (state.adminActiveFilter === 'reports') {
+    els.adminCasesList.classList.add('hidden');
+    els.adminReportsList.classList.remove('hidden');
+    renderAdminReportsList();
+    return;
+  }
+
+  els.adminReportsList.classList.add('hidden');
+  els.adminCasesList.classList.remove('hidden');
+
+  const filtered = state.adminCases.filter((item) => {
+    if (state.adminActiveFilter === 'all') return true;
+    return item.status === state.adminActiveFilter;
+  });
+
+  els.adminCasesList.innerHTML = '';
+  if (filtered.length === 0) {
+    els.adminCasesList.innerHTML = '<div class="cases-empty-state">해당 상태의 게시글이 없습니다.</div>';
+    return;
+  }
+
+  for (const item of filtered) {
+    const langMeta = getTargetLanguageMeta(item.target_language || 'en');
+    const createdDate = item.created_at ? new Date(item.created_at).toLocaleString('ko-KR') : '-';
+    const card = document.createElement('article');
+    card.className = `case-card admin-case-card status-card-${item.status}`;
+
+    card.innerHTML = `
+      <div class="case-card-header">
+        <div class="case-badge-row">
+          ${formatStatusBadgeHtml(item.status)}
+          ${item.is_sample ? '<span class="badge badge-warn">📌 [예시 사례]</span>' : ''}
+          <span class="badge badge-context">${escapeHtml(item.school_grade || '-')}</span>
+          <span class="badge badge-context">${escapeHtml(item.subject || '-')}</span>
+          <span class="badge badge-context">🌐 ${escapeHtml(langMeta.label)}</span>
+          <span class="badge badge-context">📄 ${escapeHtml(formatFileFormatLabel(item.file_format))}</span>
+        </div>
+        <div class="case-meta-date">
+          <span>제출일시: ${escapeHtml(createdDate)}</span>
+          <span>· 활용일: ${escapeHtml(item.used_date || '-')}</span>
+          <span>· 작성자 표시명: <strong>${escapeHtml(item.author_display_name || '익명 교사')}</strong></span>
+        </div>
+      </div>
+
+      <h3 class="case-card-title">${escapeHtml(item.title)}</h3>
+
+      <div class="admin-confirm-pills">
+        <span class="badge ${item.confirmed_factual ? 'badge-available' : 'badge-unavailable'}">실제 활용 확인: ${item.confirmed_factual ? '예' : '아니오'}</span>
+        <span class="badge ${item.confirmed_no_pii ? 'badge-available' : 'badge-unavailable'}">학생 개인정보 제거 확인: ${item.confirmed_no_pii ? '예' : '아니오'}</span>
+        <span class="badge ${item.confirmed_public_rights ? 'badge-available' : 'badge-unavailable'}">공개·저작권 확인: ${item.confirmed_public_rights ? '예' : '아니오'}</span>
+      </div>
+
+      <div class="case-sections-grid">
+        <div class="case-section-box">
+          <h4>🎯 수업 목표</h4>
+          <p>${escapeHtml(item.lesson_goal)}</p>
+        </div>
+        <div class="case-section-box">
+          <h4>🛠️ 도구 사용 과정</h4>
+          <p>${escapeHtml(item.tool_usage_process)}</p>
+        </div>
+        <div class="case-section-box">
+          <h4>🔎 교사의 번역 검수 · 수정 내용</h4>
+          <p>${escapeHtml(item.teacher_review_notes)}</p>
+        </div>
+        <div class="case-section-box">
+          <h4>📌 관찰한 결과와 한계</h4>
+          <p>${escapeHtml(item.observed_results_limits)}</p>
+        </div>
+      </div>
+
+      ${
+        item.rejection_reason
+          ? `<div class="alert-box alert-warning" style="margin-top: 10px;">
+              <strong>기록된 반려/비공개 사유:</strong> ${escapeHtml(item.rejection_reason)}
+            </div>`
+          : ''
+      }
+
+      <div class="admin-review-controls">
+        <div class="admin-reject-input-wrap">
+          <input
+            type="text"
+            class="drawer-input"
+            data-role="admin-reason-input"
+            value="${escapeHtml(item.rejection_reason || '')}"
+            placeholder="반려 또는 비공개 시 사유 입력 (반려 시 필수 입력 · 작성자에게 표시됨)"
+          />
+        </div>
+        <div class="admin-action-btns">
+          <button type="button" class="btn btn-primary btn-sm" data-role="admin-approve-btn">
+            ✅ 승인 (공개 게시)
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" data-role="admin-reject-btn">
+            ❌ 반려 (사유 전달)
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" data-role="admin-hide-btn">
+            🙈 비공개 전환
+          </button>
+          <button type="button" class="btn btn-outline btn-sm storage-clear-btn" data-role="admin-delete-btn">
+            🗑️ 삭제
+          </button>
+        </div>
+      </div>
+    `;
+
+    const reasonInput = card.querySelector('[data-role="admin-reason-input"]');
+
+    card.querySelector('[data-role="admin-approve-btn"]')?.addEventListener('click', async () => {
+      const res = await adminReviewCase(state.adminPasswordSession, item.id, 'approve', '');
+      showAdminActionFeedback(res.ok ? 'success' : 'error', res.message);
+      if (res.ok) {
+        await loadAndRenderAdminDashboard();
+        await loadAndRenderPublicCases();
+      }
+    });
+
+    card.querySelector('[data-role="admin-reject-btn"]')?.addEventListener('click', async () => {
+      const reason = (reasonInput?.value || '').trim();
+      if (!reason) {
+        showAdminActionFeedback('error', '반려할 때는 작성자에게 전달할 반려 사유를 반드시 입력해야 합니다.');
+        reasonInput?.focus();
+        return;
+      }
+      const res = await adminReviewCase(state.adminPasswordSession, item.id, 'reject', reason);
+      showAdminActionFeedback(res.ok ? 'success' : 'error', res.message);
+      if (res.ok) {
+        await loadAndRenderAdminDashboard();
+        await loadAndRenderPublicCases();
+      }
+    });
+
+    card.querySelector('[data-role="admin-hide-btn"]')?.addEventListener('click', async () => {
+      const reason = (reasonInput?.value || '').trim();
+      const res = await adminReviewCase(state.adminPasswordSession, item.id, 'hide', reason);
+      showAdminActionFeedback(res.ok ? 'success' : 'error', res.message);
+      if (res.ok) {
+        await loadAndRenderAdminDashboard();
+        await loadAndRenderPublicCases();
+      }
+    });
+
+    card.querySelector('[data-role="admin-delete-btn"]')?.addEventListener('click', async () => {
+      if (!window.confirm(`'${item.title}' 게시글을 삭제 처리하시겠습니까?`)) return;
+      const res = await adminReviewCase(state.adminPasswordSession, item.id, 'delete', '');
+      showAdminActionFeedback(res.ok ? 'success' : 'error', res.message);
+      if (res.ok) {
+        await loadAndRenderAdminDashboard();
+        await loadAndRenderPublicCases();
+      }
+    });
+
+    els.adminCasesList.appendChild(card);
+  }
+}
+
+function renderAdminReportsList() {
+  if (!els.adminReportsList) return;
+  els.adminReportsList.innerHTML = '';
+
+  if (state.adminReports.length === 0) {
+    els.adminReportsList.innerHTML = '<div class="cases-empty-state">접수된 게시글 신고나 수정·삭제 요청이 없습니다.</div>';
+    return;
+  }
+
+  for (const rep of state.adminReports) {
+    const card = document.createElement('div');
+    card.className = 'case-card';
+    const createdStr = rep.created_at ? new Date(rep.created_at).toLocaleString('ko-KR') : '-';
+    card.innerHTML = `
+      <div class="case-card-header">
+        <div class="case-badge-row">
+          <span class="badge ${rep.status === 'open' ? 'badge-warn' : 'badge-available'}">${
+            rep.status === 'open' ? '🚨 미처리 요청' : '✓ 처리 완료'
+          }</span>
+          <span class="badge badge-context">${escapeHtml(rep.request_type)}</span>
+          <strong>대상 글: ${escapeHtml(rep.case_title || rep.case_id)}</strong>
+        </div>
+        <span class="case-meta-date">접수일시: ${escapeHtml(createdStr)}</span>
+      </div>
+      <p style="margin: 8px 0;"><strong>사유:</strong> ${escapeHtml(rep.reason)}</p>
+      ${rep.contact_info ? `<p class="text-muted"><strong>연락처/비고:</strong> ${escapeHtml(rep.contact_info)}</p>` : ''}
+      ${
+        rep.status === 'open'
+          ? `<div style="margin-top: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm" data-role="resolve-report-btn">✓ 요청 처리 완료로 표시</button>
+            </div>`
+          : ''
+      }
+    `;
+
+    card.querySelector('[data-role="resolve-report-btn"]')?.addEventListener('click', async () => {
+      const res = await adminResolveCaseReport(state.adminPasswordSession, rep.id);
+      showAdminActionFeedback(res.ok ? 'success' : 'error', res.message || '처리되었습니다.');
+      if (res.ok) {
+        await loadAndRenderAdminDashboard();
+      }
+    });
+
+    els.adminReportsList.appendChild(card);
   }
 }
 

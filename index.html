@@ -51,7 +51,7 @@
         <div class="ys-key"><button type="button" class="ys-chip" data-ys-install>📲 <span class="ys-wide">앱 </span>설치</button><button type="button" class="ys-chip" data-qr aria-label="QR 코드로 접속">📱 QR</button></div>
         <div class="privacy-pill" role="note" aria-label="개인정보 및 보안 안내">
           <span class="privacy-dot" aria-hidden="true"></span>
-          <span><strong>서버 전송 없음</strong><span class="privacy-more"> · 내 컴퓨터 브라우저 안에서만 안전 처리</span></span>
+          <span><strong>문서 외부 전송 없음</strong><span class="privacy-more"> · 수업자료는 브라우저 안에서만 처리</span></span>
         </div>
         <button type="button" id="btn-open-manual" class="btn btn-guide" aria-haspopup="dialog" aria-controls="manual-modal">
           📘 사용 설명서 · FAQ
@@ -62,16 +62,73 @@
     <div class="notice-strip" role="region" aria-label="작업 시 유의사항">
       <div class="container notice-strip-inner">
         <span class="notice-item">
-          💡 <strong>꼭 기억해 주세요:</strong> 작업 내용은 외부에 저장되지 않으므로 <strong>창을 닫거나 새로고침하기 전에 결과 파일을 다운로드</strong>하세요.
+          💡 <strong>꼭 기억해 주세요:</strong> 수업자료는 외부 서버에 저장되지 않으므로 <strong>창을 닫기 전에 결과 파일을 다운로드</strong>하고, 공용 PC에서는 작업 후 임시 저장을 삭제하세요.
         </span>
         <span class="notice-item" id="mobile-env-banner">
           🖥️ <strong>권장 환경:</strong> 자동 번역은 <strong>데스크톱 Chrome 브라우저</strong>에서 작동합니다 (미지원 환경에서도 직접 입력·변환 가능).
         </span>
       </div>
     </div>
+
+    <!-- 상단 주요 기능 전환 탭 & 브라우저 임시 저장 통제 바 (PRD 3.2, 5, 6) -->
+    <div class="top-workspace-bar" role="region" aria-label="주요 메뉴 및 브라우저 임시 저장 설정">
+      <div class="container top-workspace-inner">
+        <div class="main-view-tabs" role="tablist" aria-label="주요 기능 화면 전환">
+          <button
+            type="button"
+            id="tab-view-translator"
+            class="main-view-tab active"
+            role="tab"
+            aria-selected="true"
+            aria-controls="view-translator"
+            data-view-target="translator"
+          >
+            📄 수업자료 번역기
+          </button>
+          <button
+            type="button"
+            id="tab-view-cases"
+            class="main-view-tab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="view-cases"
+            data-view-target="cases"
+          >
+            💡 수업 활용 사례 <span id="cases-count-pill" class="tab-count-pill">공유</span>
+          </button>
+          <button
+            type="button"
+            id="tab-view-admin"
+            class="main-view-tab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="view-admin"
+            data-view-target="admin"
+          >
+            🔒 관리자
+          </button>
+        </div>
+
+        <div class="storage-control-bar" role="group" aria-label="브라우저 임시 저장 통제">
+          <label class="storage-toggle-label" title="체크하면 작업 중인 문서와 번역문을 이 브라우저(IndexedDB)에 임시 저장하여 새로고침 후에도 이어서 작업할 수 있습니다">
+            <input type="checkbox" id="chk-enable-autosave" checked />
+            <span id="label-autosave-toggle">💾 브라우저 임시 저장 켜짐</span>
+          </label>
+          <button
+            type="button"
+            id="btn-clear-browser-storage"
+            class="btn btn-outline btn-sm storage-clear-btn"
+            title="이 브라우저에 임시 저장된 원본 파일과 번역 작업 내용을 즉시 삭제합니다"
+          >
+            🗑️ 이 브라우저의 작업 내용 삭제
+          </button>
+          <span id="storage-control-feedback" class="storage-control-feedback" role="status" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
   </header>
 
-  <nav class="stepper-bar" aria-label="변환 진행 단계">
+  <nav id="stepper-bar-nav" class="stepper-bar" aria-label="변환 진행 단계">
     <div class="container">
       <ol class="stepper-list" id="stepper-list">
         <li class="stepper-item active" data-step="1">
@@ -109,6 +166,7 @@
   </nav>
 
   <main id="main-content" class="container main-container">
+    <div id="view-translator" role="tabpanel" aria-labelledby="tab-view-translator">
     <!-- ==================== STEP 1: 파일 업로드 (화면 A - 시안 1 적용) ==================== -->
     <section id="step-1" class="step-panel active" aria-labelledby="step1-heading">
       <div class="panel-card hero-stage-card">
@@ -130,7 +188,7 @@
 
             <!-- 과정 화살표 -->
             <div class="transform-arrow-wrap" aria-hidden="true">
-              <span class="transform-process-pill">🤖 자동 번역 + ✏️ 교사 검수 ➔</span>
+              <span class="transform-process-pill">🤖 내장 자동 번역 + ✏️ 교사 검수 ➔</span>
             </div>
 
             <!-- 출력 (After) -->
@@ -144,6 +202,19 @@
           </div>
         </div>
 
+        <!-- 파일 선택 전 데이터 처리 및 임시 저장 투명성 안내 (PRD 3.1, 3.2) -->
+        <div id="data-privacy-notice-step1" class="data-transparency-box" role="region" aria-label="파일 처리 및 데이터 보관 안내">
+          <div class="data-transparency-header">
+            <strong>🔐 파일 선택 전 데이터 처리·임시 저장 안내</strong>
+            <span id="step1-storage-state-pill" class="storage-state-pill">임시 저장: 켜짐 (IndexedDB)</span>
+          </div>
+          <ul class="data-transparency-list">
+            <li><strong>브라우저 임시 저장:</strong> 작업 중 실수로 창이 닫혀도 이어서 작업할 수 있도록 원본 파일과 번역 상태가 <strong>현재 브라우저 내부 저장소(IndexedDB)에만 임시 저장</strong>됩니다. 원하지 않으시면 상단 <strong>[💾 브라우저 임시 저장]</strong> 체크를 해제해 끌 수 있습니다.</li>
+            <li><strong>외부 서버 전송 여부:</strong> 업로드한 수업자료(<code>.pptx</code>·<code>.hwpx</code>)와 추출 문장·번역문은 <strong>외부 서버나 외부 번역 API로 전송되지 않으며</strong>, 자동 번역은 브라우저 내장 온디바이스 API(<code>window.Translator</code>)로만 수행됩니다. <em>(단, ‘수업 활용 사례’ 탭에서 직접 작성·제출하는 게시글만 사례 공유 DB 서버로 전송됩니다.)</em></li>
+            <li><strong>작업 내용 삭제 방법:</strong> 화면 상단 <strong>[🗑️ 이 브라우저의 작업 내용 삭제]</strong> 버튼을 누르면 저장된 원본과 번역 내용이 즉시 삭제되며 새로고침해도 복원되지 않습니다. <strong>공용 PC에서는 작업 종료 시 반드시 삭제</strong>해 주세요.</li>
+          </ul>
+        </div>
+
         <!-- 이전 임시 저장 작업 복구 배너 (아이디어 4) -->
         <div id="session-restore-banner" class="session-restore-banner hidden" role="region" aria-label="이전 작업 이어서 하기">
           <div class="session-restore-info">
@@ -152,7 +223,7 @@
           </div>
           <div class="session-restore-actions">
             <button type="button" id="btn-restore-session" class="btn btn-primary btn-sm">이어서 작업하기 →</button>
-            <button type="button" id="btn-discard-session" class="btn btn-outline btn-sm">임시 저장 삭제</button>
+            <button type="button" id="btn-discard-session" class="btn btn-outline btn-sm">이 브라우저의 작업 내용 삭제</button>
           </div>
         </div>
 
@@ -360,17 +431,17 @@
         </div>
 
         <!-- 대상 언어 선택 라디오 그룹 (기본 5개 언어 + 다문화 학급 확장 5개 언어) -->
-        <fieldset class="lang-fieldset">
-          <legend class="fieldset-legend">1. 주요 대상 언어 5종 (Chrome 자동 번역 우선 지원)</legend>
-          <div id="language-options-grid" class="language-options-grid" role="radiogroup" aria-label="주요 대상 언어 선택">
+        <fieldset class="lang-fieldset" role="radiogroup" aria-label="번역할 대상 언어 선택 (10개 국어 중 택 1)">
+          <legend class="fieldset-legend">1. 주요 대상 언어 5종 (Chrome 내장 자동 번역 우선 지원)</legend>
+          <div id="language-options-grid" class="language-options-grid" role="group" aria-label="주요 대상 언어 5종">
             <!-- JS에서 렌더링 -->
           </div>
 
           <div class="extended-lang-section">
             <div class="extended-lang-title">
-              🌏 다문화 학급 추가 지원 언어 5종 <small>(자동 번역 또는 학교 용어집·표 붙여넣기 지원)</small>
+              🌏 다문화 학급 추가 지원 언어 5종 <small>(내장 번역 모델 지원 시 자동 번역 · 미지원 환경에서는 학교 용어집·표 붙여넣기 지원)</small>
             </div>
-            <div id="extended-language-options-grid" class="language-options-grid" role="radiogroup" aria-label="추가 다문화 언어 선택">
+            <div id="extended-language-options-grid" class="language-options-grid" role="group" aria-label="다문화 학급 추가 지원 언어 5종">
               <!-- JS에서 렌더링 -->
             </div>
           </div>
@@ -384,6 +455,12 @@
           </div>
           <p id="translator-availability-reason" class="status-check-reason">브라우저 내장 Translator API와 언어 모델 상태를 확인하고 있습니다.</p>
           <p id="translator-availability-hint" class="status-check-hint"></p>
+        </div>
+
+        <!-- 자동 번역 시작 전 데이터 처리 경로 안내 (PRD 3.1) -->
+        <div id="data-privacy-notice-step3" class="data-transparency-box compact" role="region" aria-label="자동 번역 데이터 처리 안내">
+          <strong>🔒 자동 번역 시작 전 확인 사항:</strong>
+          <span>자동 번역은 <strong>브라우저 내장 Translator API(<code>window.Translator</code>)</strong>만 사용하며, 학생·수업 자료를 외부 번역 서버로 자동 전송하지 않습니다. 번역된 초안은 현재 브라우저(<code>IndexedDB</code>)에만 임시 저장되며 상단 <strong>[🗑️ 이 브라우저의 작업 내용 삭제]</strong>로 언제든 삭제할 수 있습니다.</span>
         </div>
 
         <!-- 모델 준비·다운로드·번역 진행 상태 표시 영역 -->
@@ -420,7 +497,7 @@
           </div>
         </div>
 
-        <!-- 번역 실행 오류/부분 실패 알림 -->
+        <!-- 번역 실행 오류/부분 실패 알림 및 재시도 -->
         <div id="translation-result-alert" class="alert-box hidden" role="status" aria-live="polite"></div>
 
         <!-- 진행 버튼 영역 -->
@@ -629,6 +706,21 @@
           </div>
         </div>
 
+        <!-- 통합 검수 경고 요약 패널 (PRD 4.1: 숫자·날짜·퍼센트 누락, 미번역, 길이 증가, 용어집 불일치 모아보기) -->
+        <div id="unified-warning-summary-panel" class="unified-warning-panel" role="region" aria-label="번역 검수 경고 요약">
+          <div class="unified-warning-header">
+            <div class="unified-warning-title-group">
+              <strong>🚦 검수 경고 한눈에 모아보기</strong>
+              <span id="unified-warning-total-badge" class="badge badge-warn">미확인 경고 0건</span>
+              <span class="unified-warning-disclaimer">※ 자동 경고가 번역 정확성을 보증하지는 않으므로 선생님의 최종 검토가 필요합니다.</span>
+            </div>
+            <button type="button" id="btn-toggle-warning-list" class="btn btn-outline btn-sm" aria-expanded="true">
+              경고 목록 접기 ▲
+            </button>
+          </div>
+          <div id="unified-warning-list" class="unified-warning-list"></div>
+        </div>
+
         <!-- 검토 카드 리스트 -->
         <div id="review-items-container" class="review-items-container" aria-live="polite"></div>
 
@@ -646,7 +738,7 @@
           <div>
             <span class="step-tag">단계 5 / 5</span>
             <h2 id="step5-heading">최종 확인 후 번역된 수업자료를 다운로드하세요</h2>
-            <p class="panel-desc">빠진 번역문이나 미검토 문장이 없는지 확인한 뒤, 원하는 출력 방식으로 완성된 파일을 저장하세요.</p>
+            <p class="panel-desc">빠진 번역문이나 미확인 경고 문장이 없는지 확인한 뒤, 원하는 출력 방식으로 완성된 파일을 저장하세요.</p>
           </div>
           <div class="header-actions">
             <button type="button" id="btn-back-to-step4" class="btn btn-outline">← 번역 검토 화면으로 돌아가기</button>
@@ -672,6 +764,10 @@
             <strong class="final-stat-value" id="final-unverified-summary">0개</strong>
           </div>
           <div class="final-stat-card">
+            <span class="final-stat-label">미확인 경고 문장</span>
+            <strong class="final-stat-value text-warn" id="final-warning-summary">0개</strong>
+          </div>
+          <div class="final-stat-card">
             <span class="final-stat-label">빈 번역문</span>
             <strong class="final-stat-value" id="final-empty-summary">0개</strong>
           </div>
@@ -681,7 +777,7 @@
           </div>
         </div>
 
-        <!-- 빈 번역문 및 미검토 항목 점검 패널 -->
+        <!-- 빈 번역문 및 미검토·미확인 경고 점검 패널 -->
         <div id="download-warnings-panel" class="download-warnings-panel"></div>
 
         <!-- 문서 출력 방식 선택: 단독 번역 vs 한국어+번역문 병기 (아이디어 3) -->
@@ -749,6 +845,17 @@
           <p id="download-success-msg" class="download-success-msg hidden" role="status" aria-live="polite"></p>
         </div>
 
+        <!-- 공용 PC 사용자용 작업 종료 시 임시 저장 삭제 안내 박스 (PRD 3.2) -->
+        <div id="shared-pc-cleanup-box" class="shared-pc-cleanup-box no-print" role="region" aria-label="공용 PC 임시 저장 삭제 안내">
+          <div>
+            <strong>🖥️ 교무실·특별실 등 공용 PC를 사용 중이신가요?</strong>
+            <p>결과 파일을 다운로드하셨다면, 다른 사람이 이전 문서와 번역 내역을 볼 수 없도록 아래 버튼을 눌러 이 브라우저에 임시 저장된 작업 내용을 삭제해 주세요.</p>
+          </div>
+          <button type="button" id="btn-step5-clear-storage" class="btn btn-outline">
+            🗑️ 이 브라우저의 작업 내용 즉시 삭제
+          </button>
+        </div>
+
         <!-- 인쇄용 원문-번역문 대조표 미리보기/출력 영역 (아이디어 10) -->
         <div id="printable-comparison-sheet" class="printable-comparison-sheet hidden" role="region" aria-label="교사용 원문-번역문 대조표">
           <div class="print-sheet-header">
@@ -808,6 +915,318 @@
         </div>
       </div>
     </section>
+    </div><!-- /#view-translator -->
+
+    <!-- ==================== 신규 기능 1: 수업 활용 사례 탭 (PRD 5) ==================== -->
+    <section id="view-cases" class="step-panel hidden" role="tabpanel" aria-labelledby="tab-view-cases">
+      <div class="panel-card">
+        <div class="panel-header-row">
+          <div>
+            <span class="step-tag">교사 현장 기록 · 공유</span>
+            <h2 id="cases-heading">💡 수업 활용 사례 공유</h2>
+            <p class="panel-desc">
+              다국어 수업자료 변환기를 실제 수업·학급 운영에 활용한 과정을 기록하고, 관리자 승인을 거친 사례를 다른 선생님과 공유합니다.
+            </p>
+          </div>
+          <div class="header-actions">
+            <button type="button" id="btn-open-case-form" class="btn btn-primary">✏️ 수업 활용 사례 작성하기</button>
+            <button type="button" id="btn-open-my-cases" class="btn btn-secondary">📋 내 제출 글 상태 확인</button>
+          </div>
+        </div>
+
+        <!-- 안내 및 면책 고지 (PRD 5.1, 5.2) -->
+        <div class="alert-box alert-info" style="margin-bottom: 18px;">
+          <div class="alert-title">📌 수업 활용 사례 열람 및 작성 안내</div>
+          <p class="alert-message">
+            • 작성된 사례는 제출 직후 <strong>“관리자 승인중”</strong> 상태로 저장되며, 관리자가 개인정보 미포함 여부 등을 검토해 <strong>승인한 사례만 공개 목록에 게시</strong>됩니다.<br />
+            • 게시된 사례라는 사실만으로 수업 실적이 공식 검증된 것을 뜻하지 않으며, <strong>[예시 사례]</strong> 배지가 붙은 글은 기능 이해를 돕기 위한 샘플이므로 실제 수업 실적과 구분됩니다.
+          </p>
+        </div>
+
+        <div id="cases-server-status-banner" class="alert-box alert-warn hidden" role="status"></div>
+
+        <!-- 사례 작성 / 재제출 폼 영역 (기본 접힘 또는 버튼 클릭 시 열림) -->
+        <div id="case-write-panel" class="case-sub-panel hidden" role="region" aria-labelledby="case-form-title">
+          <div class="case-sub-panel-header">
+            <div>
+              <h3 id="case-form-title">✏️ 수업 활용 사례 작성 및 제출</h3>
+              <p class="panel-desc">학생의 이름·연락처·사진·개별 학습 이력·학생별 평가 결과 등 개인정보는 절대 입력하지 마세요. (이미지·파일 첨부 제외)</p>
+            </div>
+            <button type="button" id="btn-close-case-form" class="btn btn-outline btn-sm">닫기 ✕</button>
+          </div>
+
+          <form id="case-submit-form" class="case-form" novalidate>
+            <input type="hidden" id="case-edit-id" value="" />
+
+            <div class="case-form-grid">
+              <div class="form-field full-span">
+                <label for="case-input-title">제목 <span class="req-mark">*필수</span></label>
+                <input type="text" id="case-input-title" required maxlength="120" placeholder="예: 4학년 과학 식물의 한살이 실험 관찰지 베트남어·한국어 병기 수업 적용" />
+              </div>
+
+              <div class="form-field">
+                <label for="case-input-date">활용 날짜 <span class="req-mark">*필수</span></label>
+                <input type="date" id="case-input-date" required />
+              </div>
+
+              <div class="form-field">
+                <label for="case-input-grade">학교급 · 학년 <span class="req-mark">*필수</span></label>
+                <select id="case-input-grade" required>
+                  <option value="">선택해 주세요</option>
+                  <option value="초등 1학년">초등 1학년</option>
+                  <option value="초등 2학년">초등 2학년</option>
+                  <option value="초등 3학년">초등 3학년</option>
+                  <option value="초등 4학년">초등 4학년</option>
+                  <option value="초등 5학년">초등 5학년</option>
+                  <option value="초등 6학년">초등 6학년</option>
+                  <option value="초등 다문화특별학급">초등 다문화특별학급</option>
+                  <option value="초등 전학년·학급운영">초등 전학년·학급운영</option>
+                  <option value="중·고등 / 기타">중·고등 / 기타</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="case-input-subject">교과 / 영역 <span class="req-mark">*필수</span></label>
+                <input type="text" id="case-input-subject" required maxlength="40" placeholder="예: 과학, 사회, 국어, 창체, 가정통신문" />
+              </div>
+
+              <div class="form-field">
+                <label for="case-input-lang">대상 언어 <span class="req-mark">*필수</span></label>
+                <select id="case-input-lang" required>
+                  <option value="">선택해 주세요</option>
+                  <option value="en">영어 (English)</option>
+                  <option value="zh-Hans">중국어 간체 (中文)</option>
+                  <option value="vi">베트남어 (Tiếng Việt)</option>
+                  <option value="ja">일본어 (日本語)</option>
+                  <option value="ru">러시아어 (Русский)</option>
+                  <option value="uz">우즈베크어 (Oʻzbekcha)</option>
+                  <option value="mn">몽골어 (Монгол)</option>
+                  <option value="th">태국어 (ภาษาไทย)</option>
+                  <option value="km">캄보디아어 (ភាសាខ្មែរ)</option>
+                  <option value="tl">필리핀어 (Tagalog)</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="case-input-format">자료 형식 <span class="req-mark">*필수</span></label>
+                <select id="case-input-format" required>
+                  <option value="pptx">PPTX (파워포인트 슬라이드)</option>
+                  <option value="hwpx">HWPX (한글 표준 문서·활동지)</option>
+                  <option value="both">PPTX + HWPX 모두 활용</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="case-input-author">공개 표시 이름 <span class="opt-mark">(선택)</span></label>
+                <input type="text" id="case-input-author" maxlength="40" placeholder="미입력 시 ‘익명 교사’로 표시 (예: 서울 ○○초 교사)" />
+              </div>
+
+              <div class="form-field full-span">
+                <label for="case-input-goal">수업 목표 <span class="req-mark">*필수</span></label>
+                <textarea id="case-input-goal" rows="2" required placeholder="해당 차시 또는 활동에서 다국어 수업자료를 통해 달성하고자 한 수업 목표를 적어 주세요."></textarea>
+              </div>
+
+              <div class="form-field full-span">
+                <label for="case-input-process">도구 사용 과정 <span class="req-mark">*필수</span></label>
+                <textarea id="case-input-process" rows="3" required placeholder="파일 준비, 대상 언어 선택, 자동 번역 또는 수동 입력, 단독/병기 출력 등 변환기를 사용한 구체적인 과정을 적어 주세요."></textarea>
+              </div>
+
+              <div class="form-field full-span">
+                <label for="case-input-review">교사의 번역 검수 · 수정 내용 <span class="req-mark">*필수</span></label>
+                <textarea id="case-input-review" rows="3" required placeholder="역번역 대조, 숫자·단위 확인, 학교 표준 용어집 적용, 원문 유지 설정 등 선생님이 직접 검수·수정한 내용을 적어 주세요."></textarea>
+              </div>
+
+              <div class="form-field full-span">
+                <label for="case-input-results">관찰한 결과와 한계 <span class="req-mark">*필수</span></label>
+                <textarea id="case-input-results" rows="3" required placeholder="수업 중 관찰한 긍정적 변화와 함께, 번역 표현이나 문서 레이아웃 등에서 아쉬웠던 한계점을 솔직하게 적어 주세요."></textarea>
+              </div>
+
+              <div class="form-field">
+                <label for="case-input-metrics">학급 수 · 교원 수 등 집계 수치 <span class="opt-mark">(선택)</span></label>
+                <input type="text" id="case-input-metrics" maxlength="100" placeholder="예: 1개 학급(22명 중 다문화 학생 2명), 동학년 교사 3명 공동 활용 (학생 개인 식별 정보 제외)" />
+              </div>
+
+              <div class="form-field">
+                <label for="case-input-improvements">향후 개선 아이디어 <span class="opt-mark">(선택)</span></label>
+                <input type="text" id="case-input-improvements" maxlength="150" placeholder="도구나 수업 적용 측면에서 개선되었으면 하는 점" />
+              </div>
+
+              <div class="form-field full-span">
+                <label for="case-input-passcode">작성자 본인 확인·수정용 비밀번호 (4자 이상) <span class="req-mark">*필수</span></label>
+                <input type="password" id="case-input-passcode" required minlength="4" maxlength="30" autocomplete="new-password" placeholder="내 제출 글 상태 조회 및 반려 후 수정·삭제 시 사용할 비밀번호 (4자 이상)" />
+              </div>
+            </div>
+
+            <!-- 제출 전 필수 확인란 3종 (PRD 7) -->
+            <div class="case-confirm-checks">
+              <h4>✅ 제출 전 필수 확인 사항</h4>
+              <label class="check-row">
+                <input type="checkbox" id="chk-case-factual" required />
+                <span><strong>[필수] 실제 활용 사실 확인:</strong> 허위 생성이 아닌 실제 수업·학급 운영에서 도구를 활용한 사실에 기반하여 작성했습니다.</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" id="chk-case-nopii" required />
+                <span><strong>[필수] 학생 개인정보 제거 확인:</strong> 본문에 학생의 실명, 연락처, 사진, 개별 학습 이력이나 개인별 평가 결과가 일체 포함되지 않았음을 확인했습니다.</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" id="chk-case-rights" required />
+                <span><strong>[필수] 공개 및 저작권 확인:</strong> 작성한 사례 내용이 타인의 저작권을 침해하지 않으며, 관리자 승인 후 공개 목록에 공유되는 것에 동의합니다.</span>
+              </label>
+            </div>
+
+            <div id="case-submit-feedback" class="alert-box hidden" role="status" aria-live="polite"></div>
+
+            <div class="case-form-actions">
+              <button type="submit" id="btn-submit-case" class="btn btn-primary btn-lg">📤 사례 제출하기 (제출 후 ‘관리자 승인중’)</button>
+              <button type="button" id="btn-cancel-case-form" class="btn btn-outline">취소</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 내가 제출한 사례 상태 확인 및 수정·재제출 패널 (PRD 5.3) -->
+        <div id="my-cases-panel" class="case-sub-panel hidden" role="region" aria-labelledby="my-cases-title">
+          <div class="case-sub-panel-header">
+            <div>
+              <h3 id="my-cases-title">📋 내가 제출한 사례 및 승인 상태 확인</h3>
+              <p class="panel-desc">이 브라우저에서 제출한 글 또는 작성 시 입력한 확인 비밀번호로 <strong>관리자 승인중 / 승인됨 / 반려됨(사유 확인 및 재제출)</strong> 상태를 확인합니다.</p>
+            </div>
+            <button type="button" id="btn-close-my-cases" class="btn btn-outline btn-sm">닫기 ✕</button>
+          </div>
+
+          <div class="my-cases-lookup-bar">
+            <input type="password" id="my-cases-passcode-input" class="drawer-input" placeholder="작성 시 설정한 비밀번호 입력 (다른 PC에서 조회하거나 수정·삭제 시 필요)" />
+            <button type="button" id="btn-lookup-my-cases" class="btn btn-secondary btn-sm">🔍 내 제출 글 조회</button>
+          </div>
+
+          <div id="my-cases-list" class="cases-card-list"></div>
+        </div>
+
+        <!-- 공개 사례 검색 및 필터 바 (PRD 5.1) -->
+        <div class="case-filter-bar" role="search" aria-label="공개된 수업 활용 사례 검색 필터">
+          <select id="filter-case-lang" aria-label="대상 언어별 필터">
+            <option value="all">🌐 전체 언어</option>
+            <option value="en">영어 (English)</option>
+            <option value="zh-Hans">중국어 간체</option>
+            <option value="vi">베트남어</option>
+            <option value="ja">일본어</option>
+            <option value="ru">러시아어</option>
+            <option value="uz">우즈베크어</option>
+            <option value="mn">몽골어</option>
+            <option value="th">태국어</option>
+            <option value="km">캄보디아어</option>
+            <option value="tl">필리핀어</option>
+          </select>
+
+          <select id="filter-case-grade" aria-label="학년별 필터">
+            <option value="all">🏫 전체 학년</option>
+            <option value="초등 1학년">초등 1학년</option>
+            <option value="초등 2학년">초등 2학년</option>
+            <option value="초등 3학년">초등 3학년</option>
+            <option value="초등 4학년">초등 4학년</option>
+            <option value="초등 5학년">초등 5학년</option>
+            <option value="초등 6학년">초등 6학년</option>
+            <option value="초등 다문화특별학급">초등 다문화특별학급</option>
+            <option value="초등 전학년·학급운영">초등 전학년·학급운영</option>
+            <option value="중·고등 / 기타">중·고등 / 기타</option>
+          </select>
+
+          <select id="filter-case-format" aria-label="자료 형식별 필터">
+            <option value="all">📄 전체 자료 형식</option>
+            <option value="pptx">PPTX (슬라이드)</option>
+            <option value="hwpx">HWPX (한글 문서)</option>
+            <option value="both">PPTX + HWPX</option>
+          </select>
+
+          <input type="text" id="filter-case-subject" class="drawer-input" placeholder="교과·키워드 검색 (예: 과학, 가정통신문)" aria-label="교과 또는 제목 키워드 검색" />
+
+          <button type="button" id="btn-reset-case-filters" class="btn btn-outline btn-sm">필터 초기화</button>
+          <button type="button" id="btn-refresh-cases" class="btn btn-surface btn-sm">🔄 새로고침</button>
+        </div>
+
+        <!-- 승인된 공개 사례 목록 -->
+        <div id="cases-public-list" class="cases-card-list" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- ==================== 신규 기능 2: 관리자 탭과 승인 (PRD 6, 7) ==================== -->
+    <section id="view-admin" class="step-panel hidden" role="tabpanel" aria-labelledby="tab-view-admin">
+      <div class="panel-card">
+        <div class="panel-header-row">
+          <div>
+            <span class="step-tag">서버 권한 검증 · 승인 관리</span>
+            <h2 id="admin-heading">🔒 수업 활용 사례 관리자 승인 센터</h2>
+            <p class="panel-desc">
+              제출된 수업 활용 사례의 개인정보 포함 여부와 내용을 검토하여 <strong>승인(공개 게시)</strong>, <strong>반려(사유 전달)</strong>, <strong>비공개·삭제</strong>를 처리합니다. 모든 작업은 서버에서 관리자 권한을 검증합니다.
+            </p>
+          </div>
+          <div class="header-actions">
+            <button type="button" id="btn-admin-logout" class="btn btn-outline btn-sm hidden">🔓 관리자 잠금(로그아웃)</button>
+          </div>
+        </div>
+
+        <!-- 관리자 인증 입력 박스 -->
+        <div id="admin-auth-box" class="admin-auth-box" role="region" aria-label="관리자 인증">
+          <h3>🔑 관리자 인증이 필요합니다</h3>
+          <p class="panel-desc">
+            승인·반려·삭제는 화면 숨김 방식이 아니라 <strong>서버(Supabase RPC)에서 관리자 비밀번호 해시를 직접 검증</strong>합니다. 권한이 없는 일반 사용자는 요청을 보낼 수 없습니다.
+          </p>
+          <form id="admin-login-form" class="admin-login-form">
+            <input
+              type="password"
+              id="admin-password-input"
+              class="drawer-input"
+              placeholder="관리자 비밀번호 입력"
+              aria-label="관리자 비밀번호"
+              autocomplete="current-password"
+              required
+            />
+            <button type="submit" id="btn-admin-login" class="btn btn-primary">서버 권한 확인 및 목록 열기</button>
+          </form>
+          <p id="admin-auth-msg" class="drawer-feedback" role="status" aria-live="polite"></p>
+        </div>
+
+        <!-- 인증 완료 후 표시되는 관리자 대시보드 -->
+        <div id="admin-dashboard-box" class="admin-dashboard-box hidden">
+          <div class="admin-toolbar-row">
+            <div class="filter-btn-group" role="group" aria-label="관리자 게시글 상태 필터">
+              <button type="button" class="filter-btn active" data-admin-filter="all">전체 글 (<span id="admin-count-all">0</span>)</button>
+              <button type="button" class="filter-btn" data-admin-filter="pending">🟡 관리자 승인중 (<span id="admin-count-pending">0</span>)</button>
+              <button type="button" class="filter-btn" data-admin-filter="approved">🟢 승인됨 (<span id="admin-count-approved">0</span>)</button>
+              <button type="button" class="filter-btn" data-admin-filter="rejected">🔴 반려됨 (<span id="admin-count-rejected">0</span>)</button>
+              <button type="button" class="filter-btn" data-admin-filter="hidden">🙈 비공개 (<span id="admin-count-hidden">0</span>)</button>
+              <button type="button" class="filter-btn" data-admin-filter="reports">🚨 신고·요청 (<span id="admin-count-reports">0</span>)</button>
+            </div>
+            <div class="bulk-actions-group">
+              <button type="button" id="btn-admin-refresh" class="btn btn-surface btn-sm">🔄 목록 새로고침</button>
+              <button type="button" id="btn-toggle-admin-pw-change" class="btn btn-outline btn-sm">🔐 관리자 비밀번호 변경</button>
+            </div>
+          </div>
+
+          <!-- 운영용 관리자 비밀번호 변경 패널 -->
+          <div id="admin-pw-change-panel" class="tool-drawer hidden" role="region" aria-label="관리자 비밀번호 변경">
+            <div class="tool-drawer-header">
+              <div>
+                <strong>🔐 서버 관리자 비밀번호 변경</strong>
+                <span class="tool-drawer-sub">실제 운영 시 시연용 초기 비밀번호 대신 강한 관리자 비밀번호로 변경하여 서버 DB 해시를 갱신할 수 있습니다.</span>
+              </div>
+            </div>
+            <div class="find-replace-controls">
+              <input type="password" id="input-admin-new-pw" class="drawer-input" placeholder="새 관리자 비밀번호 (4자 이상)" />
+              <button type="button" id="btn-save-admin-new-pw" class="btn btn-primary btn-sm">비밀번호 변경 저장</button>
+              <span id="admin-pw-change-feedback" class="drawer-feedback"></span>
+            </div>
+          </div>
+
+          <div id="admin-action-feedback" class="alert-box hidden" role="status" aria-live="polite"></div>
+
+          <!-- 관리자 게시글 검토 리스트 -->
+          <div id="admin-cases-list" class="cases-card-list"></div>
+
+          <!-- 신고 및 수정·삭제 요청 리스트 -->
+          <div id="admin-reports-list" class="cases-card-list hidden"></div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- ==================== 선생님용 사용 설명서 & FAQ 모달 ==================== -->
@@ -822,23 +1241,23 @@
       </div>
 
       <div class="modal-tabs" role="tablist" aria-label="사용 설명서 목차">
-        <button type="button" class="modal-tab active" role="tab" aria-selected="true" data-manual-tab="tab-basic">
+        <button type="button" id="manual-tab-btn-basic" class="modal-tab active" role="tab" aria-selected="true" aria-controls="tab-basic" data-manual-tab="tab-basic">
           🚀 1분 기본 사용법
         </button>
-        <button type="button" class="modal-tab" role="tab" aria-selected="false" data-manual-tab="tab-convert">
+        <button type="button" id="manual-tab-btn-convert" class="modal-tab" role="tab" aria-selected="false" aria-controls="tab-convert" data-manual-tab="tab-convert">
           🔄 .hwp · .ppt 변환법
         </button>
-        <button type="button" class="modal-tab" role="tab" aria-selected="false" data-manual-tab="tab-chrome">
+        <button type="button" id="manual-tab-btn-chrome" class="modal-tab" role="tab" aria-selected="false" aria-controls="tab-chrome" data-manual-tab="tab-chrome">
           🤖 자동 번역 해결법
         </button>
-        <button type="button" class="modal-tab" role="tab" aria-selected="false" data-manual-tab="tab-layout">
+        <button type="button" id="manual-tab-btn-layout" class="modal-tab" role="tab" aria-selected="false" aria-controls="tab-layout" data-manual-tab="tab-layout">
           ✨ 다운로드 후 문서 다듬기
         </button>
       </div>
 
       <div class="modal-body">
         <!-- 탭 1: 1분 기본 사용법 -->
-        <div id="tab-basic" class="manual-tab-panel active" role="tabpanel">
+        <div id="tab-basic" class="manual-tab-panel active" role="tabpanel" aria-labelledby="manual-tab-btn-basic">
           <p class="manual-intro">별도의 프로그램 설치나 회원가입 없이 <strong>5단계 순서대로 클릭</strong>만 하면 다국어 수업자료가 완성됩니다.</p>
           <div class="manual-step-list">
             <div class="manual-step-item">
@@ -880,7 +1299,7 @@
         </div>
 
         <!-- 탭 2: 구형 .hwp / .ppt 변환법 -->
-        <div id="tab-convert" class="manual-tab-panel hidden" role="tabpanel">
+        <div id="tab-convert" class="manual-tab-panel hidden" role="tabpanel" aria-labelledby="manual-tab-btn-convert">
           <p class="manual-intro">예전 방식의 <code>.hwp</code>와 <code>.ppt</code> 파일은 문서 구조가 잠겨 있어 브라우저에서 직접 열 수 없습니다. 아래 방법으로 <strong>10초 만에 변환</strong>해 주세요.</p>
           <div class="convert-guide-grid">
             <div class="convert-step-box">
@@ -911,7 +1330,7 @@
         </div>
 
         <!-- 탭 3: 자동 번역 해결법 -->
-        <div id="tab-chrome" class="manual-tab-panel hidden" role="tabpanel">
+        <div id="tab-chrome" class="manual-tab-panel hidden" role="tabpanel" aria-labelledby="manual-tab-btn-chrome">
           <p class="manual-intro">이 웹앱은 학생·수업 자료를 외부 번역 서버로 보내지 않기 위해 <strong>컴퓨터의 Chrome 브라우저 안에 내장된 인공지능 번역기(Translator API)</strong>를 사용합니다.</p>
           <div class="manual-step-list">
             <div class="manual-step-item">
@@ -939,7 +1358,7 @@
         </div>
 
         <!-- 탭 4: 다운로드 후 문서 다듬기 -->
-        <div id="tab-layout" class="manual-tab-panel hidden" role="tabpanel">
+        <div id="tab-layout" class="manual-tab-panel hidden" role="tabpanel" aria-labelledby="manual-tab-btn-layout">
           <p class="manual-intro">한국어보다 영어·베트남어·러시아어는 단어와 문장 길이가 약 1.3~1.8배 길어집니다. 다운로드한 파일을 연 뒤 아래 방법으로 다듬어 주시면 훨씬 깔끔한 수업자료가 됩니다.</p>
           <div class="convert-guide-grid">
             <div class="convert-step-box">

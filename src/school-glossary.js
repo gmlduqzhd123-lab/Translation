@@ -480,6 +480,7 @@ export function evaluateTranslationAccuracyIssues(sourceText, translatedText, ke
     });
     if (missingNums.length > 0) {
       issues.push({
+        code: 'missing-number',
         type: 'missing-number',
         severity: 'red',
         level: 'error',
@@ -493,6 +494,7 @@ export function evaluateTranslationAccuracyIssues(sourceText, translatedText, ke
   if (leftoverHangul.length > 0) {
     if (dst === src) {
       issues.push({
+        code: 'untranslated-source',
         type: 'untranslated-source',
         severity: 'red',
         level: 'error',
@@ -500,6 +502,7 @@ export function evaluateTranslationAccuracyIssues(sourceText, translatedText, ke
       });
     } else {
       issues.push({
+        code: 'leftover-hangul',
         type: 'leftover-hangul',
         severity: 'red',
         level: 'error',
@@ -513,6 +516,7 @@ export function evaluateTranslationAccuracyIssues(sourceText, translatedText, ke
   const dstIsQuestion = /[?？]\s*$/.test(dst);
   if (srcIsQuestion && !dstIsQuestion) {
     issues.push({
+      code: 'missing-question',
       type: 'missing-question',
       severity: 'yellow',
       level: 'warn',
@@ -566,25 +570,37 @@ export function computeKoreanMeaningSimilarity(sourceKo, backTranslatedKo) {
 
 /**
  * Compute Traffic-Light confidence badge (🟢 안심 / 🟡 점검 권장 / 🔴 확인 필요)
- * Supports both (itemObj, stateObj) and (sourceText, translatedText, backTranslatedKo, contextLabel, keepOriginal)
+ * Supports both (itemObj, stateObj, langKey) and (sourceText, translatedText, backTranslatedKo, contextLabel, keepOriginal, langKey)
  */
 export function evaluateTranslationTrafficLight(
   arg1,
   arg2,
   backTranslatedKo = '',
   contextLabel = '',
-  keepOriginal = false
+  keepOriginal = false,
+  langKey = ''
 ) {
   let sourceText = arg1;
   let translatedText = arg2;
+  let resolvedLangKey = langKey;
   if (arg1 && typeof arg1 === 'object' && 'sourceText' in arg1) {
     sourceText = arg1.sourceText;
     contextLabel = arg1.contextLabel || '';
+    if (typeof backTranslatedKo === 'string' && backTranslatedKo.length > 0) {
+      resolvedLangKey = backTranslatedKo;
+    }
     if (arg2 && typeof arg2 === 'object') {
       translatedText = arg2.finalText ?? '';
       backTranslatedKo = arg2.backTranslatedKo ?? '';
       keepOriginal = Boolean(arg2.keepOriginal);
     }
+  } else if (
+    !resolvedLangKey &&
+    typeof contextLabel === 'string' &&
+    BUILTIN_SCHOOL_GLOSSARY[0]?.translations?.[contextLabel]
+  ) {
+    resolvedLangKey = contextLabel;
+    contextLabel = '';
   }
 
   const dst = String(translatedText ?? '').trim();
@@ -616,6 +632,7 @@ export function evaluateTranslationTrafficLight(
   const overflow = evaluateLengthOverflowRisk(sourceText, dst, contextLabel);
   if (overflow) {
     issues.push({
+      code: 'length-overflow',
       type: 'length-overflow',
       severity: 'yellow',
       level: 'warn',
@@ -623,10 +640,28 @@ export function evaluateTranslationTrafficLight(
     });
   }
 
+  if (resolvedLangKey) {
+    const glossaryMatches = findMatchingGlossaryTerms(sourceText, resolvedLangKey, dst);
+    const unapplied = glossaryMatches.filter((m) => !m.isApplied);
+    if (unapplied.length > 0) {
+      issues.push({
+        code: 'glossary-mismatch',
+        type: 'glossary-mismatch',
+        severity: 'yellow',
+        level: 'warn',
+        message: `용어집 불일치 확인: 학교 표준 용어(${unapplied
+          .slice(0, 3)
+          .map((m) => `'${m.ko}' → '${m.target}'`)
+          .join(', ')})가 번역문에 반영되지 않았습니다.`
+      });
+    }
+  }
+
   if (backTranslatedKo && backTranslatedKo.trim().length > 0) {
     const sim = computeKoreanMeaningSimilarity(sourceText, backTranslatedKo);
     if (sim < 0.25 && String(sourceText).trim().length >= 6) {
       issues.push({
+        code: 'meaning-divergence',
         type: 'meaning-divergence',
         severity: 'yellow',
         level: 'warn',
