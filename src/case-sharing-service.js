@@ -550,3 +550,120 @@ export async function adminChangePassword(currentPassword, newPassword) {
 }
 
 export const changeAdminPasswordOnServer = adminChangePassword;
+
+/* ==================== 익명 이용자 수 & 번역 이용 횟수 집계 서비스 ==================== */
+
+const STATS_SUPABASE_URL = 'https://oaavmecavooowuayjxjn.supabase.co';
+const STATS_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hYXZtZWNhdm9vb3d1YXlqeGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NTE5OTAsImV4cCI6MjEwNjEyNzk5MH0.hRe-EAtxpqZLA61qa389aXjOIiFpsXXMdcj_JrJvgoI';
+
+const VISITOR_ID_STORAGE_KEY = 'multilingual_translator_visitor_id_v1';
+const LOCAL_STATS_CACHE_KEY = 'multilingual_translator_usage_stats_cache_v1';
+
+export function getOrCreateAnonymousVisitorId() {
+  try {
+    if (typeof localStorage === 'undefined') return 'anon-session';
+    let vid = localStorage.getItem(VISITOR_ID_STORAGE_KEY);
+    if (!vid || vid.trim().length < 6) {
+      const rand =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      vid = `usr-${rand}`;
+      localStorage.setItem(VISITOR_ID_STORAGE_KEY, vid);
+    }
+    return vid;
+  } catch {
+    return 'anon-session';
+  }
+}
+
+function getCachedUsageStats() {
+  try {
+    if (typeof localStorage === 'undefined') return { unique_users: 1, total_translations: 0 };
+    const raw = localStorage.getItem(LOCAL_STATS_CACHE_KEY);
+    if (!raw) return { unique_users: 1, total_translations: 0 };
+    const parsed = JSON.parse(raw);
+    return {
+      unique_users: Math.max(1, Number(parsed?.unique_users) || 1),
+      total_translations: Math.max(0, Number(parsed?.total_translations) || 0),
+      doc_translations: Math.max(0, Number(parsed?.doc_translations) || 0),
+      notice_translations: Math.max(0, Number(parsed?.notice_translations) || 0)
+    };
+  } catch {
+    return { unique_users: 1, total_translations: 0 };
+  }
+}
+
+function saveCachedUsageStats(stats) {
+  try {
+    if (typeof localStorage === 'undefined' || !stats) return;
+    localStorage.setItem(LOCAL_STATS_CACHE_KEY, JSON.stringify(stats));
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
+async function callStatsRpc(rpcName, params = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(`${STATS_SUPABASE_URL}/rest/v1/rpc/${rpcName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: STATS_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${STATS_SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify(params),
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    return await res.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function registerVisitorAndFetchStats() {
+  const visitorId = getOrCreateAnonymousVisitorId();
+  try {
+    const data = await callStatsRpc('register_translation_visitor', {
+      p_visitor_id: visitorId
+    });
+    if (data && typeof data === 'object') {
+      saveCachedUsageStats(data);
+      return data;
+    }
+  } catch {
+    // Fallback to local cache if offline
+  }
+  return getCachedUsageStats();
+}
+
+export async function recordTranslationUsageEvent(eventType = 'document') {
+  const visitorId = getOrCreateAnonymousVisitorId();
+  try {
+    const data = await callStatsRpc('record_translation_event', {
+      p_visitor_id: visitorId,
+      p_event_type: eventType
+    });
+    if (data && typeof data === 'object') {
+      saveCachedUsageStats(data);
+      return data;
+    }
+  } catch {
+    // Offline fallback: increment cached count locally
+    const cached = getCachedUsageStats();
+    const updated = {
+      ...cached,
+      total_translations: (cached.total_translations || 0) + 1
+    };
+    saveCachedUsageStats(updated);
+    return updated;
+  }
+  return getCachedUsageStats();
+}
+

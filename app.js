@@ -41,13 +41,15 @@ import {
   reportLessonCase,
   getSavedMyCaseIds,
   getOrCreateAutoCasePasscode,
+  registerVisitorAndFetchStats,
+  recordTranslationUsageEvent,
   verifyAdminPasswordOnServer,
   adminFetchAllCases,
   adminReviewCase,
   adminChangePassword,
   adminFetchCaseReports,
   adminResolveCaseReport
-} from './src/case-sharing-service.js?v=20261020-7';
+} from './src/case-sharing-service.js?v=20261020-8';
 import {
   CLASSROOM_COMMUNICATION_CARDS,
   SCHOOL_NOTICE_TEMPLATES,
@@ -410,6 +412,8 @@ function cacheElements() {
   els.adminActionFeedback = document.getElementById('admin-action-feedback');
   els.adminCasesList = document.getElementById('admin-cases-list');
   els.adminReportsList = document.getElementById('admin-reports-list');
+  els.statUniqueUsers = document.getElementById('stat-unique-users');
+  els.statTotalTranslations = document.getElementById('stat-total-translations');
 }
 
 function init() {
@@ -425,6 +429,29 @@ function init() {
   refreshAllLanguageSupport();
   checkRestorableSession();
   handleInitialUrlRouting();
+  initUsageCounterStats();
+}
+
+function renderUsageStatsBadge(stats) {
+  if (!stats) return;
+  const usersCount = Math.max(1, Number(stats.unique_users) || 1);
+  const transCount = Math.max(0, Number(stats.total_translations) || 0);
+  if (els.statUniqueUsers) {
+    els.statUniqueUsers.textContent = usersCount.toLocaleString('ko-KR');
+  }
+  if (els.statTotalTranslations) {
+    els.statTotalTranslations.textContent = transCount.toLocaleString('ko-KR');
+  }
+}
+
+async function initUsageCounterStats() {
+  const stats = await registerVisitorAndFetchStats();
+  renderUsageStatsBadge(stats);
+}
+
+async function bumpTranslationUsageCounter(eventType = 'document') {
+  const stats = await recordTranslationUsageEvent(eventType);
+  renderUsageStatsBadge(stats);
 }
 
 function getSavedRecentLanguages() {
@@ -1910,6 +1937,10 @@ async function handleStartAutoTranslate() {
   els.btnStartAutoTranslate.disabled = false;
   els.btnSkipToManual.disabled = false;
   scheduleAutoSave();
+
+  if (successCount > 0) {
+    bumpTranslationUsageCounter('document');
+  }
 
   checkLanguagePairSupport(langKey).then((updated) => {
     state.langSupportMap.set(langKey, updated);
@@ -3987,6 +4018,10 @@ async function handleRunMultiLangZip() {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
 
+    if (generatedFilesCount > 0) {
+      bumpTranslationUsageCounter('document');
+    }
+
     if (els.multiLangBatchStatus) {
       els.multiLangBatchStatus.textContent = `✓ 총 ${generatedFilesCount}개 국어 수업자료가 담긴 [${zipFileName}] 다운로드가 완료되었습니다!`;
     }
@@ -4366,6 +4401,8 @@ async function handleToolkitTranslate() {
         // ignore
       }
     }
+
+    bumpTranslationUsageCounter('notice');
 
     if (els.toolkitFeedbackMsg) {
       els.toolkitFeedbackMsg.textContent = `✓ ${langMeta.label} 번역 완료!`;

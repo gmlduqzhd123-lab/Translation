@@ -4538,5 +4538,33 @@ body {
   }
 }
 
+/* ==================== 상단 이용자 수 · 번역 횟수 심플 배지 ==================== */
+.usage-stats-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.usage-stats-pill strong {
+  font-weight: 800;
+  color: #1d4ed8;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-stats-sep {
+  color: #93c5fd;
+  font-weight: 800;
+}
+
+
 
 
