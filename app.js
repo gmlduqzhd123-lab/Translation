@@ -772,7 +772,7 @@ function renderExtractStep() {
     doc.fileType === 'pptx' ? 'PPTX (PowerPoint)' : 'HWPX (한글 표준 문서)';
   els.extractUnitLabel.textContent = doc.fileType === 'pptx' ? '전체 슬라이드 수' : '전체 섹션 수';
   els.extractUnitCount.textContent =
-    doc.fileType === 'pptx' ? `${doc.unitCount}장` : `${doc.sectionCount || 1}개 섹션`;
+    doc.fileType === 'pptx' ? `${doc.unitCount ?? 0}장` : `${doc.sectionCount || 1}개 섹션`;
   els.extractItemCount.textContent = `${doc.items.length}개`;
 
   const hasItems = doc.items.length > 0;
@@ -1499,7 +1499,7 @@ function autoResizeTextarea(textarea) {
 }
 
 function getItemNavGroup(item) {
-  return item.fileType === 'pptx' ? item.groupNumber : Math.ceil(item.groupNumber / 5);
+  return state.parsedDoc?.fileType === 'pptx' ? item.groupNumber : Math.ceil(item.groupNumber / 5);
 }
 
 function expandGroupInDOM(gNum) {

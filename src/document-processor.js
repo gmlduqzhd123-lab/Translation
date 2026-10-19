@@ -502,10 +502,10 @@ export async function buildTranslatedDocument(parsedDoc, translationsById, optio
       resolvedMap[item.id] = emptyFallback === 'empty' ? '' : item.sourceText;
     } else if (outputMode === 'bilingual-ko-first') {
       resolvedMap[item.id] =
-        trimmed === srcTrimmed ? item.sourceText : `${item.sourceText}\n${rawVal}`;
+        trimmed === srcTrimmed ? item.sourceText : `${item.sourceText}\n${trimmed}`;
     } else if (outputMode === 'bilingual-target-first') {
       resolvedMap[item.id] =
-        trimmed === srcTrimmed ? item.sourceText : `${rawVal}\n${item.sourceText}`;
+        trimmed === srcTrimmed ? item.sourceText : `${trimmed}\n${item.sourceText}`;
     } else {
       resolvedMap[item.id] = rawVal;
     }

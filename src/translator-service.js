@@ -287,6 +287,7 @@ export function startTranslatorCreation(resolvedTargetCode, onDownloadProgress) 
   }
 
   const api = self.translation || self.ai?.translator;
+  if (!api) return Promise.reject(new Error('레거시 번역 API를 찾을 수 없습니다.'));
   return api.createTranslator({
     sourceLanguage: SOURCE_LANGUAGE.code,
     targetLanguage: resolvedTargetCode
@@ -323,6 +324,7 @@ export function startReverseTranslatorCreation(resolvedSourceCode, onDownloadPro
   }
 
   const api = self.translation || self.ai?.translator;
+  if (!api) return Promise.reject(new Error('레거시 역번역 API를 찾을 수 없습니다.'));
   return api.createTranslator({
     sourceLanguage: resolvedSourceCode,
     targetLanguage: SOURCE_LANGUAGE.code

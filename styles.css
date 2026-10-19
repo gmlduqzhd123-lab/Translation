@@ -1117,6 +1117,12 @@ body {
   background: #0284c7;
 }
 
+.progress-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
 .step3-action-box {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -2331,7 +2337,7 @@ body {
   .download-warnings-panel,
   .output-mode-box,
   .empty-handling-box,
-  .download-error-box,
+  #download-error-box,
   .download-cta-box,
   .post-download-guide,
   .panel-footer-actions,
