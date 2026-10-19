@@ -2356,3 +2356,39 @@ body {
 }
 
 
+
+/* ==================== 📲 앱 설치 · 📱 QR (엽쌤 앱 공통 상단 버튼) ==================== */
+.ys-key { display: flex; gap: 6px; }
+.ys-chip {
+  display: inline-block;
+  padding: 7px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ys-chip:hover { background: var(--primary-soft); }
+.ys-credit { margin: 6px 0 0; font-size: 0.8rem; }
+.ys-credit a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+/* PC: 설치·QR이 들어가도 한 줄에 맞도록 안내 문구를 줄임(넓은 화면에서는 전체 표시) */
+@media (min-width: 641px) and (max-width: 1399px) { .privacy-more { display: none; } }
+/* 휴대폰: 맨 윗줄 = 앱 이름 + 설치·QR, 아랫줄 = 안내·설명서 */
+@media (max-width: 640px) {
+  .header-inner { gap: 10px 8px; flex-wrap: wrap; }
+  .header-right-group { display: contents; }
+  .brand-group { order: 1; flex: 1 1 0; min-width: 0; gap: 10px; }
+  .ys-key { order: 2; align-self: flex-start; gap: 4px; }
+  .header-right-group > :not(.ys-key) { order: 3; }
+  .header-right-group > .privacy-pill { flex-basis: 100%; }
+  .brand-group { align-items: flex-start; }
+  .brand-icon { display: none; }
+  .app-title { font-size: 1.12rem; word-break: keep-all; }
+  .ys-chip { padding: 6px 9px; font-size: 0.8rem; }
+  .ys-wide { display: none; }
+}
+@media print { .ys-key, .ys-credit { display: none; } }
