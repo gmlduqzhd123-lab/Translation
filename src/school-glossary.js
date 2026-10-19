@@ -359,22 +359,27 @@ export function getAllGlossaryEntries() {
 
 /**
  * Find glossary entries whose Korean term appears in sourceText
+ * Also checks whether currentTranslation already contains the target glossary term.
  */
-export function findMatchingGlossaryTerms(sourceText, langKey) {
+export function findMatchingGlossaryTerms(sourceText, langKey, currentTranslation = '') {
   const raw = String(sourceText ?? '');
   if (!raw.trim()) return [];
   const entries = getAllGlossaryEntries();
   const matches = [];
+  const lowerTrans = String(currentTranslation ?? '').toLowerCase();
 
   for (const entry of entries) {
     if (!entry.ko) continue;
     const targetTerm = entry.translations?.[langKey] || entry.translations?.all;
     if (!targetTerm) continue;
     if (raw.includes(entry.ko)) {
+      const isApplied =
+        lowerTrans.length > 0 && lowerTrans.includes(String(targetTerm).toLowerCase());
       matches.push({
         ko: entry.ko,
         target: targetTerm,
-        category: entry.category || '사용자 단어'
+        category: entry.category || '사용자 단어',
+        isApplied
       });
     }
   }
@@ -435,3 +440,212 @@ export function evaluateLengthOverflowRisk(sourceText, translatedText, contextLa
   }
   return null;
 }
+
+/**
+ * Automatically detect translation accuracy issues even when the teacher doesn't know the target language:
+ * 1. Numbers in Korean source missing from translation
+ * 2. Untranslated Hangul characters remaining inside foreign translation
+ * 3. Question mark (?) in source missing from translation
+ */
+export function evaluateTranslationAccuracyIssues(sourceText, translatedText, keepOriginal = false) {
+  const src = String(sourceText ?? '').trim();
+  const dst = String(translatedText ?? '').trim();
+  const issues = [];
+
+  if (!src || !dst || keepOriginal) {
+    return issues;
+  }
+
+  // 1. Check numbers present in source
+  const srcNumbers = src.match(/\d+(?:[.,]\d+)?/g) || [];
+  if (srcNumbers.length > 0) {
+    const missingNums = srcNumbers.filter((num) => !dst.includes(num));
+    if (missingNums.length > 0) {
+      issues.push({
+        type: 'missing-number',
+        severity: 'red',
+        level: 'error',
+        message: `숫자 누락 의심: 원문의 숫자(${[...new Set(missingNums)].join(', ')})가 번역문에 없습니다.`
+      });
+    }
+  }
+
+  // 2. Check leftover Hangul characters in foreign translation
+  if (dst !== src) {
+    const leftoverHangul = dst.match(/[가-힣]{2,}/g) || [];
+    if (leftoverHangul.length > 0) {
+      issues.push({
+        type: 'leftover-hangul',
+        severity: 'red',
+        level: 'error',
+        message: `미번역 한글 포함: 번역문 안에 한글(${[...new Set(leftoverHangul)].slice(0, 3).join(', ')})이 남아 있습니다.`
+      });
+    }
+  }
+
+  // 3. Check question mark mismatch
+  const srcIsQuestion = /[?？]\s*$/.test(src);
+  const dstIsQuestion = /[?？]\s*$/.test(dst);
+  if (srcIsQuestion && !dstIsQuestion) {
+    issues.push({
+      type: 'missing-question',
+      severity: 'yellow',
+      level: 'warn',
+      message: '문장부호 확인: 원문은 물음표(?)로 끝나지만 번역문 끝에 물음표가 없습니다.'
+    });
+  }
+
+  return issues;
+}
+
+function extractKoreanKeyTokens(koText) {
+  const cleaned = String(koText ?? '')
+    .replace(/[^\w가-힣\s]/g, ' ')
+    .trim();
+  if (!cleaned) return [];
+  const rawWords = cleaned.split(/\s+/);
+  const tokens = new Set();
+
+  for (const w of rawWords) {
+    if (/^\d+$/.test(w)) {
+      tokens.add(w);
+      continue;
+    }
+    const stripped = w.replace(
+      /(은|는|이|가|을|를|에|에서|으로|로|과|와|의|도|만|부터|까지|에게|한테|합시다|봅시다|하세요|하십시오|입니다|습니다|ㅂ니다|어요|아요|다|요)$/u,
+      ''
+    );
+    if (stripped.length >= 2) {
+      tokens.add(stripped.slice(0, 2));
+    } else if (w.length >= 2) {
+      tokens.add(w.slice(0, 2));
+    }
+  }
+  return [...tokens];
+}
+
+export function computeKoreanMeaningSimilarity(sourceKo, backTranslatedKo) {
+  const srcTokens = extractKoreanKeyTokens(sourceKo);
+  const backTokens = extractKoreanKeyTokens(backTranslatedKo);
+  if (srcTokens.length === 0 || backTokens.length === 0) return 1;
+
+  let matched = 0;
+  const backJoined = String(backTranslatedKo ?? '');
+  for (const tok of srcTokens) {
+    if (backTokens.includes(tok) || backJoined.includes(tok)) {
+      matched++;
+    }
+  }
+  return matched / srcTokens.length;
+}
+
+/**
+ * Compute Traffic-Light confidence badge (🟢 안심 / 🟡 점검 권장 / 🔴 확인 필요)
+ * Supports both (itemObj, stateObj) and (sourceText, translatedText, backTranslatedKo, contextLabel, keepOriginal)
+ */
+export function evaluateTranslationTrafficLight(
+  arg1,
+  arg2,
+  backTranslatedKo = '',
+  contextLabel = '',
+  keepOriginal = false
+) {
+  let sourceText = arg1;
+  let translatedText = arg2;
+  if (arg1 && typeof arg1 === 'object' && 'sourceText' in arg1) {
+    sourceText = arg1.sourceText;
+    contextLabel = arg1.contextLabel || '';
+    if (arg2 && typeof arg2 === 'object') {
+      translatedText = arg2.finalText ?? '';
+      backTranslatedKo = arg2.backTranslatedKo ?? '';
+      keepOriginal = Boolean(arg2.keepOriginal);
+    }
+  }
+
+  const dst = String(translatedText ?? '').trim();
+  if (!dst) {
+    const badgeText = '⚪ 번역문 미입력';
+    return {
+      status: 'empty',
+      level: 'empty',
+      badgeText,
+      label: badgeText,
+      cssClass: 'signal-empty',
+      issues: []
+    };
+  }
+
+  if (keepOriginal) {
+    const badgeText = '🟢 안심 (원문 유지)';
+    return {
+      status: 'green',
+      level: 'green',
+      badgeText,
+      label: badgeText,
+      cssClass: 'signal-green',
+      issues: []
+    };
+  }
+
+  const issues = evaluateTranslationAccuracyIssues(sourceText, dst, keepOriginal);
+  const overflow = evaluateLengthOverflowRisk(sourceText, dst, contextLabel);
+  if (overflow) {
+    issues.push({
+      type: 'length-overflow',
+      severity: 'yellow',
+      level: 'warn',
+      message: overflow.message
+    });
+  }
+
+  if (backTranslatedKo && backTranslatedKo.trim().length > 0) {
+    const sim = computeKoreanMeaningSimilarity(sourceText, backTranslatedKo);
+    if (sim < 0.25 && String(sourceText).trim().length >= 6) {
+      issues.push({
+        type: 'meaning-divergence',
+        severity: 'yellow',
+        level: 'warn',
+        message: '역번역 표현 차이: 한국어 역번역 문장과 원문 표현 차이가 크므로 의미를 한 번 확인해 주세요.'
+      });
+    }
+  }
+
+  const hasRed = issues.some((i) => i.severity === 'red');
+  const hasYellow = issues.some((i) => i.severity === 'yellow');
+
+  if (hasRed) {
+    const badgeText = '🔴 확인 필요 (숫자·한글 오류 의심)';
+    return {
+      status: 'red',
+      level: 'red',
+      badgeText,
+      label: badgeText,
+      cssClass: 'signal-red',
+      issues
+    };
+  }
+  if (hasYellow) {
+    const badgeText = '🟡 점검 권장 (길이·부호·표현 확인)';
+    return {
+      status: 'yellow',
+      level: 'yellow',
+      badgeText,
+      label: badgeText,
+      cssClass: 'signal-yellow',
+      issues
+    };
+  }
+
+  const badgeText = backTranslatedKo
+    ? '🟢 안심 (역번역·숫자·부호 정상)'
+    : '🟢 안심 (숫자·문장부호·길이 정상)';
+  return {
+    status: 'green',
+    level: 'green',
+    badgeText,
+    label: badgeText,
+    cssClass: 'signal-green',
+    issues: []
+  };
+}
+

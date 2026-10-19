@@ -17,6 +17,7 @@ export const TARGET_LANGUAGES = [
     label: '영어',
     nativeLabel: 'English',
     candidates: ['en'],
+    speechLang: 'en-US',
     tier: 'core',
     sampleGreeting: 'English (영어)'
   },
@@ -25,6 +26,7 @@ export const TARGET_LANGUAGES = [
     label: '중국어 간체',
     nativeLabel: '中文(简体)',
     candidates: ['zh-Hans', 'zh'],
+    speechLang: 'zh-CN',
     tier: 'core',
     sampleGreeting: '中文(简体) (중국어 간체)'
   },
@@ -33,6 +35,7 @@ export const TARGET_LANGUAGES = [
     label: '베트남어',
     nativeLabel: 'Tiếng Việt',
     candidates: ['vi'],
+    speechLang: 'vi-VN',
     tier: 'core',
     sampleGreeting: 'Tiếng Việt (베트남어)'
   },
@@ -41,6 +44,7 @@ export const TARGET_LANGUAGES = [
     label: '일본어',
     nativeLabel: '日本語',
     candidates: ['ja'],
+    speechLang: 'ja-JP',
     tier: 'core',
     sampleGreeting: '日本語 (일본어)'
   },
@@ -49,6 +53,7 @@ export const TARGET_LANGUAGES = [
     label: '러시아어',
     nativeLabel: 'Русский',
     candidates: ['ru'],
+    speechLang: 'ru-RU',
     tier: 'core',
     sampleGreeting: 'Русский (러시아어)'
   },
@@ -57,6 +62,7 @@ export const TARGET_LANGUAGES = [
     label: '우즈베크어',
     nativeLabel: 'Oʻzbekcha',
     candidates: ['uz'],
+    speechLang: 'uz-UZ',
     tier: 'extended',
     sampleGreeting: 'Oʻzbekcha (우즈베크어)'
   },
@@ -65,6 +71,7 @@ export const TARGET_LANGUAGES = [
     label: '몽골어',
     nativeLabel: 'Монгол',
     candidates: ['mn'],
+    speechLang: 'mn-MN',
     tier: 'extended',
     sampleGreeting: 'Монгол (몽골어)'
   },
@@ -73,6 +80,7 @@ export const TARGET_LANGUAGES = [
     label: '태국어',
     nativeLabel: 'ภาษาไทย',
     candidates: ['th'],
+    speechLang: 'th-TH',
     tier: 'extended',
     sampleGreeting: 'ภาษาไทย (태국어)'
   },
@@ -81,6 +89,7 @@ export const TARGET_LANGUAGES = [
     label: '캄보디아어(크메르어)',
     nativeLabel: 'ភាសាខ្មែរ',
     candidates: ['km'],
+    speechLang: 'km-KH',
     tier: 'extended',
     sampleGreeting: 'ភាសាខ្មែរ (캄보디아어)'
   },
@@ -89,6 +98,7 @@ export const TARGET_LANGUAGES = [
     label: '필리핀어(타갈로그어)',
     nativeLabel: 'Tagalog / Filipino',
     candidates: ['tl', 'fil'],
+    speechLang: 'fil-PH',
     tier: 'extended',
     sampleGreeting: 'Tagalog (필리핀어)'
   }
@@ -284,6 +294,42 @@ export function startTranslatorCreation(resolvedTargetCode, onDownloadProgress) 
 }
 
 /**
+ * Create a Reverse Translator instance (foreign targetLanguage -> Korean 'ko')
+ * synchronously from a user click handler so teachers can verify meaning in Korean.
+ */
+export function startReverseTranslatorCreation(resolvedSourceCode, onDownloadProgress) {
+  const env = detectEnvironmentInfo();
+  if (!env.hasTranslatorApi) {
+    return Promise.reject(new Error('현재 브라우저에서 내장 역번역 API를 지원하지 않습니다.'));
+  }
+
+  if (env.apiVariant === 'standard') {
+    return self.Translator.create({
+      sourceLanguage: resolvedSourceCode,
+      targetLanguage: SOURCE_LANGUAGE.code,
+      monitor(m) {
+        if (m && typeof m.addEventListener === 'function') {
+          m.addEventListener('downloadprogress', (e) => {
+            const loaded = typeof e.loaded === 'number' ? e.loaded : 0;
+            const total = typeof e.total === 'number' && e.total > 0 ? e.total : 1;
+            const ratio = Math.min(1, Math.max(0, loaded / total));
+            if (typeof onDownloadProgress === 'function') {
+              onDownloadProgress(ratio, loaded, total);
+            }
+          });
+        }
+      }
+    });
+  }
+
+  const api = self.translation || self.ai?.translator;
+  return api.createTranslator({
+    sourceLanguage: resolvedSourceCode,
+    targetLanguage: SOURCE_LANGUAGE.code
+  });
+}
+
+/**
  * Translate a single item text while preserving line breaks (\n)
  */
 export async function translateSingleText(translator, sourceText) {
@@ -307,3 +353,35 @@ export async function translateSingleText(translator, sourceText) {
   }
   return translatedLines.join('\n');
 }
+
+/**
+ * Speak foreign text using browser-native Web Speech API (window.speechSynthesis)
+ */
+export function speakTextWithBrowserTTS(text, langKey, onStateChange) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    return false;
+  }
+  const synth = window.speechSynthesis;
+  const trimmed = String(text ?? '').trim();
+  if (!trimmed) return false;
+
+  synth.cancel();
+  const langMeta = getTargetLanguageMeta(langKey);
+  const utter = new SpeechSynthesisUtterance(trimmed);
+  utter.lang = langMeta.speechLang || langMeta.candidates[0] || 'en-US';
+  utter.rate = 0.95;
+
+  if (typeof onStateChange === 'function') {
+    onStateChange(true);
+  }
+  utter.onend = () => {
+    if (typeof onStateChange === 'function') onStateChange(false);
+  };
+  utter.onerror = () => {
+    if (typeof onStateChange === 'function') onStateChange(false);
+  };
+
+  synth.speak(utter);
+  return true;
+}
+

@@ -2392,3 +2392,158 @@ body {
   .ys-wide { display: none; }
 }
 @media print { .ys-key, .ys-credit { display: none; } }
+
+/* ==================== 6대 외국어 번역 품질 검증 기능 스타일 ==================== */
+
+.power-bar-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.counter-signal {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+/* 신호등 배지 */
+.signal-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.signal-green {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.signal-yellow {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #b45309;
+}
+
+.signal-red {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+}
+
+.signal-empty {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+}
+
+/* 번역 헤더 우측 액션 (발음 듣기 · 교차확인 복사) */
+.trans-col-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mini-tool-btn {
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mini-tool-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #eff6ff;
+}
+
+.mini-tool-btn.is-speaking {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+
+/* 한국어 역번역 확인 박스 */
+.back-translation-box {
+  margin-top: 8px;
+  padding: 9px 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.back-translation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.back-translation-label {
+  font-weight: 800;
+  color: #166534;
+  font-size: 0.8rem;
+}
+
+.back-translation-text {
+  color: #14532d;
+  font-weight: 600;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.back-translation-empty {
+  color: #64748b;
+  font-weight: 500;
+  font-style: italic;
+}
+
+/* 자동 오류 검출 목록 (숫자 누락 · 미번역 한글 · 문장부호) */
+.accuracy-issues-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.accuracy-issue-item {
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.accuracy-issue-red {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+}
+
+.accuracy-issue-yellow {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+/* 학교 용어 반영 여부 칩 */
+.glossary-suggest-chip.is-applied {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+

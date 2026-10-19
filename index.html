@@ -489,6 +489,10 @@
               <span>빈 번역문</span>
               <strong id="review-empty-count">0</strong>
             </div>
+            <div class="counter-chip counter-signal hidden" id="review-signal-chip" title="숫자 누락, 미번역 한글 잔류, 부호/길이 차이 등으로 점검이 필요한 문장 수">
+              <span>🚦 점검 필요(🔴·🟡)</span>
+              <strong id="review-signal-count">0</strong>
+            </div>
             <div class="counter-chip counter-overflow hidden" id="review-overflow-chip" title="원문보다 번역문 글자 수가 훨씬 길어 슬라이드나 표 칸을 넘칠 수 있는 항목 수">
               <span>📏 길이 넘침 주의</span>
               <strong id="review-overflow-count">0</strong>
@@ -503,6 +507,7 @@
             <div class="filter-btn-group" role="group" aria-label="검토 항목 필터">
               <button type="button" class="filter-btn active" data-filter="all">전체 보기</button>
               <button type="button" class="filter-btn" data-filter="unverified">미검토만 보기</button>
+              <button type="button" class="filter-btn" data-filter="attention" id="filter-btn-attention">🚦 점검 필요(🔴·🟡)</button>
               <button type="button" class="filter-btn" data-filter="empty">빈 번역문만 보기</button>
               <button type="button" class="filter-btn" data-filter="overflow" id="filter-btn-overflow">📏 길이 넘침 주의</button>
               <button type="button" class="filter-btn" data-filter="modified">내가 수정한 문장</button>
@@ -522,12 +527,18 @@
             </div>
           </div>
 
-          <!-- 교사 편의 도구 모음: 동일 원문 자동 동기화 · 학교 용어집 · 일괄 찾기/바꾸기 · 엑셀/CSV 연동 -->
+          <!-- 교사 편의 도구 모음: 한국어 역번역 검증 · 동일 원문 자동 동기화 · 학교 용어집 · 일괄 찾기/바꾸기 · 엑셀/CSV 연동 -->
           <div class="teacher-power-bar">
-            <label class="sync-toggle-label" title="슬라이드나 표에 반복 등장하는 동일한 한국어 문장을 한 번만 수정해도 문서 전체의 같은 문장에 자동 반영합니다">
-              <input type="checkbox" id="chk-auto-sync-identical" checked />
-              <span>🔗 동일 원문 자동 동기화</span>
-            </label>
+            <div class="power-bar-left">
+              <button type="button" id="btn-run-all-backtranslate" class="btn btn-primary btn-sm" title="외국어를 전혀 몰라도 번역된 문장을 다시 한국어로 역번역하여 뜻이 맞는지 한눈에 대조합니다">
+                🔄 전체 문장 한국어 역번역 검증
+              </button>
+              <span id="backtranslate-status-msg" class="drawer-feedback" aria-live="polite"></span>
+              <label class="sync-toggle-label" title="슬라이드나 표에 반복 등장하는 동일한 한국어 문장을 한 번만 수정해도 문서 전체의 같은 문장에 자동 반영합니다">
+                <input type="checkbox" id="chk-auto-sync-identical" checked />
+                <span>🔗 동일 원문 자동 동기화</span>
+              </label>
+            </div>
 
             <div class="power-tool-btns">
               <button type="button" id="btn-toggle-glossary" class="btn btn-surface btn-sm" aria-expanded="false">

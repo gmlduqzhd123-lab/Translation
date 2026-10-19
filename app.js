@@ -10,7 +10,9 @@ import {
   detectEnvironmentInfo,
   checkLanguagePairSupport,
   startTranslatorCreation,
-  translateSingleText
+  startReverseTranslatorCreation,
+  translateSingleText,
+  speakTextWithBrowserTTS
 } from './src/translator-service.js';
 import {
   getAllGlossaryEntries,
@@ -18,7 +20,9 @@ import {
   saveCustomGlossary,
   findMatchingGlossaryTerms,
   isNonTranslatableText,
-  evaluateLengthOverflowRisk
+  evaluateLengthOverflowRisk,
+  evaluateTranslationAccuracyIssues,
+  evaluateTranslationTrafficLight
 } from './src/school-glossary.js';
 import {
   saveWorkSessionToBrowser,
@@ -32,7 +36,7 @@ const state = {
   parsedDoc: null,
   selectedLangKey: 'en',
   langSupportMap: new Map(),
-  // id -> { draftText, finalText, verified, autoFailed, errorMessage, keepOriginal }
+  // id -> { draftText, finalText, backTranslatedKo, verified, autoFailed, errorMessage, keepOriginal }
   itemStates: new Map(),
   activeFilter: 'all',
   collapsedGroups: new Set(),
@@ -133,6 +137,8 @@ function cacheElements() {
   els.reviewVerifiedCount = document.getElementById('review-verified-count');
   els.reviewUnverifiedCount = document.getElementById('review-unverified-count');
   els.reviewEmptyCount = document.getElementById('review-empty-count');
+  els.reviewSignalChip = document.getElementById('review-signal-chip');
+  els.reviewSignalCount = document.getElementById('review-signal-count');
   els.reviewOverflowChip = document.getElementById('review-overflow-chip');
   els.reviewOverflowCount = document.getElementById('review-overflow-count');
   els.reviewFailedChip = document.getElementById('review-failed-chip');
@@ -142,7 +148,9 @@ function cacheElements() {
   els.btnFillEmptyWithSource = document.getElementById('btn-fill-empty-with-source');
   els.btnVerifyAllVisible = document.getElementById('btn-verify-all-visible');
 
-  // Step 4 Power Tools (Glossary, Find/Replace, CSV/Paste, Collapse)
+  // Step 4 Power Tools (Back-translation, Glossary, Find/Replace, CSV/Paste, Collapse)
+  els.btnRunAllBacktranslate = document.getElementById('btn-run-all-backtranslate');
+  els.backtranslateStatusMsg = document.getElementById('backtranslate-status-msg');
   els.chkAutoSyncIdentical = document.getElementById('chk-auto-sync-identical');
   els.btnToggleGlossary = document.getElementById('btn-toggle-glossary');
   els.btnToggleFindReplace = document.getElementById('btn-toggle-find-replace');
@@ -484,7 +492,8 @@ function bindEvents() {
     renderReviewStep();
   });
 
-  // Step 4 Power Tools (Feature #2, #5, #7, #8)
+  // Step 4 Power Tools (Back-translation, Feature #2, #5, #7, #8)
+  els.btnRunAllBacktranslate?.addEventListener('click', handleRunAllBacktranslate);
   els.chkAutoSyncIdentical?.addEventListener('change', () => {
     state.autoSyncIdentical = Boolean(els.chkAutoSyncIdentical.checked);
   });
@@ -492,17 +501,35 @@ function bindEvents() {
   els.btnToggleGlossary?.addEventListener('click', () => {
     const isHidden = els.glossaryDrawer.classList.toggle('hidden');
     els.btnToggleGlossary.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
-    if (!isHidden) renderGlossaryDrawer();
+    if (!isHidden) {
+      els.findReplaceDrawer?.classList.add('hidden');
+      els.btnToggleFindReplace?.setAttribute('aria-expanded', 'false');
+      els.csvPasteDrawer?.classList.add('hidden');
+      els.btnToggleCsvPanel?.setAttribute('aria-expanded', 'false');
+      renderGlossaryDrawer();
+    }
   });
 
   els.btnToggleFindReplace?.addEventListener('click', () => {
     const isHidden = els.findReplaceDrawer.classList.toggle('hidden');
     els.btnToggleFindReplace.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+    if (!isHidden) {
+      els.glossaryDrawer?.classList.add('hidden');
+      els.btnToggleGlossary?.setAttribute('aria-expanded', 'false');
+      els.csvPasteDrawer?.classList.add('hidden');
+      els.btnToggleCsvPanel?.setAttribute('aria-expanded', 'false');
+    }
   });
 
   els.btnToggleCsvPanel?.addEventListener('click', () => {
     const isHidden = els.csvPasteDrawer.classList.toggle('hidden');
     els.btnToggleCsvPanel.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+    if (!isHidden) {
+      els.glossaryDrawer?.classList.add('hidden');
+      els.btnToggleGlossary?.setAttribute('aria-expanded', 'false');
+      els.findReplaceDrawer?.classList.add('hidden');
+      els.btnToggleFindReplace?.setAttribute('aria-expanded', 'false');
+    }
   });
 
   els.btnAddCustomGlossary?.addEventListener('click', handleAddCustomGlossary);
@@ -668,6 +695,7 @@ async function processLoadedBuffer(fileName, arrayBuffer) {
     state.itemStates.set(item.id, {
       draftText: autoSkip ? item.sourceText : null,
       finalText: autoSkip ? item.sourceText : '',
+      backTranslatedKo: autoSkip ? item.sourceText : '',
       verified: autoSkip,
       autoFailed: false,
       errorMessage: null,
@@ -871,8 +899,8 @@ async function updateSelectedLanguageStatusUI() {
     els.btnStartAutoTranslate.textContent = `🤖 한국어 → ${langMeta.label} 자동 번역 초안 만들기`;
     els.autoTranslateHelper.textContent =
       info.status === 'available'
-        ? '브라우저 내장 번역 모델이 준비되어 있어 즉시 번역 초안을 생성합니다.'
-        : '최초 실행 시 브라우저가 언어 모델을 다운로드한 뒤 자동으로 번역 초안을 생성합니다.';
+        ? '브라우저 내장 번역 모델이 준비되어 있어 즉시 번역 초안과 한국어 역번역 대조문을 함께 생성합니다.'
+        : '최초 실행 시 브라우저가 언어 모델을 다운로드한 뒤 번역 초안과 한국어 역번역 대조문을 생성합니다.';
   } else {
     els.btnStartAutoTranslate.textContent = `자동 번역 사용 불가 (${langMeta.label})`;
     els.autoTranslateHelper.textContent =
@@ -901,6 +929,9 @@ async function handleStartAutoTranslate() {
     els.translationProgressTitle.textContent = `브라우저 내장 ${langMeta.label} 번역 모델 다운로드 중...`;
   });
 
+  // Also start reverse translator (target -> ko) synchronously so teachers can see Korean back-translation immediately
+  const reverseTranslatorPromise = startReverseTranslatorCreation(resolvedCode).catch(() => null);
+
   state.isTranslating = true;
   state.cancelTranslationRequested = false;
   els.btnStartAutoTranslate.disabled = true;
@@ -917,8 +948,10 @@ async function handleStartAutoTranslate() {
   els.itemTranslateProgressbar.setAttribute('aria-valuenow', '0');
 
   let translator;
+  let reverseTranslator = null;
   try {
     translator = await translatorPromise;
+    reverseTranslator = await reverseTranslatorPromise;
   } catch (err) {
     state.isTranslating = false;
     els.btnStartAutoTranslate.disabled = false;
@@ -937,6 +970,7 @@ async function handleStartAutoTranslate() {
   let successCount = 0;
   let failCount = 0;
   const translationCache = new Map();
+  const reverseCache = new Map();
 
   for (let idx = 0; idx < total; idx++) {
     if (state.cancelTranslationRequested) {
@@ -945,7 +979,7 @@ async function handleStartAutoTranslate() {
 
     const item = items[idx];
     const itemState = state.itemStates.get(item.id);
-    els.translationProgressTitle.textContent = `한국어 → ${langMeta.label} 번역 초안 생성 중...`;
+    els.translationProgressTitle.textContent = `한국어 → ${langMeta.label} 번역 및 역번역 검증 중...`;
     els.itemTranslateCurrentLabel.textContent = `${item.locationLabel} (${item.contextLabel}) 번역 중`;
     els.translationProgressCounts.textContent = `${idx + 1} / ${total}`;
 
@@ -954,6 +988,7 @@ async function handleStartAutoTranslate() {
       itemState.keepOriginal = true;
       itemState.draftText = item.sourceText;
       itemState.finalText = item.sourceText;
+      itemState.backTranslatedKo = item.sourceText;
       itemState.verified = true;
       itemState.autoFailed = false;
       itemState.errorMessage = null;
@@ -970,6 +1005,21 @@ async function handleStartAutoTranslate() {
         }
         itemState.draftText = translated;
         itemState.finalText = translated;
+
+        if (reverseTranslator && translated.trim().length > 0) {
+          if (reverseCache.has(translated)) {
+            itemState.backTranslatedKo = reverseCache.get(translated);
+          } else {
+            try {
+              const backKo = await translateSingleText(reverseTranslator, translated);
+              reverseCache.set(translated, backKo);
+              itemState.backTranslatedKo = backKo;
+            } catch {
+              itemState.backTranslatedKo = '';
+            }
+          }
+        }
+
         itemState.verified = false; // Never auto-mark translated sentences as verified
         itemState.autoFailed = false;
         itemState.errorMessage = null;
@@ -992,6 +1042,13 @@ async function handleStartAutoTranslate() {
   if (translator && typeof translator.destroy === 'function') {
     try {
       translator.destroy();
+    } catch {
+      // ignore
+    }
+  }
+  if (reverseTranslator && typeof reverseTranslator.destroy === 'function') {
+    try {
+      reverseTranslator.destroy();
     } catch {
       // ignore
     }
@@ -1025,8 +1082,8 @@ async function handleStartAutoTranslate() {
   } else {
     showTranslationAlert(
       'success',
-      `자동 번역 초안 생성 완료 (${successCount}개 항목)`,
-      `모든 항목의 ${langMeta.label} 번역 초안이 생성되었습니다. 아직 ‘미검토’ 상태이므로 내용을 확인하고 수정해 주세요.`,
+      `자동 번역 및 역번역 검증 완료 (${successCount}개 항목)`,
+      `모든 항목의 ${langMeta.label} 번역 초안과 한국어 역번역 대조문이 준비되었습니다. 내용을 확인하고 수정해 주세요.`,
       '번역 검토 화면으로 이동합니다.'
     );
   }
@@ -1044,7 +1101,71 @@ function showTranslationAlert(type, title, message, actionHint) {
   els.translationResultAlert.classList.remove('hidden');
 }
 
-/* ==================== STEP 4 POWER TOOLS: GLOSSARY, FIND/REPLACE, CSV/PASTE ==================== */
+/* ==================== STEP 4 POWER TOOLS: BACK-TRANSLATION, GLOSSARY, FIND/REPLACE, CSV/PASTE ==================== */
+
+async function handleRunAllBacktranslate() {
+  if (!state.parsedDoc || state.isTranslating) return;
+  const langKey = state.selectedLangKey;
+  const langMeta = getTargetLanguageMeta(langKey);
+  const supportInfo = state.langSupportMap.get(langKey) || {
+    resolvedCode: langMeta.candidates[0]
+  };
+  const resolvedCode = supportInfo.resolvedCode || langMeta.candidates[0];
+
+  // Start reverse translator synchronously on user click
+  const reversePromise = startReverseTranslatorCreation(resolvedCode);
+  if (els.btnRunAllBacktranslate) els.btnRunAllBacktranslate.disabled = true;
+  if (els.backtranslateStatusMsg) {
+    els.backtranslateStatusMsg.textContent = `⏳ ${langMeta.label} → 한국어 역번역 모델 준비 중...`;
+  }
+
+  let reverseTranslator;
+  try {
+    reverseTranslator = await reversePromise;
+  } catch {
+    if (els.btnRunAllBacktranslate) els.btnRunAllBacktranslate.disabled = false;
+    if (els.backtranslateStatusMsg) {
+      els.backtranslateStatusMsg.textContent = `⚠️ 현재 브라우저에서 ${langMeta.label} → 한국어 자동 역번역 모델을 사용할 수 없습니다. 숫자·부호·용어 자동 검증은 그대로 작동합니다.`;
+    }
+    return;
+  }
+
+  let count = 0;
+  const items = state.parsedDoc.items;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const st = state.itemStates.get(it.id);
+    if (!st || !st.finalText.trim()) continue;
+    if (st.keepOriginal) {
+      st.backTranslatedKo = it.sourceText;
+      continue;
+    }
+    if (els.backtranslateStatusMsg) {
+      els.backtranslateStatusMsg.textContent = `🔄 역번역 검증 중... (${i + 1}/${items.length})`;
+    }
+    try {
+      st.backTranslatedKo = await translateSingleText(reverseTranslator, st.finalText);
+      count++;
+    } catch {
+      // ignore individual failure
+    }
+  }
+
+  if (reverseTranslator && typeof reverseTranslator.destroy === 'function') {
+    try {
+      reverseTranslator.destroy();
+    } catch {
+      // ignore
+    }
+  }
+
+  if (els.btnRunAllBacktranslate) els.btnRunAllBacktranslate.disabled = false;
+  if (els.backtranslateStatusMsg) {
+    els.backtranslateStatusMsg.textContent = `✓ 총 ${count}개 번역문의 한국어 역번역 대조를 완료했습니다!`;
+  }
+  scheduleAutoSave();
+  renderReviewStep();
+}
 
 function renderGlossaryDrawer() {
   if (!els.glossaryTermsGrid) return;
@@ -1363,15 +1484,86 @@ function getItemOriginStatus(st) {
   };
 }
 
+async function handleSingleCardBacktranslate(card, item, st, btnEl) {
+  if (!st.finalText.trim()) return;
+  if (st.keepOriginal) {
+    st.backTranslatedKo = item.sourceText;
+    syncSingleCardUI(card, item, st);
+    updateReviewCountersUI();
+    scheduleAutoSave();
+    return;
+  }
+
+  const langKey = state.selectedLangKey;
+  const langMeta = getTargetLanguageMeta(langKey);
+  const supportInfo = state.langSupportMap.get(langKey) || {
+    resolvedCode: langMeta.candidates[0]
+  };
+  const resolvedCode = supportInfo.resolvedCode || langMeta.candidates[0];
+
+  // Must invoke synchronously inside click handler for transient user activation
+  const reversePromise = startReverseTranslatorCreation(resolvedCode);
+  const origLabel = btnEl ? btnEl.textContent : '🔄 역번역 다시 확인';
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.textContent = '⏳ 역번역 중...';
+  }
+
+  try {
+    const reverseTranslator = await reversePromise;
+    const koResult = await translateSingleText(reverseTranslator, st.finalText);
+    st.backTranslatedKo = koResult;
+    if (reverseTranslator && typeof reverseTranslator.destroy === 'function') {
+      try {
+        reverseTranslator.destroy();
+      } catch {
+        // ignore
+      }
+    }
+  } catch {
+    const btTextEl = card.querySelector('[data-role="backtranslate-text"]');
+    if (btTextEl) {
+      btTextEl.textContent = `⚠️ 현재 브라우저 환경에서 ${langMeta.label} → 한국어 자동 역번역 모델을 실행할 수 없습니다. 우측 상단 [💬 교차확인 복사]를 활용할 수 있습니다.`;
+      btTextEl.classList.add('is-empty');
+    }
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.textContent = origLabel;
+    }
+    return;
+  }
+
+  if (btnEl) {
+    btnEl.disabled = false;
+    btnEl.textContent = '✓ 역번역 완료';
+    setTimeout(() => {
+      btnEl.textContent = origLabel;
+    }, 1500);
+  }
+  syncSingleCardUI(card, item, st);
+  updateReviewCountersUI();
+  scheduleAutoSave();
+}
+
 function computeReviewCounters() {
   if (!state.parsedDoc) {
-    return { total: 0, verified: 0, unverified: 0, empty: 0, modified: 0, failed: 0, overflow: 0 };
+    return {
+      total: 0,
+      verified: 0,
+      unverified: 0,
+      empty: 0,
+      modified: 0,
+      failed: 0,
+      overflow: 0,
+      attention: 0
+    };
   }
   let verified = 0;
   let empty = 0;
   let modified = 0;
   let failed = 0;
   let overflow = 0;
+  let attention = 0;
 
   for (const item of state.parsedDoc.items) {
     const st = state.itemStates.get(item.id);
@@ -1389,6 +1581,10 @@ function computeReviewCounters() {
     if (evaluateLengthOverflowRisk(item.sourceText, st.finalText, item.contextLabel)) {
       overflow++;
     }
+    const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
+    if (signal.level === 'red' || signal.level === 'yellow') {
+      attention++;
+    }
   }
 
   const total = state.parsedDoc.items.length;
@@ -1399,7 +1595,8 @@ function computeReviewCounters() {
     empty,
     modified,
     failed,
-    overflow
+    overflow,
+    attention
   };
 }
 
@@ -1411,6 +1608,10 @@ function updateReviewCountersUI() {
   els.reviewVerifiedCount.textContent = `${c.verified}개`;
   els.reviewUnverifiedCount.textContent = `${c.unverified}개`;
   els.reviewEmptyCount.textContent = `${c.empty}개`;
+  if (els.reviewSignalCount && els.reviewSignalChip) {
+    els.reviewSignalCount.textContent = `${c.attention}개`;
+    els.reviewSignalChip.classList.toggle('hidden', c.attention === 0);
+  }
   if (els.reviewOverflowCount && els.reviewOverflowChip) {
     els.reviewOverflowCount.textContent = `${c.overflow}개`;
     els.reviewOverflowChip.classList.toggle('hidden', c.overflow === 0);
@@ -1482,6 +1683,7 @@ function propagateIdenticalSourceText(editedItem, sourceState) {
       otherSt.finalText = sourceState.finalText;
       otherSt.keepOriginal = sourceState.keepOriginal;
       otherSt.verified = sourceState.verified;
+      otherSt.backTranslatedKo = sourceState.backTranslatedKo;
 
       const otherCard = els.reviewItemsContainer.querySelector(
         `.review-card[data-item-id="${other.id}"]`
@@ -1496,6 +1698,19 @@ function propagateIdenticalSourceText(editedItem, sourceState) {
       }
     }
   }
+}
+
+function renderAccuracyIssuesHtml(accuracyIssues) {
+  if (!accuracyIssues || accuracyIssues.length === 0) return '';
+  return accuracyIssues
+    .map(
+      (iss) =>
+        `<div class="accuracy-issue-item ${iss.level === 'error' ? 'issue-error' : 'issue-warn'}">
+          <span>${iss.level === 'error' ? '🚨' : '⚠️'}</span>
+          <span>${escapeHtml(iss.message)}</span>
+        </div>`
+    )
+    .join('');
 }
 
 function renderReviewStep() {
@@ -1569,7 +1784,17 @@ function renderReviewStep() {
         st.finalText,
         item.contextLabel
       );
-      const glossaryMatches = findMatchingGlossaryTerms(item.sourceText, state.selectedLangKey);
+      const accuracyIssues = evaluateTranslationAccuracyIssues(
+        item.sourceText,
+        st.finalText,
+        st.keepOriginal
+      );
+      const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
+      const glossaryMatches = findMatchingGlossaryTerms(
+        item.sourceText,
+        state.selectedLangKey,
+        st.finalText
+      );
 
       const card = document.createElement('article');
       card.className = `review-card${st.verified ? ' verified' : ''}${isEmpty ? ' is-empty' : ''}${
@@ -1583,15 +1808,17 @@ function renderReviewStep() {
       const glossaryBarHtml =
         glossaryMatches.length > 0
           ? `<div class="glossary-suggest-bar" data-role="glossary-bar">
-              <span class="glossary-suggest-label">📚 추천 학교 용어 (클릭 시 입력):</span>
+              <span class="glossary-suggest-label">📚 학교 필수 용어 체크:</span>
               ${glossaryMatches
                 .map(
                   (m) =>
-                    `<button type="button" class="glossary-suggest-chip" data-term="${escapeHtml(
+                    `<button type="button" class="glossary-suggest-chip${
+                      m.isApplied ? ' is-applied' : ''
+                    }" data-ko="${escapeHtml(m.ko)}" data-term="${escapeHtml(
                       m.target
                     )}" title="클릭하면 번역문 입력칸에 '${escapeHtml(m.target)}'을(를) 넣습니다">${escapeHtml(
                       m.ko
-                    )} ➔ ${escapeHtml(m.target)}</button>`
+                    )} ➔ ${escapeHtml(m.target)} ${m.isApplied ? '✓ 반영됨' : '💡 클릭하여 반영'}</button>`
                 )
                 .join('')}
             </div>`
@@ -1603,6 +1830,7 @@ function renderReviewStep() {
             <span class="location-badge">${escapeHtml(item.locationLabel)}</span>
             <span class="badge badge-context">${escapeHtml(item.contextLabel)}</span>
             <span class="origin-badge ${origin.cssClass}" data-role="origin-badge">${escapeHtml(origin.label)}</span>
+            <span class="signal-badge ${signal.cssClass}" data-role="signal-badge" title="숫자·부호·길이·역번역 의미를 종합한 자동 안심 신호등">${escapeHtml(signal.label)}</span>
           </div>
           <div class="review-meta-right">
             <button
@@ -1639,7 +1867,25 @@ function renderReviewStep() {
           <div class="review-col">
             <div class="review-col-header">
               <label for="textarea-${item.id}">${escapeHtml(langMeta.label)} 번역문 편집 <small class="text-muted">(Ctrl+Enter: 확인 완료)</small></label>
-              <span data-role="char-count" class="text-muted">${st.finalText.length}자</span>
+              <div class="trans-col-tools">
+                <button
+                  type="button"
+                  class="mini-tool-btn"
+                  data-role="tts-btn"
+                  title="${escapeHtml(langMeta.label)} 원어민 발음으로 소리 내어 읽어줍니다"
+                >
+                  🔊 발음 듣기
+                </button>
+                <button
+                  type="button"
+                  class="mini-tool-btn"
+                  data-role="copy-verify-btn"
+                  title="다문화강사·번역앱 교차확인용 질문 양식을 클립보드에 복사합니다"
+                >
+                  💬 교차확인 복사
+                </button>
+                <span data-role="char-count" class="text-muted">${st.finalText.length}자</span>
+              </div>
             </div>
             <textarea
               id="textarea-${item.id}"
@@ -1647,6 +1893,34 @@ function renderReviewStep() {
               lang="${escapeHtml(langMeta.key)}"
               placeholder="${escapeHtml(langMeta.label)} 번역문을 입력하거나 수정하세요..."
             ></textarea>
+
+            <div class="back-translation-box" data-role="backtranslate-box">
+              <div class="back-translation-header">
+                <span class="back-translation-label">🔄 한국어 역번역 뜻 대조 (외국어 → 한국어 재번역)</span>
+                <button
+                  type="button"
+                  class="link-btn"
+                  data-role="recheck-backtranslate-btn"
+                  title="수정한 외국어 번역문을 한국어로 다시 역번역하여 뜻을 확인합니다"
+                >
+                  🔄 역번역 다시 확인
+                </button>
+              </div>
+              <div
+                class="back-translation-text ${st.backTranslatedKo ? '' : 'is-empty'}"
+                data-role="backtranslate-text"
+              >${
+                st.backTranslatedKo
+                  ? `“${escapeHtml(st.backTranslatedKo)}”`
+                  : '역번역 대기 중 — 상단 [🔄 전체 한국어 역번역 실행] 또는 우측 [🔄 역번역 다시 확인]을 누르면 외국어 번역문의 한국어 뜻이 표시됩니다.'
+              }</div>
+            </div>
+
+            <div
+              class="accuracy-issues-list ${accuracyIssues.length > 0 ? '' : 'hidden'}"
+              data-role="accuracy-issues-list"
+            >${renderAccuracyIssuesHtml(accuracyIssues)}</div>
+
             <div
               class="overflow-warning-bar ${
                 overflowInfo
@@ -1674,6 +1948,9 @@ function renderReviewStep() {
       const keepSourceBtn = card.querySelector('[data-role="keep-source-btn"]');
       const copySourceBtn = card.querySelector('[data-role="copy-source-btn"]');
       const restoreDraftBtn = card.querySelector('[data-role="restore-draft-btn"]');
+      const ttsBtn = card.querySelector('[data-role="tts-btn"]');
+      const copyVerifyBtn = card.querySelector('[data-role="copy-verify-btn"]');
+      const recheckBtBtn = card.querySelector('[data-role="recheck-backtranslate-btn"]');
       const glossaryChips = card.querySelectorAll('.glossary-suggest-chip');
 
       glossaryChips.forEach((chip) => {
@@ -1682,7 +1959,7 @@ function renderReviewStep() {
           if (!term) return;
           if (st.finalText.trim().length === 0 || item.sourceText.trim().length <= 10) {
             st.finalText = term;
-          } else if (!st.finalText.includes(term)) {
+          } else if (!st.finalText.toLowerCase().includes(term.toLowerCase())) {
             st.finalText = `${st.finalText.trim()} (${term})`;
           }
           st.keepOriginal = false;
@@ -1695,6 +1972,65 @@ function renderReviewStep() {
           scheduleAutoSave();
         });
       });
+
+      if (ttsBtn) {
+        ttsBtn.addEventListener('click', () => {
+          speakTextWithBrowserTTS(st.finalText, state.selectedLangKey, (status) => {
+            if (status === 'speaking') {
+              ttsBtn.classList.add('is-active');
+              ttsBtn.textContent = '⏹️ 읽는 중 (중지)';
+            } else if (status === 'empty') {
+              ttsBtn.textContent = '⚠️ 번역문 없음';
+              setTimeout(() => {
+                ttsBtn.textContent = '🔊 발음 듣기';
+              }, 1200);
+            } else if (status === 'unsupported') {
+              ttsBtn.textContent = '⚠️ 음성 미지원';
+              setTimeout(() => {
+                ttsBtn.textContent = '🔊 발음 듣기';
+              }, 1500);
+            } else {
+              ttsBtn.classList.remove('is-active');
+              ttsBtn.textContent = '🔊 발음 듣기';
+            }
+          });
+        });
+      }
+
+      if (copyVerifyBtn) {
+        copyVerifyBtn.addEventListener('click', async () => {
+          const verifyLines = [
+            `[다국어 수업자료 번역 확인 요청]`,
+            `• 문서 위치: ${item.locationLabel} (${item.contextLabel})`,
+            `• 대상 언어: ${langMeta.label} (${langMeta.nativeLabel})`,
+            `• 한국어 원문: ${item.sourceText}`,
+            `• ${langMeta.label} 번역문: ${st.finalText || '(미입력)'}`,
+            ...(st.backTranslatedKo ? [`• 한국어 역번역: ${st.backTranslatedKo}`] : []),
+            `→ 위 ${langMeta.label} 번역문이 한국어 원문의 뜻과 자연스럽게 일치하는지 확인 부탁드립니다.`
+          ].join('\n');
+
+          try {
+            await navigator.clipboard.writeText(verifyLines);
+            copyVerifyBtn.classList.add('is-active');
+            copyVerifyBtn.textContent = '✓ 질문 복사됨!';
+            setTimeout(() => {
+              copyVerifyBtn.classList.remove('is-active');
+              copyVerifyBtn.textContent = '💬 교차확인 복사';
+            }, 1800);
+          } catch {
+            copyVerifyBtn.textContent = '⚠️ 복사 실패';
+            setTimeout(() => {
+              copyVerifyBtn.textContent = '💬 교차확인 복사';
+            }, 1500);
+          }
+        });
+      }
+
+      if (recheckBtBtn) {
+        recheckBtBtn.addEventListener('click', () => {
+          handleSingleCardBacktranslate(card, item, st, recheckBtBtn);
+        });
+      }
 
       textarea.addEventListener('focus', () => {
         els.currentPositionIndicator.textContent = `현재 위치: ${item.locationLabel} (${item.contextLabel})`;
@@ -1731,6 +2067,7 @@ function renderReviewStep() {
         st.keepOriginal = !st.keepOriginal;
         if (st.keepOriginal) {
           st.finalText = item.sourceText;
+          st.backTranslatedKo = item.sourceText;
           st.verified = true;
           textarea.value = st.finalText;
           autoResizeTextarea(textarea);
@@ -1799,6 +2136,12 @@ function syncSingleCardUI(card, item, st) {
     st.finalText,
     item.contextLabel
   );
+  const accuracyIssues = evaluateTranslationAccuracyIssues(
+    item.sourceText,
+    st.finalText,
+    st.keepOriginal
+  );
+  const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
 
   card.classList.toggle('verified', st.verified);
   card.classList.toggle('is-empty', isEmpty);
@@ -1807,6 +2150,12 @@ function syncSingleCardUI(card, item, st) {
   if (originBadge) {
     originBadge.textContent = origin.label;
     originBadge.className = `origin-badge ${origin.cssClass}`;
+  }
+
+  const signalBadge = card.querySelector('[data-role="signal-badge"]');
+  if (signalBadge) {
+    signalBadge.textContent = signal.label;
+    signalBadge.className = `signal-badge ${signal.cssClass}`;
   }
 
   const keepSourceBtn = card.querySelector('[data-role="keep-source-btn"]');
@@ -1826,6 +2175,39 @@ function syncSingleCardUI(card, item, st) {
   if (charCount) {
     charCount.textContent = `${st.finalText.length}자`;
   }
+
+  const btTextEl = card.querySelector('[data-role="backtranslate-text"]');
+  if (btTextEl) {
+    if (st.backTranslatedKo) {
+      btTextEl.textContent = `“${st.backTranslatedKo}”`;
+      btTextEl.classList.remove('is-empty');
+    } else {
+      btTextEl.textContent =
+        '역번역 대기 중 — 상단 [🔄 전체 한국어 역번역 실행] 또는 우측 [🔄 역번역 다시 확인]을 누르면 외국어 번역문의 한국어 뜻이 표시됩니다.';
+      btTextEl.classList.add('is-empty');
+    }
+  }
+
+  const accuracyListEl = card.querySelector('[data-role="accuracy-issues-list"]');
+  if (accuracyListEl) {
+    if (accuracyIssues.length > 0) {
+      accuracyListEl.classList.remove('hidden');
+      accuracyListEl.innerHTML = renderAccuracyIssuesHtml(accuracyIssues);
+    } else {
+      accuracyListEl.classList.add('hidden');
+      accuracyListEl.innerHTML = '';
+    }
+  }
+
+  const glossaryChips = card.querySelectorAll('.glossary-suggest-chip');
+  glossaryChips.forEach((chip) => {
+    const ko = chip.getAttribute('data-ko') || '';
+    const term = chip.getAttribute('data-term') || '';
+    const isApplied =
+      Boolean(st.finalText && term) && st.finalText.toLowerCase().includes(term.toLowerCase());
+    chip.classList.toggle('is-applied', isApplied);
+    chip.textContent = `${ko} ➔ ${term} ${isApplied ? '✓ 반영됨' : '💡 클릭하여 반영'}`;
+  });
 
   const overflowBar = card.querySelector('[data-role="overflow-bar"]');
   const overflowText = card.querySelector('[data-role="overflow-text"]');
@@ -1870,9 +2252,12 @@ function applyReviewFilter() {
     const isOverflow = Boolean(
       evaluateLengthOverflowRisk(item.sourceText, st.finalText, item.contextLabel)
     );
+    const signal = evaluateTranslationTrafficLight(item, st, state.selectedLangKey);
+    const isAttention = signal.level === 'red' || signal.level === 'yellow';
 
     let visible = true;
     if (filter === 'unverified') visible = !st.verified;
+    else if (filter === 'attention') visible = isAttention;
     else if (filter === 'empty') visible = isEmpty;
     else if (filter === 'overflow') visible = isOverflow;
     else if (filter === 'modified') visible = isModified;
