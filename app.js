@@ -47,6 +47,13 @@ import {
   adminFetchCaseReports,
   adminResolveCaseReport
 } from './src/case-sharing-service.js';
+import {
+  CLASSROOM_COMMUNICATION_CARDS,
+  SCHOOL_NOTICE_TEMPLATES,
+  buildExternalAiTranslationPrompt,
+  encodeStudentViewPayload,
+  decodeStudentViewPayload
+} from './src/teacher-toolkit.js';
 
 const state = {
   activeMainView: 'translator',
@@ -89,6 +96,7 @@ function cacheElements() {
   els.viewTranslator = document.getElementById('view-translator');
   els.viewCases = document.getElementById('view-cases');
   els.viewAdmin = document.getElementById('view-admin');
+  els.viewToolkit = document.getElementById('view-toolkit');
   els.stepperBarNav = document.getElementById('stepper-bar-nav');
   els.casesCountPill = document.getElementById('cases-count-pill');
 
@@ -119,6 +127,9 @@ function cacheElements() {
   els.detailsLegacyConvert = document.getElementById('details-legacy-convert');
 
   // Step 1
+  els.chkQuickTranslateMode = document.getElementById('chk-quick-translate-mode');
+  els.selectQuickTargetLang = document.getElementById('select-quick-target-lang');
+  els.btnOpenToolkitFromStep1 = document.getElementById('btn-open-toolkit-from-step1');
   els.sessionRestoreBanner = document.getElementById('session-restore-banner');
   els.sessionRestoreDesc = document.getElementById('session-restore-desc');
   els.btnRestoreSession = document.getElementById('btn-restore-session');
@@ -169,6 +180,13 @@ function cacheElements() {
   els.btnStartAutoTranslate = document.getElementById('btn-start-auto-translate');
   els.autoTranslateHelper = document.getElementById('auto-translate-helper');
   els.btnSkipToManual = document.getElementById('btn-skip-to-manual');
+  els.btnStep3CopyAiPrompt = document.getElementById('btn-step3-copy-ai-prompt');
+  els.multiLangBatchDetails = document.getElementById('multi-lang-batch-details');
+  els.multiLangCheckboxGrid = document.getElementById('multi-lang-checkbox-grid');
+  els.btnMultiLangSelectCore = document.getElementById('btn-multi-lang-select-core');
+  els.btnMultiLangClear = document.getElementById('btn-multi-lang-clear');
+  els.btnRunMultiLangZip = document.getElementById('btn-run-multi-lang-zip');
+  els.multiLangBatchStatus = document.getElementById('multi-lang-batch-status');
 
   // Step 4
   els.autosaveStatusBadge = document.getElementById('autosave-status-badge');
@@ -202,6 +220,9 @@ function cacheElements() {
   els.glossaryDrawer = document.getElementById('glossary-drawer');
   els.glossaryLangLabel = document.getElementById('glossary-lang-label');
   els.btnApplyGlossaryAll = document.getElementById('btn-apply-glossary-all');
+  els.btnExportGlossaryJson = document.getElementById('btn-export-glossary-json');
+  els.btnImportGlossaryJson = document.getElementById('btn-import-glossary-json');
+  els.inputImportGlossaryFile = document.getElementById('input-import-glossary-file');
   els.inputCustomGlossaryKo = document.getElementById('input-custom-glossary-ko');
   els.inputCustomGlossaryTarget = document.getElementById('input-custom-glossary-target');
   els.btnAddCustomGlossary = document.getElementById('btn-add-custom-glossary');
@@ -217,6 +238,7 @@ function cacheElements() {
   els.csvPasteDrawer = document.getElementById('csv-paste-drawer');
   els.btnExportCsv = document.getElementById('btn-export-csv');
   els.btnCopySourceLines = document.getElementById('btn-copy-source-lines');
+  els.btnCopyAiPrompt = document.getElementById('btn-copy-ai-prompt');
   els.textareaBulkPaste = document.getElementById('textarea-bulk-paste');
   els.btnApplyBulkPaste = document.getElementById('btn-apply-bulk-paste');
   els.csvPasteFeedback = document.getElementById('csv-paste-feedback');
@@ -246,12 +268,14 @@ function cacheElements() {
   els.finalModifiedSummary = document.getElementById('final-modified-summary');
   els.downloadWarningsPanel = document.getElementById('download-warnings-panel');
   els.outputModeRadios = document.querySelectorAll('input[name="output-mode"]');
+  els.chkAutoShrinkFont = document.getElementById('chk-auto-shrink-font');
   els.emptyHandlingBox = document.getElementById('empty-handling-box');
   els.downloadErrorBox = document.getElementById('download-error-box');
   els.downloadErrorTitle = document.getElementById('download-error-title');
   els.downloadErrorMessage = document.getElementById('download-error-message');
   els.downloadErrorAction = document.getElementById('download-error-action');
   els.btnDownloadFile = document.getElementById('btn-download-file');
+  els.btnOpenStudentQrModal = document.getElementById('btn-open-student-qr-modal');
   els.btnPrintComparisonSheet = document.getElementById('btn-print-comparison-sheet');
   els.downloadSuccessMsg = document.getElementById('download-success-msg');
   els.btnStep5ClearStorage = document.getElementById('btn-step5-clear-storage');
@@ -260,6 +284,37 @@ function cacheElements() {
   els.printSheetTbody = document.getElementById('print-sheet-tbody');
   els.btnTriggerWindowPrint = document.getElementById('btn-trigger-window-print');
   els.btnClosePrintSheet = document.getElementById('btn-close-print-sheet');
+
+  // Student QR Reader Modal (Idea #9)
+  els.studentQrModal = document.getElementById('student-qr-modal');
+  els.btnCloseStudentQrModal = document.getElementById('btn-close-student-qr-modal');
+  els.btnCloseStudentQrBottom = document.getElementById('btn-close-student-qr-bottom');
+  els.studentQrShareSection = document.getElementById('student-qr-share-section');
+  els.imgStudentShareQr = document.getElementById('img-student-share-qr');
+  els.inputStudentShareUrl = document.getElementById('input-student-share-url');
+  els.btnCopyStudentShareUrl = document.getElementById('btn-copy-student-share-url');
+  els.btnSpeakAllStudentCards = document.getElementById('btn-speak-all-student-cards');
+  els.studentShareFeedback = document.getElementById('student-share-feedback');
+  els.studentReaderDocTitle = document.getElementById('student-reader-doc-title');
+  els.studentReaderLangBadge = document.getElementById('student-reader-lang-badge');
+  els.chkStudentReaderShowKo = document.getElementById('chk-student-reader-show-ko');
+  els.studentReaderCardsList = document.getElementById('student-reader-cards-list');
+
+  // Teacher Toolkit View (Ideas #4, #7, #8)
+  els.selectToolkitTargetLang = document.getElementById('select-toolkit-target-lang');
+  els.toolkitTemplateButtons = document.getElementById('toolkit-template-buttons');
+  els.textareaToolkitSource = document.getElementById('textarea-toolkit-source');
+  els.btnToolkitClear = document.getElementById('btn-toolkit-clear');
+  els.btnToolkitTranslate = document.getElementById('btn-toolkit-translate');
+  els.toolkitFeedbackMsg = document.getElementById('toolkit-feedback-msg');
+  els.labelToolkitTargetLang = document.getElementById('label-toolkit-target-lang');
+  els.textareaToolkitTarget = document.getElementById('textarea-toolkit-target');
+  els.btnToolkitSpeak = document.getElementById('btn-toolkit-speak');
+  els.btnToolkitCopyTarget = document.getElementById('btn-toolkit-copy-target');
+  els.btnToolkitCopyBilingual = document.getElementById('btn-toolkit-copy-bilingual');
+  els.toolkitBacktranslateBox = document.getElementById('toolkit-backtranslate-box');
+  els.toolkitBacktranslateText = document.getElementById('toolkit-backtranslate-text');
+  els.classroomCardsGrid = document.getElementById('classroom-cards-grid');
 
   // Lesson Utilization Cases View (PRD 5)
   els.btnOpenCaseForm = document.getElementById('btn-open-case-form');
@@ -337,6 +392,7 @@ function init() {
   syncStorageControlUI();
   bindEvents();
   renderLanguageCards();
+  initToolkitView();
   refreshAllLanguageSupport();
   checkRestorableSession();
   handleInitialUrlRouting();
@@ -369,6 +425,10 @@ function switchMainView(viewName) {
   if (els.stepperBarNav) {
     els.stepperBarNav.classList.toggle('hidden', viewName !== 'translator');
   }
+  if (els.viewToolkit) {
+    els.viewToolkit.classList.toggle('hidden', viewName !== 'toolkit');
+    els.viewToolkit.classList.toggle('active', viewName === 'toolkit');
+  }
   if (els.viewCases) {
     els.viewCases.classList.toggle('hidden', viewName !== 'cases');
     els.viewCases.classList.toggle('active', viewName === 'cases');
@@ -378,7 +438,9 @@ function switchMainView(viewName) {
     els.viewAdmin.classList.toggle('active', viewName === 'admin');
   }
 
-  if (viewName === 'cases') {
+  if (viewName === 'toolkit') {
+    renderClassroomCards();
+  } else if (viewName === 'cases') {
     loadAndRenderPublicCases();
   } else if (viewName === 'admin' && state.adminAuthenticated) {
     loadAndRenderAdminDashboard();
@@ -387,13 +449,22 @@ function switchMainView(viewName) {
 
 function handleInitialUrlRouting() {
   try {
+    // Check Student QR Reader hash (#student-view=...)
+    if (window.location.hash && window.location.hash.startsWith('#student-view=')) {
+      const encoded = window.location.hash.slice('#student-view='.length);
+      const payload = decodeStudentViewPayload(encoded);
+      if (payload) {
+        openStudentReaderFromPayload(payload, true);
+      }
+    }
+
     const params = new URLSearchParams(window.location.search);
     const caseId = params.get('case');
     const viewParam = params.get('view');
     if (caseId) {
       state.highlightedCaseId = caseId;
       switchMainView('cases');
-    } else if (viewParam === 'cases' || viewParam === 'admin') {
+    } else if (viewParam === 'cases' || viewParam === 'admin' || viewParam === 'toolkit') {
       switchMainView(viewParam);
     } else {
       // Load approved case count quietly in background without blocking translator
@@ -672,6 +743,19 @@ function bindEvents() {
     if (e.key === 'Escape' && els.manualModal && !els.manualModal.classList.contains('hidden')) {
       closeManualModal();
     }
+    if (e.key === 'Escape' && els.studentQrModal && !els.studentQrModal.classList.contains('hidden')) {
+      closeStudentQrModal();
+    }
+  });
+
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash && window.location.hash.startsWith('#student-view=')) {
+      const encoded = window.location.hash.slice('#student-view='.length);
+      const payload = decodeStudentViewPayload(encoded);
+      if (payload) {
+        openStudentReaderFromPayload(payload, true);
+      }
+    }
   });
 
   // Stepper navigation
@@ -685,6 +769,25 @@ function bindEvents() {
         goToStep(target);
       }
     });
+  });
+
+  // Idea #1: Quick Convert Mode & Toolkit shortcut in Step 1
+  els.btnOpenToolkitFromStep1?.addEventListener('click', () => {
+    switchMainView('toolkit');
+  });
+
+  els.selectQuickTargetLang?.addEventListener('change', () => {
+    const val = els.selectQuickTargetLang.value;
+    if (val && !state.isTranslating) {
+      state.selectedLangKey = val;
+      document.querySelectorAll('.lang-option-card').forEach((c) => {
+        const isMatch = c.getAttribute('data-lang-key') === val;
+        c.classList.toggle('selected', isMatch);
+        const r = c.querySelector('input[type="radio"]');
+        if (r) r.checked = isMatch;
+      });
+      updateSelectedLanguageStatusUI();
+    }
   });
 
   // Step 1: Upload & Drag-Drop & Keyboard
@@ -764,9 +867,26 @@ function bindEvents() {
     scheduleAutoSave();
     unlockAndGoToStep(4);
   });
+  els.btnStep3CopyAiPrompt?.addEventListener('click', () => {
+    handleCopyAiPrompt(true);
+  });
   els.btnCancelTranslation.addEventListener('click', () => {
     state.cancelTranslationRequested = true;
   });
+
+  // Idea #3: Multi-language Batch ZIP buttons
+  els.btnMultiLangSelectCore?.addEventListener('click', () => {
+    const coreKeys = new Set(['en', 'zh-Hans', 'vi', 'ru', 'ja', 'uz', 'mn', 'tl', 'th', 'km']);
+    els.multiLangCheckboxGrid?.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      cb.checked = coreKeys.has(cb.value);
+    });
+  });
+  els.btnMultiLangClear?.addEventListener('click', () => {
+    els.multiLangCheckboxGrid?.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      cb.checked = false;
+    });
+  });
+  els.btnRunMultiLangZip?.addEventListener('click', handleRunMultiLangZip);
 
   // Step 4 buttons
   const backToStep3 = () => goToStep(3);
@@ -868,13 +988,17 @@ function bindEvents() {
 
   els.btnAddCustomGlossary?.addEventListener('click', handleAddCustomGlossary);
   els.btnApplyGlossaryAll?.addEventListener('click', handleApplyGlossaryAll);
+  els.btnExportGlossaryJson?.addEventListener('click', handleExportGlossaryJson);
+  els.btnImportGlossaryJson?.addEventListener('click', () => els.inputImportGlossaryFile?.click());
+  els.inputImportGlossaryFile?.addEventListener('change', handleImportGlossaryFile);
   els.btnRunReplaceAll?.addEventListener('click', handleRunFindReplaceAll);
   els.btnExportCsv?.addEventListener('click', handleExportCsv);
   els.btnCopySourceLines?.addEventListener('click', handleCopySourceLines);
+  els.btnCopyAiPrompt?.addEventListener('click', () => handleCopyAiPrompt(false));
   els.btnApplyBulkPaste?.addEventListener('click', handleApplyBulkPaste);
   els.btnCollapseVerifiedGroups?.addEventListener('click', handleToggleCollapseVerifiedGroups);
 
-  // Step 5 buttons & output mode (Feature #3 & #10)
+  // Step 5 buttons & output mode (Feature #3 & #10 & Idea #9)
   els.btnBackToStep4.addEventListener('click', () => goToStep(4));
   els.btnBackToStep4Bottom.addEventListener('click', () => goToStep(4));
   els.btnRestartNewFile.addEventListener('click', () => {
@@ -901,6 +1025,21 @@ function bindEvents() {
   });
 
   els.btnDownloadFile.addEventListener('click', handleDownloadTranslatedFile);
+  els.btnOpenStudentQrModal?.addEventListener('click', handleOpenStudentQrModal);
+  els.btnCloseStudentQrModal?.addEventListener('click', closeStudentQrModal);
+  els.btnCloseStudentQrBottom?.addEventListener('click', closeStudentQrModal);
+  els.studentQrModal?.addEventListener('click', (e) => {
+    if (e.target === els.studentQrModal) closeStudentQrModal();
+  });
+  els.btnCopyStudentShareUrl?.addEventListener('click', handleCopyStudentShareUrl);
+  els.btnSpeakAllStudentCards?.addEventListener('click', handleSpeakAllStudentCards);
+  els.chkStudentReaderShowKo?.addEventListener('change', () => {
+    const showKo = Boolean(els.chkStudentReaderShowKo.checked);
+    els.studentReaderCardsList?.querySelectorAll('.student-reader-ko-line').forEach((el) => {
+      el.classList.toggle('hidden', !showKo);
+    });
+  });
+
   els.btnPrintComparisonSheet?.addEventListener('click', handleOpenComparisonSheet);
   els.btnTriggerWindowPrint?.addEventListener('click', () => window.print());
   els.btnClosePrintSheet?.addEventListener('click', () => {
@@ -1015,7 +1154,7 @@ async function handleUploadedFile(file) {
       showUploadError(
         '파일을 읽는 중 오류가 발생했습니다',
         err?.message || '알 수 없는 파일 처리 오류입니다.',
-        '정상적인 .pptx 또는 .hwpx 파일인지 확인한 후 다시 시도해 주세요.'
+        '정상적인 .pptx, .hwpx, .docx, .xlsx 파일인지 확인한 후 다시 시도해 주세요.'
       );
     }
   }
@@ -1037,7 +1176,7 @@ async function loadSampleDocument(url, displayFileName) {
       showUploadError(
         '샘플 파일 불러오기 실패',
         err?.message || '샘플 문서를 가져오지 못했습니다.',
-        '페이지를 새로고침하거나 직접 .pptx·.hwpx 파일을 선택해 주세요.'
+        '페이지를 새로고침하거나 직접 .pptx·.hwpx·.docx·.xlsx 파일을 선택해 주세요.'
       );
     }
   }
@@ -1071,21 +1210,81 @@ async function processLoadedBuffer(fileName, arrayBuffer) {
   els.translationResultAlert.classList.add('hidden');
   els.translationProgressPanel.classList.add('hidden');
   scheduleAutoSave();
+
+  // Idea #1: ⚡ One-Click Quick Convert Mode (skip steps 2 & 3)
+  if (els.chkQuickTranslateMode?.checked && parsed.items.length > 0) {
+    const quickLang = els.selectQuickTargetLang?.value || state.selectedLangKey || 'en';
+    state.selectedLangKey = quickLang;
+    document.querySelectorAll('.lang-option-card').forEach((c) => {
+      const isMatch = c.getAttribute('data-lang-key') === quickLang;
+      c.classList.toggle('selected', isMatch);
+      const r = c.querySelector('input[type="radio"]');
+      if (r) r.checked = isMatch;
+    });
+    updateSelectedLanguageStatusUI();
+
+    // Pre-apply school glossary matches so even manual fallback has instant school terms
+    const entries = getAllGlossaryEntries();
+    for (const item of parsed.items) {
+      const st = state.itemStates.get(item.id);
+      if (!st || st.keepOriginal) continue;
+      const srcTrimmed = item.sourceText.trim();
+      const srcCore = srcTrimmed.replace(/^[\d.\-•()\s]+|[:：.\s]+$/g, '').trim();
+      for (const entry of entries) {
+        const targetTerm = entry.translations?.[quickLang];
+        if (!targetTerm) continue;
+        if (srcTrimmed === entry.ko || srcCore === entry.ko) {
+          st.finalText = targetTerm;
+          break;
+        }
+      }
+    }
+
+    const supportInfo = state.langSupportMap.get(quickLang) || (await checkLanguagePairSupport(quickLang));
+    state.langSupportMap.set(quickLang, supportInfo);
+    if (supportInfo && supportInfo.supported) {
+      unlockAndGoToStep(3);
+      await handleStartAutoTranslate();
+      return;
+    } else {
+      state.translatedLangKey = quickLang;
+      scheduleAutoSave();
+      unlockAndGoToStep(4);
+      return;
+    }
+  }
+
   goToStep(2);
 }
 
 /* ==================== STEP 2: EXTRACT RESULTS ==================== */
+
+function getFileTypeBadgeText(fileType) {
+  if (fileType === 'pptx') return 'PPTX (PowerPoint)';
+  if (fileType === 'docx') return 'DOCX (Word 문서)';
+  if (fileType === 'xlsx') return 'XLSX (Excel 표 문서)';
+  return 'HWPX (한글 표준 문서)';
+}
 
 function renderExtractStep() {
   const doc = state.parsedDoc;
   if (!doc) return;
 
   els.extractFileName.textContent = doc.fileName;
-  els.extractFileTypeBadge.textContent =
-    doc.fileType === 'pptx' ? 'PPTX (PowerPoint)' : 'HWPX (한글 표준 문서)';
-  els.extractUnitLabel.textContent = doc.fileType === 'pptx' ? '전체 슬라이드 수' : '전체 섹션 수';
-  els.extractUnitCount.textContent =
-    doc.fileType === 'pptx' ? `${doc.unitCount ?? 0}장` : `${doc.sectionCount || 1}개 섹션`;
+  els.extractFileTypeBadge.textContent = getFileTypeBadgeText(doc.fileType);
+  if (doc.fileType === 'pptx') {
+    els.extractUnitLabel.textContent = '전체 슬라이드 수';
+    els.extractUnitCount.textContent = `${doc.unitCount ?? 0}장`;
+  } else if (doc.fileType === 'xlsx') {
+    els.extractUnitLabel.textContent = '전체 시트 수';
+    els.extractUnitCount.textContent = `${doc.unitCount ?? 1}개 시트`;
+  } else if (doc.fileType === 'docx') {
+    els.extractUnitLabel.textContent = '문서 구성';
+    els.extractUnitCount.textContent = 'Word 본문·표';
+  } else {
+    els.extractUnitLabel.textContent = '전체 섹션 수';
+    els.extractUnitCount.textContent = `${doc.sectionCount || 1}개 섹션`;
+  }
   els.extractItemCount.textContent = `${doc.items.length}개`;
 
   const hasItems = doc.items.length > 0;
@@ -1096,22 +1295,23 @@ function renderExtractStep() {
   els.extractListContainer.innerHTML = '';
   if (!hasItems) return;
 
-  if (doc.fileType === 'pptx') {
-    const slideGroups = new Map();
+  if (doc.fileType === 'pptx' || doc.fileType === 'xlsx') {
+    const unitGroups = new Map();
     for (const item of doc.items) {
-      if (!slideGroups.has(item.groupNumber)) {
-        slideGroups.set(item.groupNumber, []);
+      if (!unitGroups.has(item.groupNumber)) {
+        unitGroups.set(item.groupNumber, []);
       }
-      slideGroups.get(item.groupNumber).push(item);
+      unitGroups.get(item.groupNumber).push(item);
     }
 
-    for (const [slideNum, items] of slideGroups.entries()) {
+    const unitPrefix = doc.fileType === 'pptx' ? '슬라이드' : '시트';
+    for (const [unitNum, items] of unitGroups.entries()) {
       const card = document.createElement('div');
       card.className = 'extract-group-card';
 
       const header = document.createElement('div');
       header.className = 'extract-group-header';
-      header.innerHTML = `<span>슬라이드 ${slideNum}</span><span>추출 문장 ${items.length}개</span>`;
+      header.innerHTML = `<span>${unitPrefix} ${unitNum}</span><span>추출 문장 ${items.length}개</span>`;
       card.appendChild(header);
 
       const list = document.createElement('div');
@@ -1189,6 +1389,9 @@ function createLanguageCardElement(lang) {
   radio.addEventListener('change', () => {
     if (state.isTranslating) return;
     state.selectedLangKey = lang.key;
+    if (els.selectQuickTargetLang) {
+      els.selectQuickTargetLang.value = lang.key;
+    }
     document.querySelectorAll('.lang-option-card').forEach((c) => {
       c.classList.toggle('selected', c.getAttribute('data-lang-key') === lang.key);
     });
@@ -1217,23 +1420,42 @@ function renderLanguageCards() {
     }
   }
 
+  const langOptionsHtml = TARGET_LANGUAGES.map(
+    (l) => `<option value="${escapeHtml(l.key)}">${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
+  ).join('');
+
+  if (els.selectQuickTargetLang) {
+    els.selectQuickTargetLang.innerHTML = langOptionsHtml;
+    els.selectQuickTargetLang.value = state.selectedLangKey || 'en';
+  }
+
+  if (els.selectToolkitTargetLang) {
+    const currentToolkitLang = els.selectToolkitTargetLang.value || 'vi';
+    els.selectToolkitTargetLang.innerHTML = langOptionsHtml;
+    els.selectToolkitTargetLang.value = currentToolkitLang;
+  }
+
+  if (els.multiLangCheckboxGrid && els.multiLangCheckboxGrid.children.length === 0) {
+    const defaultChecked = new Set(['vi', 'zh-Hans', 'en', 'ru']);
+    els.multiLangCheckboxGrid.innerHTML = TARGET_LANGUAGES.map(
+      (l) => `
+        <label class="multi-lang-check-item">
+          <input type="checkbox" value="${escapeHtml(l.key)}" ${defaultChecked.has(l.key) ? 'checked' : ''} />
+          <span>${escapeHtml(l.label)} <small class="text-muted">(${escapeHtml(l.nativeLabel)})</small></span>
+        </label>
+      `
+    ).join('');
+  }
+
   if (els.caseInputLang) {
     const currentVal = els.caseInputLang.value;
-    els.caseInputLang.innerHTML =
-      '<option value="">선택해 주세요</option>' +
-      TARGET_LANGUAGES.map(
-        (l) => `<option value="${escapeHtml(l.key)}">${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
-      ).join('');
+    els.caseInputLang.innerHTML = '<option value="">선택해 주세요</option>' + langOptionsHtml;
     if (currentVal) els.caseInputLang.value = currentVal;
   }
 
   if (els.filterCaseLang) {
     const currentFilter = els.filterCaseLang.value || 'all';
-    els.filterCaseLang.innerHTML =
-      '<option value="all">🌐 전체 언어</option>' +
-      TARGET_LANGUAGES.map(
-        (l) => `<option value="${escapeHtml(l.key)}">${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
-      ).join('');
+    els.filterCaseLang.innerHTML = '<option value="all">🌐 전체 언어</option>' + langOptionsHtml;
     els.filterCaseLang.value = currentFilter;
   }
 }
@@ -1686,6 +1908,100 @@ function handleApplyGlossaryAll() {
   }
 }
 
+function handleExportGlossaryJson() {
+  const customList = loadCustomGlossary();
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    schoolGlossary: customList
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: 'application/json;charset=utf-8;'
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `우리학교_맞춤단어장_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+  if (els.glossaryFeedbackMsg) {
+    els.glossaryFeedbackMsg.textContent = `✓ 맞춤 단어장(${customList.length}개 항목)을 파일로 저장했습니다. 동학년 선생님께 공유해 보세요!`;
+  }
+}
+
+async function handleImportGlossaryFile(e) {
+  const file = e.target?.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const customList = loadCustomGlossary();
+    let importedCount = 0;
+
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        const cols = line.split(',').map((c) => c.replace(/^"|"$/g, '').trim());
+        if (cols.length >= 2 && cols[0] && cols[1] && cols[0] !== '한국어') {
+          const ko = cols[0];
+          const target = cols[1];
+          const langKey = cols[2] || state.selectedLangKey;
+          const existing = customList.find((item) => item.ko === ko);
+          if (existing) {
+            existing.translations = existing.translations || {};
+            existing.translations[langKey] = target;
+          } else {
+            customList.unshift({
+              ko,
+              category: '공유 단어장',
+              translations: { [langKey]: target }
+            });
+          }
+          importedCount++;
+        }
+      }
+    } else {
+      const parsed = JSON.parse(text);
+      const arr = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.schoolGlossary)
+          ? parsed.schoolGlossary
+          : [];
+      for (const item of arr) {
+        if (!item || typeof item.ko !== 'string' || !item.ko.trim()) continue;
+        const ko = item.ko.trim();
+        const existing = customList.find((x) => x.ko === ko);
+        if (existing) {
+          existing.translations = { ...(existing.translations || {}), ...(item.translations || {}) };
+        } else {
+          customList.unshift({
+            ko,
+            category: item.category || '공유 단어장',
+            translations: item.translations || {}
+          });
+        }
+        importedCount++;
+      }
+    }
+
+    saveCustomGlossary(customList);
+    renderGlossaryDrawer();
+    renderReviewStep();
+    if (els.glossaryFeedbackMsg) {
+      els.glossaryFeedbackMsg.textContent = `✓ 공유 단어장 파일에서 총 ${importedCount}개 용어를 불러와 병합했습니다!`;
+    }
+  } catch {
+    if (els.glossaryFeedbackMsg) {
+      els.glossaryFeedbackMsg.textContent = '⚠️ 단어장 파일 형식이 올바르지 않습니다 (.json 또는 .csv 파일을 선택해 주세요).';
+    }
+  } finally {
+    e.target.value = '';
+  }
+}
+
 function handleRunFindReplaceAll() {
   if (!state.parsedDoc) return;
   const findStr = els.inputFindText?.value || '';
@@ -1755,7 +2071,7 @@ function handleExportCsv() {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const base = state.parsedDoc.fileName.replace(/\.(pptx|hwpx)$/i, '');
+  const base = state.parsedDoc.fileName.replace(/\.(pptx|hwpx|docx|xlsx)$/i, '');
   a.href = url;
   a.download = `${base}_${langMeta.key}_번역대조표.csv`;
   document.body.appendChild(a);
@@ -1787,6 +2103,41 @@ async function handleCopySourceLines() {
   }
 }
 
+/**
+ * Idea #6: Copy structured external AI prompt (ChatGPT / Gemini / Claude / Papago)
+ */
+async function handleCopyAiPrompt(fromStep3 = false) {
+  if (!state.parsedDoc) return;
+  const promptText = buildExternalAiTranslationPrompt(state.parsedDoc.items, state.selectedLangKey);
+  const langMeta = getTargetLanguageMeta(state.selectedLangKey);
+
+  if (fromStep3) {
+    if (state.translatedLangKey && state.translatedLangKey !== state.selectedLangKey) {
+      resetItemStatesForLanguageChange();
+    }
+    state.translatedLangKey = state.selectedLangKey;
+    scheduleAutoSave();
+    unlockAndGoToStep(4);
+    els.csvPasteDrawer?.classList.remove('hidden');
+    els.btnToggleCsvPanel?.setAttribute('aria-expanded', 'true');
+  }
+
+  try {
+    await navigator.clipboard.writeText(promptText);
+    if (els.csvPasteFeedback) {
+      els.csvPasteFeedback.textContent = `✓ ChatGPT·Gemini용 [${langMeta.label} 맞춤형 번역 프롬프트(${state.parsedDoc.items.length}문장)]가 복사되었습니다! AI 답변을 아래 입력창에 붙여넣으세요.`;
+    }
+  } catch {
+    if (els.textareaBulkPaste) {
+      els.textareaBulkPaste.value = promptText;
+      els.textareaBulkPaste.select();
+    }
+    if (els.csvPasteFeedback) {
+      els.csvPasteFeedback.textContent = '아래 입력창에 AI 프롬프트를 채웠습니다. 복사하여 ChatGPT·Gemini에 붙여넣으세요.';
+    }
+  }
+}
+
 function handleApplyBulkPaste() {
   if (!state.parsedDoc) return;
   const raw = els.textareaBulkPaste?.value || '';
@@ -1809,7 +2160,10 @@ function handleApplyBulkPaste() {
     if (st && lines[i].length > 0) {
       // If pasted from TSV (source \t translation), take the last tab column
       const parts = lines[i].split('\t');
-      st.finalText = parts[parts.length - 1].trim();
+      let cleaned = parts[parts.length - 1].trim();
+      // Idea #6: Strip leading numbering prefixes like "[1] ", "1. ", "(1) " from AI outputs
+      cleaned = cleaned.replace(/^(?:\[\d+\]|\(\d+\)|\d+[.)])\s*/, '').trim();
+      st.finalText = cleaned;
       st.backTranslatedKo = '';
       st.keepOriginal = false;
       applied++;
@@ -1817,7 +2171,7 @@ function handleApplyBulkPaste() {
   }
 
   if (els.csvPasteFeedback) {
-    els.csvPasteFeedback.textContent = `✓ 총 ${applied}개 항목에 번역문을 순서대로 반영했습니다.`;
+    els.csvPasteFeedback.textContent = `✓ 총 ${applied}개 항목에 번역문을 순서대로 반영했습니다 (번호표 자동 제거 적용).`;
   }
   state.hasUnsavedWork = true;
   scheduleAutoSave();
@@ -1857,7 +2211,18 @@ function autoResizeTextarea(textarea) {
 }
 
 function getItemNavGroup(item) {
-  return state.parsedDoc?.fileType === 'pptx' ? item.groupNumber : Math.ceil(item.groupNumber / 5);
+  const ft = state.parsedDoc?.fileType;
+  return ft === 'pptx' || ft === 'xlsx' ? item.groupNumber : Math.ceil(item.groupNumber / 5);
+}
+
+function formatNavGroupLabel(doc, gNum, gItems, compact = false) {
+  if (!doc) return `그룹 ${gNum}`;
+  if (doc.fileType === 'pptx') return `슬라이드 ${gNum}`;
+  if (doc.fileType === 'xlsx') return `시트 ${gNum}`;
+  if (gItems.length === 1) return `문단 ${gItems[0].groupNumber}`;
+  return compact
+    ? `문단 ${gItems[0].groupNumber}~${gItems[gItems.length - 1].groupNumber}`
+    : `문단 ${gItems[0].groupNumber} ~ ${gItems[gItems.length - 1].groupNumber}`;
 }
 
 function expandGroupInDOM(gNum) {
@@ -1885,12 +2250,7 @@ function updateGroupDividerStatusUI() {
     if (!divider) continue;
     const doneCount = gItems.filter((it) => state.itemStates.get(it.id)?.verified).length;
     const isAllDone = doneCount === gItems.length;
-    const groupTitle =
-      state.parsedDoc.fileType === 'pptx'
-        ? `슬라이드 ${gNum}`
-        : gItems.length === 1
-          ? `문단 ${gItems[0].groupNumber}`
-          : `문단 ${gItems[0].groupNumber} ~ ${gItems[gItems.length - 1].groupNumber}`;
+    const groupTitle = formatNavGroupLabel(state.parsedDoc, gNum, gItems, false);
     divider.classList.toggle('group-all-verified', isAllDone);
     const titleWrap = divider.querySelector('.review-group-title');
     if (titleWrap) {
@@ -2231,12 +2591,7 @@ function renderReviewJumpNav() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = `jump-btn${isAllDone ? ' is-group-done' : ''}`;
-    const labelPrefix =
-      doc.fileType === 'pptx'
-        ? `슬라이드 ${gNum}`
-        : gItems.length === 1
-          ? `문단 ${gItems[0].groupNumber}`
-          : `문단 ${gItems[0].groupNumber}~${gItems[gItems.length - 1].groupNumber}`;
+    const labelPrefix = formatNavGroupLabel(doc, gNum, gItems, true);
     btn.textContent = `${isAllDone ? '✓ ' : ''}${labelPrefix} (${doneCount}/${gItems.length})`;
 
     btn.addEventListener('click', () => {
@@ -2313,12 +2668,7 @@ function renderReviewStep() {
     const doneCount = gItems.filter((it) => state.itemStates.get(it.id)?.verified).length;
     const isAllDone = doneCount === gItems.length;
     const isCollapsed = state.collapsedGroups.has(gNum);
-    const groupTitle =
-      state.parsedDoc.fileType === 'pptx'
-        ? `슬라이드 ${gNum}`
-        : gItems.length === 1
-          ? `문단 ${gItems[0].groupNumber}`
-          : `문단 ${gItems[0].groupNumber} ~ ${gItems[gItems.length - 1].groupNumber}`;
+    const groupTitle = formatNavGroupLabel(state.parsedDoc, gNum, gItems, false);
 
     // Group Header Bar (Feature #8)
     const divider = document.createElement('div');
@@ -3109,6 +3459,19 @@ function handleOpenComparisonSheet() {
   els.printableComparisonSheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function getMimeTypeForFileType(fileType) {
+  if (fileType === 'pptx') {
+    return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  }
+  if (fileType === 'docx') {
+    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  }
+  if (fileType === 'xlsx') {
+    return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  }
+  return 'application/hwp+zip';
+}
+
 async function handleDownloadTranslatedFile() {
   if (!state.parsedDoc) return;
   els.downloadErrorBox.classList.add('hidden');
@@ -3122,6 +3485,7 @@ async function handleDownloadTranslatedFile() {
 
     const fallbackRadio = document.querySelector('input[name="empty-fallback-mode"]:checked');
     const emptyFallback = fallbackRadio ? fallbackRadio.value : 'keep-source';
+    const autoShrinkFont = Boolean(els.chkAutoShrinkFont?.checked);
 
     const translationsMap = {};
     for (const item of doc.items) {
@@ -3131,7 +3495,8 @@ async function handleDownloadTranslatedFile() {
 
     const uint8 = await buildTranslatedDocument(doc, translationsMap, {
       emptyFallback,
-      outputMode: state.outputMode
+      outputMode: state.outputMode,
+      autoShrinkFont
     });
     if (!uint8 || uint8.byteLength < 100) {
       throw new DocumentProcessError(
@@ -3142,11 +3507,7 @@ async function handleDownloadTranslatedFile() {
       );
     }
 
-    const mimeType =
-      doc.fileType === 'pptx'
-        ? 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-        : 'application/hwp+zip';
-
+    const mimeType = getMimeTypeForFileType(doc.fileType);
     const blob = new Blob([uint8], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -3158,7 +3519,7 @@ async function handleDownloadTranslatedFile() {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
 
     state.hasUnsavedWork = false;
-    els.downloadSuccessMsg.textContent = `✓ ${outName} 파일이 저장되었습니다! PowerPoint 또는 한글에서 열어 글자 넘침과 배치를 꼭 확인해 주세요.`;
+    els.downloadSuccessMsg.textContent = `✓ ${outName} 파일이 저장되었습니다! 원본 프로그램(PowerPoint·한글·Word·Excel)에서 열어 글자 넘침과 배치를 확인해 주세요.`;
     els.downloadSuccessMsg.classList.remove('hidden');
   } catch (err) {
     els.downloadErrorTitle.textContent =
@@ -3175,11 +3536,610 @@ async function handleDownloadTranslatedFile() {
   }
 }
 
+/* ==================== IDEA #3: MULTI-LANGUAGE BATCH ZIP DOWNLOAD ==================== */
+
+async function handleRunMultiLangZip() {
+  if (!state.parsedDoc || state.isTranslating) return;
+  const checkedBoxes = Array.from(
+    els.multiLangCheckboxGrid?.querySelectorAll('input[type="checkbox"]:checked') || []
+  );
+  const langKeys = checkedBoxes.map((cb) => cb.value).filter(Boolean);
+  if (langKeys.length === 0) {
+    if (els.multiLangBatchStatus) {
+      els.multiLangBatchStatus.textContent = '⚠️ 일괄 변환할 언어를 최소 1개 이상 체크해 주세요.';
+    }
+    return;
+  }
+
+  if (typeof window.JSZip !== 'function') {
+    if (els.multiLangBatchStatus) {
+      els.multiLangBatchStatus.textContent = '⚠️ 압축(JSZip) 라이브러리를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.';
+    }
+    return;
+  }
+
+  const doc = state.parsedDoc;
+  const entries = getAllGlossaryEntries();
+  const autoShrinkFont = Boolean(els.chkAutoShrinkFont?.checked);
+  const masterZip = new window.JSZip();
+
+  if (els.btnRunMultiLangZip) els.btnRunMultiLangZip.disabled = true;
+
+  try {
+    let generatedFilesCount = 0;
+
+    for (let lIdx = 0; lIdx < langKeys.length; lIdx++) {
+      const langKey = langKeys[lIdx];
+      const langMeta = getTargetLanguageMeta(langKey);
+      if (els.multiLangBatchStatus) {
+        els.multiLangBatchStatus.textContent = `⏳ [${lIdx + 1}/${langKeys.length}] ${langMeta.label} 문서 생성 중...`;
+      }
+
+      const translationsMap = {};
+      // If teacher already edited/translated this language, reuse their verified/edited state
+      if (langKey === state.translatedLangKey && state.itemStates.size > 0) {
+        for (const item of doc.items) {
+          const st = state.itemStates.get(item.id);
+          translationsMap[item.id] = st && st.finalText.trim() ? st.finalText : item.sourceText;
+        }
+      } else {
+        // Try creating Chrome built-in translator if supported, otherwise apply school glossary + bilingual/source fallback
+        let translator = null;
+        const supportInfo = state.langSupportMap.get(langKey) || (await checkLanguagePairSupport(langKey));
+        if (supportInfo && supportInfo.supported) {
+          try {
+            translator = await startTranslatorCreation(supportInfo.resolvedCode || langMeta.candidates[0]);
+          } catch {
+            translator = null;
+          }
+        }
+
+        const cache = new Map();
+        for (const item of doc.items) {
+          if (isNonTranslatableText(item.sourceText)) {
+            translationsMap[item.id] = item.sourceText;
+            continue;
+          }
+          const srcTrimmed = item.sourceText.trim();
+          const srcCore = srcTrimmed.replace(/^[\d.\-•()\s]+|[:：.\s]+$/g, '').trim();
+
+          // Check exact school glossary match first
+          let glossaryHit = '';
+          for (const entry of entries) {
+            const targetTerm = entry.translations?.[langKey];
+            if (targetTerm && (srcTrimmed === entry.ko || srcCore === entry.ko)) {
+              glossaryHit = targetTerm;
+              break;
+            }
+          }
+
+          if (glossaryHit) {
+            translationsMap[item.id] = glossaryHit;
+          } else if (translator) {
+            try {
+              if (cache.has(srcTrimmed)) {
+                translationsMap[item.id] = cache.get(srcTrimmed);
+              } else {
+                const tr = await translateSingleText(translator, item.sourceText);
+                cache.set(srcTrimmed, tr);
+                translationsMap[item.id] = tr;
+              }
+            } catch {
+              translationsMap[item.id] = item.sourceText;
+            }
+          } else {
+            // Check partial glossary hints or keep source
+            const matches = findMatchingGlossaryTerms(item.sourceText, langKey, '');
+            if (matches.length > 0) {
+              const hints = matches.map((m) => `${m.ko}:${m.target}`).join(', ');
+              translationsMap[item.id] = `${item.sourceText} (${hints})`;
+            } else {
+              translationsMap[item.id] = item.sourceText;
+            }
+          }
+        }
+
+        if (translator && typeof translator.destroy === 'function') {
+          try {
+            translator.destroy();
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      const fileUint8 = await buildTranslatedDocument(doc, translationsMap, {
+        emptyFallback: 'keep-source',
+        outputMode: state.outputMode,
+        autoShrinkFont
+      });
+      const outName = buildOutputFileName(doc.fileName, langMeta.key, doc.fileType, state.outputMode);
+      masterZip.file(outName, fileUint8);
+      generatedFilesCount++;
+    }
+
+    if (els.multiLangBatchStatus) {
+      els.multiLangBatchStatus.textContent = `📦 ${generatedFilesCount}개 국어 문서를 ZIP 파일로 묶는 중...`;
+    }
+
+    const zipUint8 = await masterZip.generateAsync({
+      type: 'uint8array',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 }
+    });
+
+    const baseName = doc.fileName.replace(/\.(pptx|hwpx|docx|xlsx)$/i, '');
+    const zipFileName = `${baseName}_다국어일괄변환_${generatedFilesCount}개국어.zip`;
+    const blob = new Blob([zipUint8], { type: 'application/zip' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = zipFileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    if (els.multiLangBatchStatus) {
+      els.multiLangBatchStatus.textContent = `✓ 총 ${generatedFilesCount}개 국어 수업자료가 담긴 [${zipFileName}] 다운로드가 완료되었습니다!`;
+    }
+  } catch (err) {
+    if (els.multiLangBatchStatus) {
+      els.multiLangBatchStatus.textContent = `⚠️ 다국어 일괄 ZIP 생성 중 오류: ${err?.message || '다시 시도해 주세요.'}`;
+    }
+  } finally {
+    if (els.btnRunMultiLangZip) els.btnRunMultiLangZip.disabled = false;
+  }
+}
+
+/* ==================== IDEA #9: STUDENT QR MOBILE READER MODAL ==================== */
+
+let currentStudentReaderPayload = null;
+
+function handleOpenStudentQrModal() {
+  if (!state.parsedDoc) return;
+  const doc = state.parsedDoc;
+  const langKey = state.selectedLangKey;
+  const pairs = doc.items.map((item) => {
+    const st = state.itemStates.get(item.id);
+    return {
+      ko: item.sourceText,
+      target: st && st.finalText.trim() ? st.finalText : item.sourceText,
+      loc: item.locationLabel
+    };
+  });
+
+  const encoded = encodeStudentViewPayload(doc.fileName, langKey, pairs);
+  const baseUrl = `${window.location.origin}${window.location.pathname}`;
+  const shareUrl = `${baseUrl}#student-view=${encoded}`;
+
+  if (els.inputStudentShareUrl) {
+    els.inputStudentShareUrl.value = shareUrl;
+  }
+  if (els.imgStudentShareQr) {
+    els.imgStudentShareQr.onerror = () => {
+      els.imgStudentShareQr.onerror = null;
+      els.imgStudentShareQr.src = './qr.svg';
+    };
+    // QR servers usually handle up to ~2000 chars cleanly; if URL is very long, use base app URL + hash up to safe limit
+    const qrTargetUrl = shareUrl.length <= 1800 ? shareUrl : baseUrl;
+    els.imgStudentShareQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(qrTargetUrl)}`;
+  }
+  if (els.studentShareFeedback) {
+    els.studentShareFeedback.textContent = '';
+  }
+
+  openStudentReaderFromPayload(
+    {
+      title: doc.fileName,
+      langKey,
+      pairs
+    },
+    false
+  );
+}
+
+function openStudentReaderFromPayload(payload, isDirectStudentLink = false) {
+  if (!payload || !els.studentQrModal) return;
+  currentStudentReaderPayload = payload;
+  const langMeta = getTargetLanguageMeta(payload.langKey || 'en');
+
+  if (els.studentQrShareSection) {
+    els.studentQrShareSection.classList.toggle('hidden', isDirectStudentLink);
+  }
+  if (els.studentReaderDocTitle) {
+    els.studentReaderDocTitle.textContent = payload.title || '다국어 활동지';
+  }
+  if (els.studentReaderLangBadge) {
+    els.studentReaderLangBadge.textContent = `${langMeta.label} (${langMeta.nativeLabel})`;
+  }
+
+  const showKo = els.chkStudentReaderShowKo ? Boolean(els.chkStudentReaderShowKo.checked) : true;
+  if (els.studentReaderCardsList) {
+    els.studentReaderCardsList.innerHTML = '';
+    const pairs = Array.isArray(payload.pairs) ? payload.pairs : [];
+    pairs.forEach((p, idx) => {
+      const card = document.createElement('div');
+      card.className = 'student-reader-card';
+      card.innerHTML = `
+        <div class="student-reader-card-top">
+          <span class="location-badge">${escapeHtml(p.loc || `문장 ${idx + 1}`)}</span>
+          <button type="button" class="btn btn-outline btn-xs" data-role="student-card-tts">🔊 발음 듣기</button>
+        </div>
+        <div class="student-reader-target-line" lang="${escapeHtml(langMeta.key)}" dir="${escapeHtml(langMeta.dir || 'ltr')}">
+          ${escapeHtml(p.target || p.ko || '')}
+        </div>
+        <div class="student-reader-ko-line ${showKo ? '' : 'hidden'}" lang="ko">
+          🇰🇷 ${escapeHtml(p.ko || '')}
+        </div>
+      `;
+      const ttsBtn = card.querySelector('[data-role="student-card-tts"]');
+      ttsBtn?.addEventListener('click', () => {
+        const isSpeaking = ttsBtn.classList.contains('is-active');
+        speakTextWithBrowserTTS(
+          p.target || p.ko || '',
+          langMeta.key,
+          (st) => {
+            if (st === 'speaking' || st === true) {
+              ttsBtn.classList.add('is-active');
+              ttsBtn.textContent = '⏹️ 중지';
+            } else {
+              ttsBtn.classList.remove('is-active');
+              ttsBtn.textContent = '🔊 발음 듣기';
+            }
+          },
+          isSpeaking
+        );
+      });
+      els.studentReaderCardsList.appendChild(card);
+    });
+  }
+
+  els.studentQrModal.classList.remove('hidden');
+}
+
+function closeStudentQrModal() {
+  if (!els.studentQrModal) return;
+  els.studentQrModal.classList.add('hidden');
+  if (window.speechSynthesis) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch {
+      // ignore
+    }
+  }
+}
+
+async function handleCopyStudentShareUrl() {
+  const url = els.inputStudentShareUrl?.value || '';
+  if (!url) return;
+  try {
+    await navigator.clipboard.writeText(url);
+    if (els.studentShareFeedback) {
+      els.studentShareFeedback.textContent = '✓ 학생용 다국어 활동지 링크가 복사되었습니다! 학급 게시판이나 메신저에 붙여넣으세요.';
+    }
+  } catch {
+    els.inputStudentShareUrl?.select();
+    if (els.studentShareFeedback) {
+      els.studentShareFeedback.textContent = '링크 입력창을 선택했습니다. Ctrl+C를 눌러 복사해 주세요.';
+    }
+  }
+}
+
+function handleSpeakAllStudentCards() {
+  if (!currentStudentReaderPayload || !Array.isArray(currentStudentReaderPayload.pairs)) return;
+  const langKey = currentStudentReaderPayload.langKey || 'en';
+  const combinedText = currentStudentReaderPayload.pairs
+    .map((p) => (p.target || '').trim())
+    .filter(Boolean)
+    .join('. ');
+  if (!combinedText) return;
+
+  const isActive = els.btnSpeakAllStudentCards?.classList.contains('is-active');
+  speakTextWithBrowserTTS(
+    combinedText,
+    langKey,
+    (st) => {
+      if (!els.btnSpeakAllStudentCards) return;
+      if (st === 'speaking' || st === true) {
+        els.btnSpeakAllStudentCards.classList.add('is-active');
+        els.btnSpeakAllStudentCards.textContent = '⏹️ 연속 듣기 중지';
+      } else {
+        els.btnSpeakAllStudentCards.classList.remove('is-active');
+        els.btnSpeakAllStudentCards.textContent = '🔊 전체 문장 연속 듣기';
+      }
+    },
+    Boolean(isActive)
+  );
+}
+
+/* ==================== IDEAS #4, #7, #8: TEACHER TOOLKIT (10s NOTICE TRANSLATOR, TEMPLATES, CLASSROOM TTS CARDS) ==================== */
+
+function initToolkitView() {
+  if (els.toolkitTemplateButtons) {
+    els.toolkitTemplateButtons.innerHTML = '';
+    for (const tpl of SCHOOL_NOTICE_TEMPLATES) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-surface btn-sm';
+      btn.textContent = `📌 ${tpl.title || tpl.label}`;
+      btn.addEventListener('click', () => {
+        const ko = tpl.ko || tpl.koText || '';
+        const langKey = els.selectToolkitTargetLang?.value || 'vi';
+        if (els.textareaToolkitSource) {
+          els.textareaToolkitSource.value = ko;
+        }
+        if (tpl.translations?.[langKey] && els.textareaToolkitTarget) {
+          els.textareaToolkitTarget.value = tpl.translations[langKey];
+          if (els.toolkitBacktranslateText && els.toolkitBacktranslateBox) {
+            els.toolkitBacktranslateText.textContent = `“${ko}” (검증된 학교 표준 템플릿 번역문)`;
+            els.toolkitBacktranslateBox.classList.remove('hidden');
+          }
+          if (els.toolkitFeedbackMsg) {
+            els.toolkitFeedbackMsg.textContent = '✓ 검증된 다국어 가정통신문·알림장 표준 템플릿이 즉시 적용되었습니다!';
+          }
+        } else {
+          handleToolkitTranslate();
+        }
+      });
+      els.toolkitTemplateButtons.appendChild(btn);
+    }
+  }
+
+  els.selectToolkitTargetLang?.addEventListener('change', () => {
+    renderClassroomCards();
+    const langMeta = getTargetLanguageMeta(els.selectToolkitTargetLang.value || 'vi');
+    if (els.labelToolkitTargetLang) {
+      els.labelToolkitTargetLang.textContent = `🌏 ${langMeta.label} (${langMeta.nativeLabel}) 번역 결과`;
+    }
+    if (els.textareaToolkitSource?.value.trim()) {
+      handleToolkitTranslate();
+    }
+  });
+
+  els.btnToolkitClear?.addEventListener('click', () => {
+    if (els.textareaToolkitSource) els.textareaToolkitSource.value = '';
+    if (els.textareaToolkitTarget) els.textareaToolkitTarget.value = '';
+    els.toolkitBacktranslateBox?.classList.add('hidden');
+    if (els.toolkitFeedbackMsg) els.toolkitFeedbackMsg.textContent = '';
+  });
+
+  els.btnToolkitTranslate?.addEventListener('click', handleToolkitTranslate);
+
+  els.btnToolkitSpeak?.addEventListener('click', () => {
+    const langKey = els.selectToolkitTargetLang?.value || 'vi';
+    const text = els.textareaToolkitTarget?.value || '';
+    const isSpeaking = els.btnToolkitSpeak.classList.contains('is-active');
+    speakTextWithBrowserTTS(
+      text,
+      langKey,
+      (st) => {
+        if (st === 'speaking' || st === true) {
+          els.btnToolkitSpeak.classList.add('is-active');
+          els.btnToolkitSpeak.textContent = '⏹️ 읽는 중 (중지)';
+        } else {
+          els.btnToolkitSpeak.classList.remove('is-active');
+          els.btnToolkitSpeak.textContent = '🔊 외국어 발음 듣기';
+        }
+      },
+      isSpeaking
+    );
+  });
+
+  els.btnToolkitCopyTarget?.addEventListener('click', async () => {
+    const target = (els.textareaToolkitTarget?.value || '').trim();
+    if (!target) return;
+    try {
+      await navigator.clipboard.writeText(target);
+      if (els.toolkitFeedbackMsg) {
+        els.toolkitFeedbackMsg.textContent = '✓ 다국어 번역문을 클립보드에 복사했습니다!';
+      }
+    } catch {
+      els.textareaToolkitTarget?.select();
+    }
+  });
+
+  els.btnToolkitCopyBilingual?.addEventListener('click', async () => {
+    const ko = (els.textareaToolkitSource?.value || '').trim();
+    const target = (els.textareaToolkitTarget?.value || '').trim();
+    if (!ko && !target) return;
+    const langMeta = getTargetLanguageMeta(els.selectToolkitTargetLang?.value || 'vi');
+    const combined = `[학교 알림장 / 가정통신 안내]\n${ko}\n\n[${langMeta.label} (${langMeta.nativeLabel})]\n${target}`;
+    try {
+      await navigator.clipboard.writeText(combined);
+      if (els.toolkitFeedbackMsg) {
+        els.toolkitFeedbackMsg.textContent = '✓ [한국어 + 다국어 병기] 학부모 문자·하이톡용 문구가 복사되었습니다!';
+      }
+    } catch {
+      els.textareaToolkitTarget?.select();
+    }
+  });
+
+  renderClassroomCards();
+}
+
+async function handleToolkitTranslate() {
+  const koText = (els.textareaToolkitSource?.value || '').trim();
+  if (!koText) {
+    if (els.toolkitFeedbackMsg) {
+      els.toolkitFeedbackMsg.textContent = '번역할 한국어 알림장·안내문 문장을 먼저 입력하거나 위 템플릿 버튼을 눌러 주세요.';
+    }
+    return;
+  }
+
+  const langKey = els.selectToolkitTargetLang?.value || 'vi';
+  const langMeta = getTargetLanguageMeta(langKey);
+  if (els.labelToolkitTargetLang) {
+    els.labelToolkitTargetLang.textContent = `🌏 ${langMeta.label} (${langMeta.nativeLabel}) 번역 결과`;
+  }
+
+  // Check if source matches a built-in template with pre-verified translation
+  const matchedTpl = SCHOOL_NOTICE_TEMPLATES.find((t) => (t.ko || t.koText) === koText);
+  if (matchedTpl && matchedTpl.translations?.[langKey]) {
+    if (els.textareaToolkitTarget) {
+      els.textareaToolkitTarget.value = matchedTpl.translations[langKey];
+      els.textareaToolkitTarget.setAttribute('dir', langMeta.dir || 'ltr');
+    }
+    if (els.toolkitBacktranslateText && els.toolkitBacktranslateBox) {
+      els.toolkitBacktranslateText.textContent = `“${koText}” (검증된 학교 표준 템플릿 번역문)`;
+      els.toolkitBacktranslateBox.classList.remove('hidden');
+    }
+    if (els.toolkitFeedbackMsg) {
+      els.toolkitFeedbackMsg.textContent = `✓ ${langMeta.label} 표준 가정통신문·알림장 번역이 적용되었습니다!`;
+    }
+    return;
+  }
+
+  const supportInfo = state.langSupportMap.get(langKey) || {
+    resolvedCode: langMeta.candidates[0]
+  };
+  const resolvedCode = supportInfo.resolvedCode || langMeta.candidates[0];
+
+  // Start Translator creation synchronously on user click
+  const translatorPromise = startTranslatorCreation(resolvedCode);
+  const reversePromise = startReverseTranslatorCreation(resolvedCode).catch(() => null);
+
+  if (els.btnToolkitTranslate) els.btnToolkitTranslate.disabled = true;
+  if (els.toolkitFeedbackMsg) {
+    els.toolkitFeedbackMsg.textContent = `⏳ ${langMeta.label} 번역 중...`;
+  }
+
+  try {
+    const translator = await translatorPromise;
+    const translated = await translateSingleText(translator, koText);
+    if (els.textareaToolkitTarget) {
+      els.textareaToolkitTarget.value = translated;
+      els.textareaToolkitTarget.setAttribute('dir', langMeta.dir || 'ltr');
+    }
+
+    const reverseTranslator = await reversePromise;
+    if (reverseTranslator && translated.trim()) {
+      try {
+        const backKo = await translateSingleText(reverseTranslator, translated);
+        if (els.toolkitBacktranslateText && els.toolkitBacktranslateBox) {
+          els.toolkitBacktranslateText.textContent = `“${backKo}”`;
+          els.toolkitBacktranslateBox.classList.remove('hidden');
+        }
+      } catch {
+        els.toolkitBacktranslateBox?.classList.add('hidden');
+      }
+      if (typeof reverseTranslator.destroy === 'function') {
+        try {
+          reverseTranslator.destroy();
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (typeof translator.destroy === 'function') {
+      try {
+        translator.destroy();
+      } catch {
+        // ignore
+      }
+    }
+
+    if (els.toolkitFeedbackMsg) {
+      els.toolkitFeedbackMsg.textContent = `✓ ${langMeta.label} 번역 및 역번역 검증이 완료되었습니다!`;
+    }
+  } catch {
+    // Fallback: apply matching school glossary terms so teacher still gets helpful terms + prompt copy
+    const matches = findMatchingGlossaryTerms(koText, langKey, '');
+    const glossaryHint =
+      matches.length > 0
+        ? `\n\n[학교 표준 용어 참고]\n` + matches.map((m) => `• ${m.ko} ➔ ${m.target}`).join('\n')
+        : '';
+    if (els.textareaToolkitTarget) {
+      els.textareaToolkitTarget.value = `${koText}${glossaryHint}`;
+    }
+    if (els.toolkitFeedbackMsg) {
+      els.toolkitFeedbackMsg.textContent = `ℹ️ 현재 브라우저에서 ${langMeta.label} 자동 번역 모델이 지원되지 않아 학교 표준 용어 힌트를 표시했습니다.`;
+    }
+  } finally {
+    if (els.btnToolkitTranslate) els.btnToolkitTranslate.disabled = false;
+  }
+}
+
+function renderClassroomCards() {
+  if (!els.classroomCardsGrid) return;
+  const langKey = els.selectToolkitTargetLang?.value || 'vi';
+  const langMeta = getTargetLanguageMeta(langKey);
+  if (els.labelToolkitTargetLang) {
+    els.labelToolkitTargetLang.textContent = `🌏 ${langMeta.label} (${langMeta.nativeLabel}) 번역 결과`;
+  }
+
+  els.classroomCardsGrid.innerHTML = '';
+  for (const item of CLASSROOM_COMMUNICATION_CARDS) {
+    const rawTarget = item.translations?.[langKey] || item.translations?.en || item.ko;
+    const targetText = typeof rawTarget === 'string' ? rawTarget : rawTarget.text || item.ko;
+    const pronText =
+      (typeof rawTarget === 'object' && rawTarget.pron) ||
+      item.pronunciation?.[langKey] ||
+      '우측 상단 [🔊 발음 듣기]로 원어민 음성을 바로 들려주세요';
+
+    const card = document.createElement('div');
+    card.className = 'classroom-phrase-card';
+    card.innerHTML = `
+      <div class="classroom-phrase-top">
+        <span class="badge badge-context">${escapeHtml(item.category)}</span>
+        <div class="inline-actions">
+          <button type="button" class="btn btn-outline btn-xs" data-role="phrase-tts-btn">🔊 발음 듣기</button>
+          <button type="button" class="btn btn-surface btn-xs" data-role="phrase-copy-btn">📋 복사</button>
+        </div>
+      </div>
+      <div class="classroom-phrase-ko">🇰🇷 ${escapeHtml(item.ko)}</div>
+      <div class="classroom-phrase-target" lang="${escapeHtml(langMeta.key)}" dir="${escapeHtml(langMeta.dir || 'ltr')}">
+        ${escapeHtml(targetText)}
+      </div>
+      <div class="classroom-phrase-pron">
+        🗣️ 발음 가이드: <strong>${escapeHtml(pronText)}</strong>
+      </div>
+    `;
+
+    const ttsBtn = card.querySelector('[data-role="phrase-tts-btn"]');
+    ttsBtn?.addEventListener('click', () => {
+      const isSpeaking = ttsBtn.classList.contains('is-active');
+      speakTextWithBrowserTTS(
+        targetText,
+        langKey,
+        (st) => {
+          if (st === 'speaking' || st === true) {
+            ttsBtn.classList.add('is-active');
+            ttsBtn.textContent = '⏹️ 중지';
+          } else {
+            ttsBtn.classList.remove('is-active');
+            ttsBtn.textContent = '🔊 발음 듣기';
+          }
+        },
+        isSpeaking
+      );
+    });
+
+    const copyBtn = card.querySelector('[data-role="phrase-copy-btn"]');
+    copyBtn?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(`${item.ko}\n${targetText}`);
+        copyBtn.textContent = '✓ 복사됨';
+        setTimeout(() => {
+          copyBtn.textContent = '📋 복사';
+        }, 1500);
+      } catch {
+        // ignore
+      }
+    });
+
+    els.classroomCardsGrid.appendChild(card);
+  }
+}
+
 /* ==================== PRD 5: LESSON UTILIZATION CASE SHARING ==================== */
 
 function formatFileFormatLabel(fmt) {
   if (fmt === 'pptx') return 'PPTX (슬라이드)';
   if (fmt === 'hwpx') return 'HWPX (한글 문서)';
+  if (fmt === 'docx') return 'DOCX (Word 문서)';
+  if (fmt === 'xlsx') return 'XLSX (Excel 표)';
   if (fmt === 'both') return 'PPTX + HWPX';
   return fmt || 'PPTX';
 }

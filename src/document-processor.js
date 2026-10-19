@@ -106,11 +106,29 @@ export function validateFileMetadata(fileName, arrayBuffer) {
     );
   }
 
-  if (ext !== '.pptx' && ext !== '.hwpx') {
+  if (ext === '.doc') {
+    throw new DocumentProcessError(
+      '구형 Word 파일(.doc)은 직접 변환할 수 없습니다',
+      '업로드하신 파일은 이전 버전의 이진 문서(.doc) 형식입니다. 이 앱은 표준 개방형 문서인 .docx 형식만 지원합니다.',
+      'Microsoft Word 또는 한컴오피스에서 파일을 연 뒤 [다른 이름으로 저장] → "Word 문서(*.docx)"로 저장한 후 다시 업로드해 주세요.',
+      'LEGACY_DOC'
+    );
+  }
+
+  if (ext === '.xls') {
+    throw new DocumentProcessError(
+      '구형 Excel 파일(.xls)은 직접 변환할 수 없습니다',
+      '업로드하신 파일은 이전 버전의 이진 통합 문서(.xls) 형식입니다. 이 앱은 표준 개방형 문서인 .xlsx 형식만 지원합니다.',
+      'Excel에서 파일을 연 뒤 [다른 이름으로 저장] → "Excel 통합 문서(*.xlsx)"로 저장한 후 다시 업로드해 주세요.',
+      'LEGACY_XLS'
+    );
+  }
+
+  if (ext !== '.pptx' && ext !== '.hwpx' && ext !== '.docx' && ext !== '.xlsx') {
     throw new DocumentProcessError(
       '지원하지 않는 파일 형식입니다',
-      `선택한 파일(${fileName || '이름 없음'})의 확장자가 .pptx 또는 .hwpx가 아닙니다.`,
-      '수업자료 파일이 .pptx(PowerPoint) 또는 .hwpx(한글 표준 문서) 형식인지 확인한 뒤 다시 선택해 주세요. (PDF, 이미지, .doc, .xlsx 등은 지원하지 않습니다.)',
+      `선택한 파일(${fileName || '이름 없음'})의 확장자가 .pptx, .hwpx, .docx, .xlsx가 아닙니다.`,
+      '수업자료 파일이 .pptx(파워포인트), .hwpx(한글 표준 문서), .docx(워드), .xlsx(엑셀) 형식인지 확인한 뒤 다시 선택해 주세요.',
       'UNSUPPORTED_EXT'
     );
   }
@@ -135,27 +153,27 @@ export function validateFileMetadata(fileName, arrayBuffer) {
       );
     }
     throw new DocumentProcessError(
-      '암호가 설정되었거나 확장자만 변경된 .hwp 파일입니다',
-      '파일 확장자는 .hwpx이지만 내부 구조가 구형 .hwp(OLE2) 또는 배포용/암호 문서 형식입니다.',
-      '한컴오피스 한글에서 문서를 열고 암호나 배포용 문서 설정을 해제한 뒤 [다른 이름으로 저장하기] → "한글 표준 문서(*.hwpx)"로 저장해 주세요.',
+      '암호가 설정되었거나 구형 이진(OLE2) 문서 형식입니다',
+      `파일 확장자는 ${ext}이지만 내부 구조가 암호화 문서 또는 구형 이진(OLE2) 형식입니다.`,
+      '문서에 열기 암호가 걸려 있다면 암호를 해제하고 [다른 이름으로 저장]을 통해 표준 개방형 문서(.pptx, .hwpx, .docx, .xlsx)로 다시 저장해 주세요.',
       'OLE2_IN_HWPX'
     );
   }
 
   if (headerType !== 'ZIP') {
     throw new DocumentProcessError(
-      '정상적인 PPTX·HWPX 파일 구조가 아닙니다',
+      '정상적인 문서 파일 구조가 아닙니다',
       '파일이 손상되었거나 표준 압축 문서(ZIP 패키지) 형식이 아닙니다.',
-      '문서 프로그램(PowerPoint 또는 한글)에서 파일이 정상적으로 열리는지 확인하고 다시 저장한 후 업로드해 주세요.',
+      '문서 프로그램(PowerPoint, 한글, Word, Excel)에서 파일이 정상적으로 열리는지 확인하고 다시 저장한 후 업로드해 주세요.',
       'INVALID_ARCHIVE_HEADER'
     );
   }
 
-  return ext.slice(1); // 'pptx' or 'hwpx'
+  return ext.slice(1); // 'pptx' | 'hwpx' | 'docx' | 'xlsx'
 }
 
 /**
- * Parse either PPTX or HWPX from an ArrayBuffer
+ * Parse PPTX, HWPX, DOCX, or XLSX from an ArrayBuffer
  */
 export async function extractDocumentFromBuffer(fileName, arrayBuffer) {
   const fileType = validateFileMetadata(fileName, arrayBuffer);
@@ -168,13 +186,19 @@ export async function extractDocumentFromBuffer(fileName, arrayBuffer) {
     throw new DocumentProcessError(
       '손상된 문서 파일입니다',
       '파일 내부 압축 구조를 해제하는 중 오류가 발생했습니다. 파일 다운로드가 덜 되었거나 손상되었을 수 있습니다.',
-      '원본 문서를 PowerPoint 또는 한글에서 다시 열어 새 이름으로 저장(.pptx 또는 .hwpx)한 뒤 업로드해 주세요.',
+      '원본 문서를 다시 열어 새 이름으로 저장(.pptx, .hwpx, .docx, .xlsx)한 뒤 업로드해 주세요.',
       'CORRUPTED_ZIP'
     );
   }
 
   if (fileType === 'pptx') {
     return await extractPptxFromZip(fileName, arrayBuffer, zip);
+  }
+  if (fileType === 'docx') {
+    return await extractDocxFromZip(fileName, arrayBuffer, zip);
+  }
+  if (fileType === 'xlsx') {
+    return await extractXlsxFromZip(fileName, arrayBuffer, zip);
   }
   return await extractHwpxFromZip(fileName, arrayBuffer, zip);
 }
@@ -476,13 +500,218 @@ function detectHwpxParagraphContext(pEl) {
   return '본문 문단';
 }
 
+async function extractDocxFromZip(fileName, arrayBuffer, zip) {
+  const docPaths = Object.keys(zip.files)
+    .filter((p) => /^word\/(document|header\d+|footer\d+)\.xml$/i.test(p))
+    .sort((a, b) => {
+      if (a.toLowerCase() === 'word/document.xml') return -1;
+      if (b.toLowerCase() === 'word/document.xml') return 1;
+      return a.localeCompare(b);
+    });
+
+  if (docPaths.length === 0) {
+    throw new DocumentProcessError(
+      '유효한 Word(.docx) 본문 구조를 찾을 수 없습니다',
+      '파일 내부에 워드 본문 데이터(word/document.xml)가 존재하지 않습니다.',
+      '선택한 파일이 정상적인 Word 문서(.docx) 파일인지 확인해 주세요.',
+      'NO_DOCX_BODY'
+    );
+  }
+
+  const items = [];
+  let globalParaNumber = 0;
+
+  for (const xmlPath of docPaths) {
+    const xmlStr = await zip.file(xmlPath).async('string');
+    const doc = parseXmlStrict(xmlStr, xmlPath);
+    const allElements = doc.getElementsByTagName('*');
+    const paragraphs = [];
+    for (let i = 0; i < allElements.length; i++) {
+      if (getLocalName(allElements[i]) === 'p') {
+        paragraphs.push(allElements[i]);
+      }
+    }
+
+    for (let pIndex = 0; pIndex < paragraphs.length; pIndex++) {
+      const pEl = paragraphs[pIndex];
+      const text = extractDocxParagraphText(pEl);
+      if (text.trim().length === 0) continue;
+
+      globalParaNumber++;
+      const contextLabel = detectDocxParagraphContext(pEl, xmlPath);
+      items.push({
+        id: `docx-${xmlPath.replace(/[^a-zA-Z0-9]/g, '_')}-p${pIndex}`,
+        index: globalParaNumber,
+        fileType: 'docx',
+        xmlPath,
+        groupNumber: globalParaNumber,
+        paragraphIndex: pIndex,
+        orderInGroup: globalParaNumber,
+        groupLabel: `문단 ${globalParaNumber}`,
+        locationLabel: `문단 ${globalParaNumber}`,
+        contextLabel,
+        sourceText: text
+      });
+    }
+  }
+
+  return {
+    fileName,
+    fileType: 'docx',
+    originalBuffer: arrayBuffer,
+    unitLabel: '문단',
+    unitCount: items.length,
+    items
+  };
+}
+
+function extractDocxParagraphText(pEl) {
+  let out = '';
+  const runs = getDirectChildrenByLocalName(pEl, 'r');
+  for (const r of runs) {
+    for (let i = 0; i < r.childNodes.length; i++) {
+      const child = r.childNodes[i];
+      if (child.nodeType !== 1) continue;
+      const ln = getLocalName(child);
+      if (ln === 't') {
+        out += child.textContent || '';
+      } else if (ln === 'br' || ln === 'cr') {
+        out += '\n';
+      } else if (ln === 'tab') {
+        out += '\t';
+      }
+    }
+  }
+  return out;
+}
+
+function detectDocxParagraphContext(pEl, xmlPath) {
+  if (/header/i.test(xmlPath)) return '머리글';
+  if (/footer/i.test(xmlPath)) return '바닥글';
+  let curr = pEl.parentNode;
+  while (curr && curr.nodeType === 1) {
+    const ln = getLocalName(curr);
+    if (ln === 'tc') return '표 셀';
+    if (ln === 'txbxContent') return '글상자/도형';
+    curr = curr.parentNode;
+  }
+  return '본문 문단';
+}
+
+async function extractXlsxFromZip(fileName, arrayBuffer, zip) {
+  const items = [];
+  let globalIndex = 0;
+
+  // 1. SharedStrings table (xl/sharedStrings.xml)
+  const sharedPath = 'xl/sharedStrings.xml';
+  if (zip.file(sharedPath)) {
+    const xmlStr = await zip.file(sharedPath).async('string');
+    const doc = parseXmlStrict(xmlStr, sharedPath);
+    const allElements = doc.getElementsByTagName('*');
+    const siNodes = [];
+    for (let i = 0; i < allElements.length; i++) {
+      if (getLocalName(allElements[i]) === 'si') {
+        siNodes.push(allElements[i]);
+      }
+    }
+
+    for (let sIdx = 0; sIdx < siNodes.length; sIdx++) {
+      const si = siNodes[sIdx];
+      const text = extractXlsxSiText(si);
+      if (text.trim().length === 0) continue;
+      globalIndex++;
+      items.push({
+        id: `xlsx-ss-${sIdx}`,
+        index: globalIndex,
+        fileType: 'xlsx',
+        xmlPath: sharedPath,
+        groupNumber: Math.ceil(globalIndex / 10),
+        paragraphIndex: sIdx,
+        orderInGroup: globalIndex,
+        groupLabel: `시트 텍스트 그룹 ${Math.ceil(globalIndex / 10)}`,
+        locationLabel: `셀 텍스트 #${globalIndex}`,
+        contextLabel: '엑셀 셀',
+        sourceText: text
+      });
+    }
+  }
+
+  // 2. Inline strings in worksheets (xl/worksheets/sheet*.xml)
+  const sheetPaths = Object.keys(zip.files)
+    .filter((p) => /^xl\/worksheets\/sheet\d+\.xml$/i.test(p))
+    .sort();
+
+  for (let shIdx = 0; shIdx < sheetPaths.length; shIdx++) {
+    const sheetPath = sheetPaths[shIdx];
+    const xmlStr = await zip.file(sheetPath).async('string');
+    const doc = parseXmlStrict(xmlStr, sheetPath);
+    const allElements = doc.getElementsByTagName('*');
+    const isNodes = [];
+    for (let i = 0; i < allElements.length; i++) {
+      if (getLocalName(allElements[i]) === 'is') {
+        isNodes.push(allElements[i]);
+      }
+    }
+
+    for (let iIdx = 0; iIdx < isNodes.length; iIdx++) {
+      const isEl = isNodes[iIdx];
+      const text = extractXlsxSiText(isEl);
+      if (text.trim().length === 0) continue;
+      globalIndex++;
+      items.push({
+        id: `xlsx-sh${shIdx + 1}-is${iIdx}`,
+        index: globalIndex,
+        fileType: 'xlsx',
+        xmlPath: sheetPath,
+        groupNumber: shIdx + 1,
+        paragraphIndex: iIdx,
+        orderInGroup: globalIndex,
+        groupLabel: `시트 ${shIdx + 1}`,
+        locationLabel: `시트 ${shIdx + 1} · 셀 #${globalIndex}`,
+        contextLabel: '엑셀 셀',
+        sourceText: text
+      });
+    }
+  }
+
+  if (items.length === 0) {
+    throw new DocumentProcessError(
+      '추출할 텍스트 셀이 없습니다',
+      '선택한 엑셀(.xlsx) 파일에서 번역할 문자열 셀을 찾지 못했습니다.',
+      '문자열이 포함된 엑셀 통합 문서인지 확인해 주세요.',
+      'EMPTY_XLSX_TEXT'
+    );
+  }
+
+  return {
+    fileName,
+    fileType: 'xlsx',
+    originalBuffer: arrayBuffer,
+    unitLabel: '셀 항목',
+    unitCount: items.length,
+    items
+  };
+}
+
+function extractXlsxSiText(siEl) {
+  let out = '';
+  const all = siEl.getElementsByTagName('*');
+  for (let i = 0; i < all.length; i++) {
+    if (getLocalName(all[i]) === 't') {
+      out += all[i].textContent || '';
+    }
+  }
+  return out;
+}
+
 /**
- * Rebuild a valid PPTX or HWPX Uint8Array with translations applied
+ * Rebuild a valid PPTX, HWPX, DOCX, or XLSX Uint8Array with translations applied
  * options.emptyFallback: 'keep-source' | 'empty'
  * options.outputMode: 'replace' | 'bilingual-ko-first' | 'bilingual-target-first'
+ * options.autoShrinkFont: boolean (Idea #5: auto-reduce PPTX font size on text overflow)
  */
 export async function buildTranslatedDocument(parsedDoc, translationsById, options = {}) {
-  const { emptyFallback = 'keep-source', outputMode = 'replace' } = options;
+  const { emptyFallback = 'keep-source', outputMode = 'replace', autoShrinkFont = true } = options;
   if (!parsedDoc || !parsedDoc.originalBuffer || !Array.isArray(parsedDoc.items)) {
     throw new DocumentProcessError(
       '원본 문서 정보가 없습니다',
@@ -512,20 +741,29 @@ export async function buildTranslatedDocument(parsedDoc, translationsById, optio
   }
 
   if (parsedDoc.fileType === 'pptx') {
-    return await rebuildPptxUint8(parsedDoc.originalBuffer, parsedDoc.items, resolvedMap);
+    return await rebuildPptxUint8(parsedDoc.originalBuffer, parsedDoc.items, resolvedMap, {
+      autoShrinkFont
+    });
   }
   if (parsedDoc.fileType === 'hwpx') {
     return await rebuildHwpxUint8(parsedDoc.originalBuffer, parsedDoc.items, resolvedMap);
   }
+  if (parsedDoc.fileType === 'docx') {
+    return await rebuildDocxUint8(parsedDoc.originalBuffer, parsedDoc.items, resolvedMap);
+  }
+  if (parsedDoc.fileType === 'xlsx') {
+    return await rebuildXlsxUint8(parsedDoc.originalBuffer, parsedDoc.items, resolvedMap);
+  }
   throw new DocumentProcessError(
     '알 수 없는 파일 형식입니다',
     `지원하지 않는 문서 유형(${parsedDoc.fileType})입니다.`,
-    'PPTX 또는 HWPX 파일을 다시 업로드해 주세요.',
+    'PPTX, HWPX, DOCX, XLSX 파일을 다시 업로드해 주세요.',
     'UNKNOWN_TYPE'
   );
 }
 
-async function rebuildPptxUint8(originalBuffer, items, resolvedMap) {
+async function rebuildPptxUint8(originalBuffer, items, resolvedMap, pptxOptions = {}) {
+  const { autoShrinkFont = true } = pptxOptions;
   const JSZip = getJSZip();
   const zip = await JSZip.loadAsync(originalBuffer);
   const serializer = new XMLSerializer();
@@ -567,7 +805,10 @@ async function rebuildPptxUint8(originalBuffer, items, resolvedMap) {
           'PPTX_NODE_MISMATCH'
         );
       }
-      replacePptxParagraphText(doc, targetP, resolvedMap[item.id]);
+      replacePptxParagraphText(doc, targetP, resolvedMap[item.id], {
+        sourceText: item.sourceText,
+        autoShrinkFont
+      });
     }
 
     const serialized = ensureXmlDeclaration(serializer.serializeToString(doc), originalXml);
@@ -587,7 +828,7 @@ function sanitizeXml10Text(str) {
   return String(str ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '');
 }
 
-function replacePptxParagraphText(doc, pEl, newText) {
+function replacePptxParagraphText(doc, pEl, newText, shrinkMeta = {}) {
   const aNs = pEl.namespaceURI || 'http://schemas.openxmlformats.org/drawingml/2006/main';
   const prefix = pEl.prefix ? `${pEl.prefix}:` : 'a:';
 
@@ -609,6 +850,24 @@ function replacePptxParagraphText(doc, pEl, newText) {
       toRemove.push(child);
     } else if (ln === 'endParaRPr') {
       endParaRPr = child;
+    }
+  }
+
+  // Idea #5: Automatically scale down font size when translated text is significantly longer than Korean source
+  if (shrinkMeta.autoShrinkFont && firstRPr) {
+    const srcLen = Math.max(1, String(shrinkMeta.sourceText || '').trim().length);
+    const dstLen = String(newText || '').trim().length;
+    const ratio = dstLen / srcLen;
+    if (ratio >= 1.35 && dstLen > 12) {
+      const scale = ratio >= 2.1 ? 0.78 : ratio >= 1.7 ? 0.84 : 0.9;
+      const szAttr = firstRPr.getAttribute('sz');
+      if (szAttr) {
+        const currentSz = parseInt(szAttr, 10);
+        if (!Number.isNaN(currentSz) && currentSz >= 1000) {
+          const nextSz = Math.max(900, Math.round((currentSz * scale) / 50) * 50);
+          firstRPr.setAttribute('sz', String(nextSz));
+        }
+      }
     }
   }
 
@@ -636,6 +895,143 @@ function replacePptxParagraphText(doc, pEl, newText) {
     rEl.appendChild(tEl);
     pEl.insertBefore(rEl, endParaRPr || null);
   }
+}
+
+async function rebuildDocxUint8(originalBuffer, items, resolvedMap) {
+  const JSZip = getJSZip();
+  const zip = await JSZip.loadAsync(originalBuffer);
+  const serializer = new XMLSerializer();
+
+  const byPath = new Map();
+  for (const item of items) {
+    if (!byPath.has(item.xmlPath)) byPath.set(item.xmlPath, []);
+    byPath.get(item.xmlPath).push(item);
+  }
+
+  for (const [xmlPath, docItems] of byPath.entries()) {
+    const entry = zip.file(xmlPath);
+    if (!entry) continue;
+    const originalXml = await entry.async('string');
+    const doc = parseXmlStrict(originalXml, xmlPath);
+
+    const allElements = doc.getElementsByTagName('*');
+    const paragraphs = [];
+    for (let i = 0; i < allElements.length; i++) {
+      if (getLocalName(allElements[i]) === 'p') {
+        paragraphs.push(allElements[i]);
+      }
+    }
+
+    for (const item of docItems) {
+      const targetP = paragraphs[item.paragraphIndex];
+      if (targetP) {
+        replaceDocxParagraphText(doc, targetP, resolvedMap[item.id]);
+      }
+    }
+
+    const serialized = ensureXmlDeclaration(serializer.serializeToString(doc), originalXml);
+    parseXmlStrict(serialized, xmlPath);
+    zip.file(xmlPath, serialized);
+  }
+
+  return await zip.generateAsync({
+    type: 'uint8array',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 }
+  });
+}
+
+function replaceDocxParagraphText(doc, pEl, newText) {
+  const wNs = pEl.namespaceURI || 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const prefix = pEl.prefix ? `${pEl.prefix}:` : 'w:';
+
+  let firstRPr = null;
+  const runs = getDirectChildrenByLocalName(pEl, 'r');
+  for (const r of runs) {
+    if (!firstRPr) {
+      const rPr = getDirectChildrenByLocalName(r, 'rPr')[0];
+      if (rPr) firstRPr = rPr.cloneNode(true);
+    }
+    pEl.removeChild(r);
+  }
+
+  const lines = sanitizeXml10Text(newText).split(/\r?\n/);
+  const rEl = doc.createElementNS(wNs, `${prefix}r`);
+  if (firstRPr) {
+    rEl.appendChild(firstRPr.cloneNode(true));
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    if (i > 0) {
+      const brEl = doc.createElementNS(wNs, `${prefix}br`);
+      rEl.appendChild(brEl);
+    }
+    const tEl = doc.createElementNS(wNs, `${prefix}t`);
+    tEl.setAttribute('xml:space', 'preserve');
+    tEl.textContent = lines[i];
+    rEl.appendChild(tEl);
+  }
+  pEl.appendChild(rEl);
+}
+
+async function rebuildXlsxUint8(originalBuffer, items, resolvedMap) {
+  const JSZip = getJSZip();
+  const zip = await JSZip.loadAsync(originalBuffer);
+  const serializer = new XMLSerializer();
+
+  const byPath = new Map();
+  for (const item of items) {
+    if (!byPath.has(item.xmlPath)) byPath.set(item.xmlPath, []);
+    byPath.get(item.xmlPath).push(item);
+  }
+
+  for (const [xmlPath, sheetItems] of byPath.entries()) {
+    const entry = zip.file(xmlPath);
+    if (!entry) continue;
+    const originalXml = await entry.async('string');
+    const doc = parseXmlStrict(originalXml, xmlPath);
+
+    const targetTag = xmlPath === 'xl/sharedStrings.xml' ? 'si' : 'is';
+    const allElements = doc.getElementsByTagName('*');
+    const targetNodes = [];
+    for (let i = 0; i < allElements.length; i++) {
+      if (getLocalName(allElements[i]) === targetTag) {
+        targetNodes.push(allElements[i]);
+      }
+    }
+
+    for (const item of sheetItems) {
+      const targetEl = targetNodes[item.paragraphIndex];
+      if (targetEl) {
+        replaceXlsxSiText(doc, targetEl, resolvedMap[item.id]);
+      }
+    }
+
+    const serialized = ensureXmlDeclaration(serializer.serializeToString(doc), originalXml);
+    parseXmlStrict(serialized, xmlPath);
+    zip.file(xmlPath, serialized);
+  }
+
+  return await zip.generateAsync({
+    type: 'uint8array',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 }
+  });
+}
+
+function replaceXlsxSiText(doc, siEl, newText) {
+  const ns = siEl.namespaceURI || 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+  const prefix = siEl.prefix ? `${siEl.prefix}:` : '';
+  while (siEl.firstChild) {
+    siEl.removeChild(siEl.firstChild);
+  }
+  const tEl = doc.createElementNS(ns, `${prefix}t`);
+  const cleaned = sanitizeXml10Text(newText);
+  if (/^\s|\s$|\s{2,}|\n/.test(cleaned)) {
+    tEl.setAttribute('xml:space', 'preserve');
+  }
+  tEl.textContent = cleaned;
+  siEl.appendChild(tEl);
 }
 
 async function rebuildHwpxUint8(originalBuffer, items, resolvedMap) {
@@ -760,7 +1156,7 @@ function replaceHwpxParagraphText(doc, pEl, newText) {
 }
 
 export function buildOutputFileName(originalName, targetLangCode, fileType, outputMode = 'replace') {
-  const base = (originalName || 'lesson').replace(/\.(pptx|hwpx)$/i, '');
+  const base = (originalName || 'lesson').replace(/\.(pptx|hwpx|docx|xlsx)$/i, '');
   const safeLang = (targetLangCode || 'translated').replace(/[^a-zA-Z0-9_-]/g, '_');
   if (outputMode === 'bilingual-ko-first' || outputMode === 'bilingual-target-first') {
     return `${base}_ko_${safeLang}.${fileType}`;
