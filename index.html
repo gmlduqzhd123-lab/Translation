@@ -52,25 +52,13 @@
         <button type="button" id="btn-share-site-url" class="btn btn-outline btn-sm" title="동료 선생님께 이 사이트 주소를 메신저로 바로 공유합니다">
           🔗 동료 교사 공유
         </button>
-        <div class="privacy-pill" role="note" aria-label="개인정보 및 보안 안내">
-          <span class="privacy-dot" aria-hidden="true"></span>
-          <span><strong>문서 외부 전송 없음</strong><span class="privacy-more"> · 브라우저 내부 처리</span></span>
-        </div>
         <button type="button" id="btn-open-manual" class="btn btn-guide" aria-haspopup="dialog" aria-controls="manual-modal">
           📘 1분 설명서
         </button>
       </div>
     </div>
 
-    <div class="notice-strip compact-notice-strip" role="region" aria-label="작업 시 유의사항">
-      <div class="container notice-strip-inner">
-        <span class="notice-item">
-          💡 <strong>안내:</strong> 수업자료는 외부 서버로 전송되지 않으며, 자동 번역은 <strong>데스크톱 Chrome</strong>에서 지원됩니다. (공용 PC에서는 사용 후 임시 저장을 삭제하세요)
-        </span>
-      </div>
-    </div>
-
-    <!-- 상단 주요 기능 전환 탭 & 브라우저 임시 저장 통제 바 (PRD 3.2, 5, 6) -->
+    <!-- 상단 주요 기능 전환 탭 & 브라우저 임시 저장 통제 바 -->
     <div class="top-workspace-bar" role="region" aria-label="주요 메뉴 및 브라우저 임시 저장 설정">
       <div class="container top-workspace-inner">
         <div class="main-view-tabs" role="tablist" aria-label="주요 기능 화면 전환">
@@ -83,7 +71,7 @@
             aria-controls="view-translator"
             data-view-target="translator"
           >
-            📄 수업자료 번역기
+            📄 문서 번역
           </button>
           <button
             type="button"
@@ -94,7 +82,7 @@
             aria-controls="view-toolkit"
             data-view-target="toolkit"
           >
-            🗣️ 알림장·교실회화 <span class="tab-count-pill">즉시 활용</span>
+            🗣️ 알림장·회화
           </button>
           <button
             type="button"
@@ -105,7 +93,7 @@
             aria-controls="view-cases"
             data-view-target="cases"
           >
-            💡 수업 활용 사례 <span id="cases-count-pill" class="tab-count-pill">공유</span>
+            💡 활용 사례 <span id="cases-count-pill" class="tab-count-pill">공유</span>
           </button>
           <button
             type="button"
@@ -123,7 +111,7 @@
         <div class="storage-control-bar" role="group" aria-label="브라우저 임시 저장 통제">
           <label class="storage-toggle-label" title="체크하면 작업 중인 문서와 번역문을 이 브라우저(IndexedDB)에 임시 저장하여 새로고침 후에도 이어서 작업할 수 있습니다">
             <input type="checkbox" id="chk-enable-autosave" checked />
-            <span id="label-autosave-toggle">💾 브라우저 임시 저장 켜짐</span>
+            <span id="label-autosave-toggle">💾 임시 저장 켜짐</span>
           </label>
           <button
             type="button"
@@ -131,7 +119,7 @@
             class="btn btn-outline btn-sm storage-clear-btn"
             title="이 브라우저에 임시 저장된 원본 파일과 번역 작업 내용을 즉시 삭제합니다"
           >
-            🗑️ 이 브라우저의 작업 내용 삭제
+            🗑️ 작업 내용 삭제
           </button>
           <span id="storage-control-feedback" class="storage-control-feedback" role="status" aria-live="polite"></span>
         </div>
@@ -139,7 +127,7 @@
     </div>
   </header>
 
-  <nav id="stepper-bar-nav" class="stepper-bar" aria-label="변환 진행 단계">
+  <nav id="stepper-bar-nav" class="stepper-bar hidden" aria-label="변환 진행 단계">
     <div class="container">
       <ol class="stepper-list" id="stepper-list">
         <li class="stepper-item active" data-step="1">
@@ -178,68 +166,10 @@
 
   <main id="main-content" class="container main-container">
     <div id="view-translator" role="tabpanel" aria-labelledby="tab-view-translator">
-    <!-- ==================== STEP 1: 파일 업로드 (화면 A - 3초 목적별 빠른 시작) ==================== -->
+    <!-- ==================== STEP 1: 시안 2 (①언어 선택 ➔ ②파일 선택 2단계 카드형) ==================== -->
     <section id="step-1" class="step-panel active" aria-labelledby="step1-heading">
-      <div class="panel-card hero-stage-card">
-        <!-- 1. 3초 목적별 빠른 시작 카드 (Quick Start Launcher) -->
-        <div class="visual-transform-banner" aria-label="선생님 목적별 빠른 시작 메뉴">
-          <h2 id="step1-heading" class="transform-banner-title">
-            오늘 어떤 다국어 수업·학급 자료가 필요하신가요? <span class="banner-sub-inline">(서식 유지 · 25개 국어 지원)</span>
-          </h2>
-
-          <div class="quick-start-cards-grid" role="group" aria-label="목적별 빠른 시작 3종">
-            <button type="button" id="btn-quickstart-upload" class="quick-start-card active-mode">
-              <span class="qs-icon" aria-hidden="true">📄</span>
-              <span class="qs-body">
-                <strong>1. 수업자료 파일 통째로 번역</strong>
-                <span>PPT(<b>.pptx</b>) · 한글(<b>.hwpx</b>) · 워드(<b>.docx</b>) · 엑셀(<b>.xlsx</b>) 서식 유지</span>
-              </span>
-              <span class="qs-cta">파일 선택 ➔</span>
-            </button>
-
-            <button type="button" id="btn-quickstart-notice" class="quick-start-card">
-              <span class="qs-icon" aria-hidden="true">💬</span>
-              <span class="qs-body">
-                <strong>2. 가정통신문 · 알림장 10초 번역</strong>
-                <span>파일 없이 준비물·상담·행사 문구를 바로 다국어로 변환·복사</span>
-              </span>
-              <span class="qs-cta">바로 열기 ➔</span>
-            </button>
-
-            <button type="button" id="btn-quickstart-cards" class="quick-start-card">
-              <span class="qs-icon" aria-hidden="true">🗣️</span>
-              <span class="qs-body">
-                <strong>3. 교실 다국어 회화 카드 &amp; 음성</strong>
-                <span>다문화 학생과 첫인사·급식·수업 안내 원어민 음성 즉시 재생</span>
-              </span>
-              <span class="qs-cta">카드 보기 ➔</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 파일 선택 전 데이터 처리 및 임시 저장 투명성 안내 (PRD 3.1, 3.2) -->
-        <details id="data-privacy-notice-step1" class="data-transparency-box data-transparency-collapsible">
-          <summary class="data-transparency-header">
-            <div class="data-transparency-title-wrap">
-              <strong>🔐 파일 선택 전 데이터 처리·임시 저장 안내</strong>
-              <span class="data-transparency-summary-sub">외부 서버 미전송 · 브라우저 내부 저장</span>
-            </div>
-            <div class="data-transparency-header-right">
-              <span id="step1-storage-state-pill" class="storage-state-pill">임시 저장: 켜짐 (IndexedDB)</span>
-              <span class="data-transparency-toggle-btn" aria-hidden="true">
-                <span class="toggle-text-closed">상세 보기 ▼</span>
-                <span class="toggle-text-open">상세 닫기 ▲</span>
-              </span>
-            </div>
-          </summary>
-          <ul class="data-transparency-list">
-            <li><strong>브라우저 임시 저장:</strong> 작업 중 실수로 창이 닫혀도 이어서 작업할 수 있도록 원본 파일과 번역 상태가 <strong>현재 브라우저 내부 저장소(IndexedDB)에만 임시 저장</strong>됩니다. 원하지 않으시면 상단 <strong>[💾 브라우저 임시 저장]</strong> 체크를 해제해 끌 수 있습니다.</li>
-            <li><strong>외부 서버 전송 여부:</strong> 업로드한 수업자료(<code>.pptx</code>·<code>.hwpx</code>·<code>.docx</code>·<code>.xlsx</code>)와 추출 문장·번역문은 <strong>외부 서버나 외부 번역 API로 전송되지 않으며</strong>, 자동 번역은 브라우저 내장 온디바이스 API(<code>window.Translator</code>)로만 수행됩니다. <em>(단, ‘수업 활용 사례’ 탭에서 직접 작성·제출하는 게시글만 사례 공유 DB 서버로 전송됩니다.)</em></li>
-            <li><strong>작업 내용 삭제 방법:</strong> 화면 상단 <strong>[🗑️ 이 브라우저의 작업 내용 삭제]</strong> 버튼을 누르면 저장된 원본과 번역 내용이 즉시 삭제되며 새로고침해도 복원되지 않습니다. <strong>공용 PC에서는 작업 종료 시 반드시 삭제</strong>해 주세요.</li>
-          </ul>
-        </details>
-
-        <!-- 이전 임시 저장 작업 복구 배너 (아이디어 4) -->
+      <div class="step1-two-card-stack">
+        <!-- 이전 임시 저장 작업 복구 배너 (있을 때만 표시) -->
         <div id="session-restore-banner" class="session-restore-banner hidden" role="region" aria-label="이전 작업 이어서 하기">
           <div class="session-restore-info">
             <span class="session-restore-badge">💾 자동 임시 저장된 작업 발견</span>
@@ -247,39 +177,38 @@
           </div>
           <div class="session-restore-actions">
             <button type="button" id="btn-restore-session" class="btn btn-primary btn-sm">이어서 작업하기 →</button>
-            <button type="button" id="btn-discard-session" class="btn btn-outline btn-sm">이 브라우저의 작업 내용 삭제</button>
+            <button type="button" id="btn-discard-session" class="btn btn-outline btn-sm">작업 내용 삭제</button>
           </div>
         </div>
 
-        <!-- 파일 처리 오류 표시 영역 -->
+        <!-- 파일 처리 오류 표시 영역 (오류 시에만 표시) -->
         <div id="upload-error-box" class="alert-box alert-error hidden" role="alert" aria-live="assertive">
           <div class="alert-title" id="upload-error-title">파일을 처리할 수 없습니다</div>
           <p class="alert-message" id="upload-error-message"></p>
           <p class="alert-action" id="upload-error-action"></p>
         </div>
 
-        <!-- 아이디어 1 & 3: 원클릭 빠른 변환 모드 설정 바 + 우리 반 최근 사용 언어 핀 -->
-        <div id="quick-convert-bar" class="quick-convert-bar" role="region" aria-label="원클릭 빠른 변환 및 우리 반 언어 설정">
-          <div class="quick-convert-top-row">
-            <label class="quick-convert-toggle">
-              <input type="checkbox" id="chk-quick-translate-mode" checked />
-              <span>⚡ <strong>원클릭 빠른 변환:</strong> 파일 선택 즉시 아래 언어로 번역·검수 화면까지 한 번에 이동</span>
-            </label>
-            <div class="quick-convert-right">
-              <label for="select-quick-target-lang" class="quick-lang-label">우리 반 언어:</label>
-              <select id="select-quick-target-lang" class="quick-lang-select" aria-label="빠른 변환 대상 언어 선택"></select>
-              <button type="button" id="btn-open-toolkit-from-step1" class="btn btn-surface btn-sm" title="파일 없이 알림장·문자를 바로 번역하거나 교실 다국어 회화 카드를 엽니다">
-                📋 알림장 · 🗣️ 회화
-              </button>
+        <!-- ==================== 카드 ①: 어느 나라 말로 번역할까요? ==================== -->
+        <div id="quick-convert-bar" class="step1-card step1-lang-card" role="region" aria-label="1단계 번역 언어 선택">
+          <div class="step1-card-head">
+            <span class="step1-num-badge" aria-hidden="true">1</span>
+            <h2 id="step1-heading" class="step1-card-title">어느 나라 말로 번역할까요?</h2>
+          </div>
+
+          <div class="step1-lang-controls">
+            <input type="checkbox" id="chk-quick-translate-mode" class="sr-only" checked aria-label="원클릭 빠른 변환 사용" />
+            <div id="step1-recent-langs-bar" class="step1-lang-pills" aria-label="자주 쓰는 언어 빠른 선택"></div>
+            <div class="step1-more-lang-wrap">
+              <label for="select-quick-target-lang" class="sr-only">전체 25개국 언어 선택</label>
+              <select id="select-quick-target-lang" class="step1-more-lang-select" aria-label="전체 25개국 번역 대상 언어 선택"></select>
             </div>
           </div>
-          <div id="step1-recent-langs-bar" class="recent-langs-bar" aria-label="자주 쓰는 우리 반 언어 빠른 선택"></div>
         </div>
 
-        <!-- 2. 오직 '내 파일 올리기' 하나에만 집중한 메인 드롭존 -->
+        <!-- ==================== 카드 ②: 번역할 수업자료 파일을 선택하세요 ==================== -->
         <div
           id="drop-zone"
-          class="drop-zone focused-drop-zone"
+          class="step1-card step1-upload-card"
           role="button"
           tabindex="0"
           aria-describedby="drop-zone-hint"
@@ -291,106 +220,90 @@
             accept=".pptx,.hwpx,.docx,.xlsx,.ppt,.hwp,.doc,.xls"
             aria-label="수업자료 파일 선택 (.pptx, .hwpx, .docx, .xlsx)"
           />
-          <p class="drop-zone-main">
-            📂 여기에 수업자료 파일(<span class="ext-accent">.pptx</span> · <span class="ext-accent">.hwpx</span> · <span class="ext-accent">.docx</span> · <span class="ext-accent">.xlsx</span>)을 끌어다 놓으세요
-          </p>
-          <div class="focused-upload-cta">
-            <button type="button" id="btn-select-file" class="btn btn-primary btn-xl">
-              내 컴퓨터에서 파일 선택하기
+
+          <div class="step1-upload-head">
+            <span class="step1-num-badge" aria-hidden="true">2</span>
+            <span class="step1-card-title">
+              번역할 수업자료 파일(<strong class="ext-accent">.pptx</strong> · <strong class="ext-accent">.hwpx</strong> · <strong class="ext-accent">.docx</strong> · <strong class="ext-accent">.xlsx</strong>)을 선택하세요
+            </span>
+          </div>
+
+          <div class="step1-upload-cta-row">
+            <button type="button" id="btn-select-file" class="btn btn-primary step1-upload-cta-btn">
+              📂 내 컴퓨터에서 파일 선택하기
             </button>
           </div>
-          <p id="drop-zone-hint" class="drop-zone-security-note">
-            🔒 업로드한 파일은 외부 서버로 전송되지 않고 선생님 컴퓨터 안에서만 안전하게 처리됩니다
+
+          <p id="drop-zone-hint" class="step1-drag-hint">
+            또는 이 상자 안에 파일을 마우스로 끌어다 놓으세요
           </p>
-        </div>
 
-        <!-- 3. 하단 분리 바: 좌측 샘플 체험 & 우측 3단계 진행 순서 -->
-        <div class="bottom-split-bar">
-          <!-- 좌측: 예시 파일 체험 -->
-          <div class="split-card sample-try-card">
-            <div class="sample-try-text">
-              <strong>💡 지금 파일이 없으신가요?</strong>
-              <span>예시 수업자료로 10초 만에 체험해 보세요 (<a href="./samples/sample-science-lesson.pptx" download="sample-science-lesson.pptx" class="sample-download-link">PPTX 원본</a> · <a href="./samples/sample-science-activity.hwpx" download="sample-science-activity.hwpx" class="sample-download-link">HWPX 원본</a>)</span>
-            </div>
-            <div class="sample-try-btns">
-              <button type="button" id="btn-load-sample-pptx" class="btn btn-surface btn-sm">
-                📊 PPTX 예시 열기
-              </button>
-              <button type="button" id="btn-load-sample-hwpx" class="btn btn-surface btn-sm">
-                📝 HWPX 예시 열기
-              </button>
-            </div>
-          </div>
-
-          <!-- 우측: 3단계 이용 순서 + 설명서 -->
-          <div class="split-card step-order-card" aria-label="이용 순서 3단계">
-            <div class="step-order-flow">
-              <div class="step-order-item">
-                <span class="step-order-tag">STEP 1</span>
-                <strong>파일 선택</strong>
-              </div>
-              <span class="step-order-arrow" aria-hidden="true">➔</span>
-              <div class="step-order-item">
-                <span class="step-order-tag">STEP 2</span>
-                <strong>언어 선택·번역</strong>
-              </div>
-              <span class="step-order-arrow" aria-hidden="true">➔</span>
-              <div class="step-order-item">
-                <span class="step-order-tag">STEP 3</span>
-                <strong>수정·다운로드</strong>
-              </div>
-            </div>
-            <button type="button" id="btn-open-manual-inline" class="link-btn">
-              📘 1분 설명서
+          <div class="step1-sample-inline-row">
+            <span>연습용 샘플:</span>
+            <button type="button" id="btn-load-sample-pptx" class="step1-inline-sample-link">
+              📊 과학 PPTX 예시 열기
+            </button>
+            <span aria-hidden="true">·</span>
+            <button type="button" id="btn-load-sample-hwpx" class="step1-inline-sample-link">
+              📝 한글 HWPX 예시 열기
             </button>
           </div>
         </div>
 
-        <!-- 보조 참고 안내 (기본 접힘 상태로 첫 화면을 깔끔하게 유지) -->
-        <div class="info-accordion-stack">
-          <details id="details-legacy-convert" class="accordion-card">
-            <summary class="accordion-summary">
-              <span>📌 <strong>구형 <code>.hwp</code> 또는 <code>.ppt</code> 파일이신가요?</strong> (10초 만에 <code>.hwpx</code>·<code>.pptx</code>로 바꾸는 법)</span>
-              <span class="accordion-chevron" aria-hidden="true">▼</span>
-            </summary>
-            <div class="accordion-body">
-              <p class="accordion-lead">구형 이진 문서(<code>.hwp</code>, <code>.ppt</code>)는 직접 읽을 수 없습니다. 아래 순서대로 <strong>[다른 이름으로 저장]</strong>만 해주시면 바로 사용 가능합니다.</p>
-              <div class="convert-guide-grid">
-                <div class="convert-step-box">
-                  <h4>한글 문서 (<code>.hwp</code> → <code>.hwpx</code>)</h4>
-                  <ol>
-                    <li>한컴오피스 한글에서 원본 <code>.hwp</code> 파일을 엽니다.</li>
-                    <li>상단 메뉴 <strong>[파일] → [다른 이름으로 저장하기]</strong>를 누릅니다.</li>
-                    <li>아래쪽 <strong>[파일 형식]</strong>을 <strong><code>한글 표준 문서 (*.hwpx)</code></strong>로 바꾼 뒤 저장합니다.</li>
-                  </ol>
-                </div>
-                <div class="convert-step-box">
-                  <h4>파워포인트 (<code>.ppt</code> → <code>.pptx</code>)</h4>
-                  <ol>
-                    <li>PowerPoint에서 원본 <code>.ppt</code> 파일을 엽니다.</li>
-                    <li>상단 메뉴 <strong>[파일] → [다른 이름으로 저장]</strong>을 누릅니다.</li>
-                    <li>파일 형식을 <strong><code>PowerPoint 프레젠테이션 (*.pptx)</code></strong>으로 선택해 저장합니다.</li>
-                  </ol>
-                </div>
-              </div>
-            </div>
-          </details>
-
-          <details class="accordion-card">
-            <summary class="accordion-summary">
-              <span>🔍 <strong>어떤 내용이 번역되고, 어떤 내용은 제외되나요?</strong> (지원 범위 상세 안내)</span>
-              <span class="accordion-chevron" aria-hidden="true">▼</span>
-            </summary>
-            <div class="accordion-body">
-              <ul class="info-list">
-                <li><strong>번역 지원 언어 (25개 국어):</strong> 한국어 원문 → <strong>영어, 중국어 간체·번체, 베트남어, 일본어, 러시아어, 우즈베크어, 몽골어, 태국어, 캄보디아어(크메르어), 필리핀어(타갈로그어), 인도네시아어, 미얀마어, 네팔어, 스리랑카어(신할라어), 힌디어, 벵골어, 파키스탄어(우르두어), 카자흐어, 키르기스어, 아랍어, 스페인어, 프랑스어, 포르투갈어, 튀르키예어</strong> 중 1개 선택</li>
-                <li><strong>번역되는 내용:</strong> 마우스로 클릭해 글자를 고칠 수 있는 모든 텍스트(슬라이드 제목·본문, 글상자, 표 안의 글자, 한글 문단)</li>
-                <li><strong>번역에서 제외되는 내용:</strong> <strong>그림(이미지) 파일 속에 그려진 글자</strong>, 스캔한 문서, PDF, 동영상·음성, 암호가 걸린 문서</li>
-                <li><strong>문서 모양 유지 안내:</strong> 사진·도형·표의 기본 틀은 그대로 유지됩니다. 다만 외국어 문장이 한국어보다 길어질 수 있으므로 다운로드 후 문서 프로그램에서 글자 크기를 한 번 확인해 주세요.</li>
-              </ul>
-            </div>
-          </details>
+        <!-- ==================== 하단 보조 링크 한 줄 (테두리 박스 없음) ==================== -->
+        <div class="step1-footer-links-bar">
+          <span>🔒 파일 외부 전송 없음 (브라우저 내 처리)</span>
+          <span aria-hidden="true">·</span>
+          <button type="button" id="btn-toggle-privacy-detail" class="step1-footer-link" aria-expanded="false" aria-controls="data-privacy-notice-step1">
+            🔐 데이터 처리 안내
+          </button>
+          <span aria-hidden="true">·</span>
+          <button type="button" id="btn-toggle-legacy-guide" class="step1-footer-link" aria-expanded="false" aria-controls="details-legacy-convert">
+            📌 구형 .hwp·.ppt 변환 안내
+          </button>
+          <span aria-hidden="true">·</span>
+          <button type="button" id="btn-open-manual-inline" class="step1-footer-link">
+            📘 사용 설명서
+          </button>
         </div>
+
+        <!-- 클릭 시에만 펼쳐지는 상세 안내 패널 (평소에는 완전히 숨김) -->
+        <div id="data-privacy-notice-step1" class="step1-collapsible-drawer hidden" role="region" aria-label="데이터 처리 및 임시 저장 안내">
+          <div class="step1-drawer-top">
+            <strong>🔐 데이터 처리 · 브라우저 임시 저장 안내</strong>
+            <span id="step1-storage-state-pill" class="storage-state-pill">임시 저장: 켜짐 (IndexedDB)</span>
+          </div>
+          <ul class="data-transparency-list">
+            <li><strong>브라우저 임시 저장:</strong> 작업 중 실수로 창이 닫혀도 이어서 작업할 수 있도록 원본 파일과 번역 상태가 <strong>현재 브라우저 내부 저장소(IndexedDB)에만 임시 저장</strong>됩니다. 상단 <strong>[💾 임시 저장]</strong> 체크를 해제해 언제든 끌 수 있습니다.</li>
+            <li><strong>외부 서버 전송 없음:</strong> 업로드한 수업자료(<code>.pptx</code>·<code>.hwpx</code>·<code>.docx</code>·<code>.xlsx</code>)와 번역문은 <strong>외부 서버로 전송되지 않으며</strong>, 자동 번역은 브라우저 내장 온디바이스 API(<code>window.Translator</code>)로만 수행됩니다.</li>
+            <li><strong>작업 내용 삭제:</strong> 상단 <strong>[🗑️ 작업 내용 삭제]</strong> 버튼을 누르면 즉시 삭제됩니다. 공용 PC에서는 작업 종료 시 삭제해 주세요.</li>
+          </ul>
+        </div>
+
+        <details id="details-legacy-convert" class="step1-collapsible-drawer hidden">
+          <summary class="sr-only">구형 .hwp 또는 .ppt 파일 변환 방법</summary>
+          <div class="step1-drawer-top">
+            <strong>📌 구형 <code>.hwp</code> 또는 <code>.ppt</code> 파일 변환 방법 (10초 만에 <code>.hwpx</code>·<code>.pptx</code>로 바꾸기)</strong>
+          </div>
+          <div class="convert-guide-grid">
+            <div class="convert-step-box">
+              <h4>한글 문서 (<code>.hwp</code> → <code>.hwpx</code>)</h4>
+              <ol>
+                <li>한컴오피스 한글에서 원본 <code>.hwp</code> 파일을 엽니다.</li>
+                <li>상단 메뉴 <strong>[파일] → [다른 이름으로 저장하기]</strong>를 누릅니다.</li>
+                <li>아래쪽 <strong>[파일 형식]</strong>을 <strong><code>한글 표준 문서 (*.hwpx)</code></strong>로 바꾼 뒤 저장합니다.</li>
+              </ol>
+            </div>
+            <div class="convert-step-box">
+              <h4>파워포인트 (<code>.ppt</code> → <code>.pptx</code>)</h4>
+              <ol>
+                <li>PowerPoint에서 원본 <code>.ppt</code> 파일을 엽니다.</li>
+                <li>상단 메뉴 <strong>[파일] → [다른 이름으로 저장]</strong>을 누릅니다.</li>
+                <li>파일 형식을 <strong><code>PowerPoint 프레젠테이션 (*.pptx)</code></strong>으로 선택해 저장합니다.</li>
+              </ol>
+            </div>
+          </div>
+        </details>
       </div>
     </section>
 

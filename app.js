@@ -121,7 +121,7 @@ function cacheElements() {
     5: document.getElementById('step-5')
   };
 
-  // Manual Modal
+  // Manual Modal & Step 1 Collapsible Drawers
   els.btnOpenManual = document.getElementById('btn-open-manual');
   els.btnOpenManualInline = document.getElementById('btn-open-manual-inline');
   els.manualModal = document.getElementById('manual-modal');
@@ -130,6 +130,9 @@ function cacheElements() {
   els.manualTabs = document.querySelectorAll('.modal-tab');
   els.manualTabPanels = document.querySelectorAll('.manual-tab-panel');
   els.detailsLegacyConvert = document.getElementById('details-legacy-convert');
+  els.dataPrivacyNoticeStep1 = document.getElementById('data-privacy-notice-step1');
+  els.btnTogglePrivacyDetail = document.getElementById('btn-toggle-privacy-detail');
+  els.btnToggleLegacyGuide = document.getElementById('btn-toggle-legacy-guide');
 
   // Step 1
   els.btnQuickstartUpload = document.getElementById('btn-quickstart-upload');
@@ -516,22 +519,74 @@ function applySelectedLanguageEverywhere(langKey) {
   updateSelectedLanguageStatusUI();
 }
 
+const LANGUAGE_FLAG_MAP = {
+  vi: '🇻🇳',
+  'zh-Hans': '🇨🇳',
+  'zh-Hant': '🇹🇼',
+  en: '🇺🇸',
+  ru: '🇷🇺',
+  ja: '🇯🇵',
+  uz: '🇺🇿',
+  mn: '🇲🇳',
+  th: '🇹🇭',
+  km: '🇰🇭',
+  tl: '🇵🇭',
+  id: '🇮🇩',
+  my: '🇲🇲',
+  ne: '🇳🇵',
+  si: '🇱🇰',
+  hi: '🇮🇳',
+  bn: '🇧🇩',
+  ur: '🇵🇰',
+  kk: '🇰🇿',
+  ky: '🇰🇬',
+  ar: '🇸🇦',
+  es: '🇪🇸',
+  fr: '🇫🇷',
+  pt: '🇧🇷',
+  tr: '🇹🇷'
+};
+
+function getLanguageFlag(key) {
+  return LANGUAGE_FLAG_MAP[key] || '🌐';
+}
+
 function renderRecentLanguageBars() {
   const recentKeys = getSavedRecentLanguages();
-  const containers = [els.step1RecentLangsBar, els.step3RecentLangsBar].filter(Boolean);
-  for (const container of containers) {
-    container.innerHTML = '<span class="recent-langs-label">⭐ 우리 반·최근 사용 언어:</span>';
+
+  // Step 1 Card ①: Clean language pill buttons (시안 2)
+  if (els.step1RecentLangsBar) {
+    els.step1RecentLangsBar.innerHTML = '';
+    for (const key of recentKeys) {
+      const meta = getTargetLanguageMeta(key);
+      const isSelected = state.selectedLangKey === key;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `step1-lang-pill${isSelected ? ' is-current' : ''}`;
+      btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      btn.textContent = `${getLanguageFlag(key)} ${meta.label}${isSelected ? ' ✓' : ''}`;
+      btn.addEventListener('click', () => {
+        applySelectedLanguageEverywhere(key);
+        scheduleAutoSave();
+      });
+      els.step1RecentLangsBar.appendChild(btn);
+    }
+  }
+
+  // Step 3 recent languages bar
+  if (els.step3RecentLangsBar) {
+    els.step3RecentLangsBar.innerHTML = '<span class="recent-langs-label">⭐ 우리 반·최근 사용 언어:</span>';
     for (const key of recentKeys) {
       const meta = getTargetLanguageMeta(key);
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = `recent-lang-chip${state.selectedLangKey === key ? ' is-current' : ''}`;
-      btn.textContent = `${meta.label} (${meta.nativeLabel})`;
+      btn.textContent = `${getLanguageFlag(key)} ${meta.label} (${meta.nativeLabel})`;
       btn.addEventListener('click', () => {
         applySelectedLanguageEverywhere(key);
         scheduleAutoSave();
       });
-      container.appendChild(btn);
+      els.step3RecentLangsBar.appendChild(btn);
     }
   }
 }
@@ -561,7 +616,9 @@ function switchMainView(viewName) {
     els.viewTranslator.classList.toggle('hidden', viewName !== 'translator');
   }
   if (els.stepperBarNav) {
-    els.stepperBarNav.classList.toggle('hidden', viewName !== 'translator');
+    const hideStepper =
+      viewName !== 'translator' || (state.currentStep === 1 && state.maxUnlockedStep === 1);
+    els.stepperBarNav.classList.toggle('hidden', hideStepper);
   }
   if (els.viewToolkit) {
     els.viewToolkit.classList.toggle('hidden', viewName !== 'toolkit');
@@ -925,6 +982,22 @@ function bindEvents() {
     }
   });
 
+  // Step 1 footer link toggles (시안 2)
+  els.btnTogglePrivacyDetail?.addEventListener('click', () => {
+    if (!els.dataPrivacyNoticeStep1) return;
+    const isHidden = els.dataPrivacyNoticeStep1.classList.toggle('hidden');
+    els.btnTogglePrivacyDetail.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+  });
+
+  els.btnToggleLegacyGuide?.addEventListener('click', () => {
+    if (!els.detailsLegacyConvert) return;
+    const isHidden = els.detailsLegacyConvert.classList.toggle('hidden');
+    if (!isHidden) {
+      els.detailsLegacyConvert.open = true;
+    }
+    els.btnToggleLegacyGuide.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+  });
+
   // Step 1: 3-Second Quick Start Cards (Idea #1)
   els.btnQuickstartUpload?.addEventListener('click', () => {
     els.fileInput?.click();
@@ -1270,6 +1343,11 @@ function goToStep(stepNum) {
   }
 
   state.currentStep = stepNum;
+  if (els.stepperBarNav) {
+    const hideStepper =
+      state.activeMainView !== 'translator' || (stepNum === 1 && state.maxUnlockedStep === 1);
+    els.stepperBarNav.classList.toggle('hidden', hideStepper);
+  }
   for (let s = 1; s <= 5; s++) {
     const panel = els.stepPanels[s];
     if (panel) {
@@ -1321,6 +1399,7 @@ function showUploadError(title, message, actionHint, code = '') {
 
   if (code.includes('LEGACY_') || code.includes('OLE2_')) {
     if (els.detailsLegacyConvert) {
+      els.detailsLegacyConvert.classList.remove('hidden');
       els.detailsLegacyConvert.open = true;
     }
   }
@@ -1598,12 +1677,14 @@ function renderLanguageCards() {
   }
 
   const langOptionsHtml = TARGET_LANGUAGES.map(
-    (l) => `<option value="${escapeHtml(l.key)}">${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
+    (l) => `<option value="${escapeHtml(l.key)}">${getLanguageFlag(l.key)} ${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
   ).join('');
 
   if (els.selectQuickTargetLang) {
-    els.selectQuickTargetLang.innerHTML = langOptionsHtml;
-    els.selectQuickTargetLang.value = state.selectedLangKey || 'en';
+    els.selectQuickTargetLang.innerHTML = TARGET_LANGUAGES.map(
+      (l) => `<option value="${escapeHtml(l.key)}">🌐 25개국: ${getLanguageFlag(l.key)} ${escapeHtml(l.label)} (${escapeHtml(l.nativeLabel)})</option>`
+    ).join('');
+    els.selectQuickTargetLang.value = state.selectedLangKey || 'vi';
   }
 
   if (els.selectToolkitTargetLang) {
