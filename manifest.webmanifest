@@ -1,0 +1,17 @@
+{
+  "id": "/Translation/",
+  "name": "다국어 수업자료 변환기",
+  "short_name": "수업자료 번역",
+  "description": "한국어 PPTX·HWPX 수업자료를 다국어로 번역해 원본 형식으로 저장하는 교사용 도구",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1d4ed8",
+  "lang": "ko",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

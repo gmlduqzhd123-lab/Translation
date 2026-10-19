@@ -1,11 +1,31 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-qr-url="https://gmlduqzhd123-lab.github.io/Translation/" data-qr-name="다국어 수업자료 변환기">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>다국어 수업자료 변환기 | PPTX·HWPX 교사용 번역 도구</title>
   <meta name="description" content="한국어 PPTX·HWPX 수업자료를 브라우저 내장 Translator API와 수동 검토를 통해 다국어 수업자료로 변환하는 교사용 정적 웹앱입니다." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>" />
+  <meta name="theme-color" content="#1d4ed8" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="다국어 수업자료 변환기" />
+  <meta property="og:description" content="한국어 PPT·한글 수업자료를 영어·중국어·베트남어 등으로 번역해 원본 형식 그대로 저장하는 교사용 도구" />
+  <meta property="og:url" content="https://gmlduqzhd123-lab.github.io/Translation/" />
+  <meta property="og:image" content="https://gmlduqzhd123-lab.github.io/Translation/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="ko_KR" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="다국어 수업자료 변환기" />
+  <meta name="twitter:description" content="한국어 PPT·한글 수업자료를 영어·중국어·베트남어 등으로 번역해 원본 형식 그대로 저장하는 교사용 도구" />
+  <meta name="twitter:image" content="https://gmlduqzhd123-lab.github.io/Translation/og-image.jpg" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="수업자료 번역" />
+  <script src="./ys-install.js" defer></script>
+  <script src="./ys-qr.js" defer></script>
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <link rel="stylesheet" href="./styles.css" />
   <script src="./vendor/jszip.min.js" defer></script>
@@ -28,9 +48,10 @@
       </div>
 
       <div class="header-right-group">
+        <div class="ys-key"><button type="button" class="ys-chip" data-ys-install>📲 <span class="ys-wide">앱 </span>설치</button><button type="button" class="ys-chip" data-qr aria-label="QR 코드로 접속">📱 QR</button></div>
         <div class="privacy-pill" role="note" aria-label="개인정보 및 보안 안내">
           <span class="privacy-dot" aria-hidden="true"></span>
-          <span><strong>서버 전송 없음</strong> · 내 컴퓨터 브라우저 안에서만 안전 처리</span>
+          <span><strong>서버 전송 없음</strong><span class="privacy-more"> · 내 컴퓨터 브라우저 안에서만 안전 처리</span></span>
         </div>
         <button type="button" id="btn-open-manual" class="btn btn-guide" aria-haspopup="dialog" aria-controls="manual-modal">
           📘 사용 설명서 · FAQ
@@ -936,7 +957,13 @@
   <footer class="app-footer">
     <div class="container footer-inner">
       <p>다국어 수업자료 변환기 · 선생님을 위한 간편 수업자료 번역 도구 · 모든 문서 처리는 브라우저 내부에서만 안전하게 이루어집니다.</p>
+      <p class="ys-credit">© 2026 엽쌤. All rights reserved. · <a href="https://gmlduqzhd123-lab.github.io/YScode/" target="_blank" rel="noopener">엽쌤의 다른 앱 보기 →</a></p>
     </div>
   </footer>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
+    }
+  </script>
 </body>
 </html>
