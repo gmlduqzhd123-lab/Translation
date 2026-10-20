@@ -2221,6 +2221,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
@@ -2239,6 +2241,7 @@ body {
   color: var(--text-primary);
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -4883,6 +4886,54 @@ body {
   }
   .case-evidence-label {
     min-width: 0;
+  }
+  .usage-stats-pill {
+    white-space: normal;
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+    max-width: 100%;
+    font-size: 0.77rem;
+    padding: 5px 10px;
+    line-height: 1.35;
+  }
+  .school-diag-trigger-btn {
+    white-space: normal;
+    justify-content: center;
+    text-align: center;
+    max-width: 100%;
+    font-size: 0.79rem;
+    padding: 6px 12px;
+  }
+  .step1-lang-controls,
+  .step1-more-lang-wrap,
+  .step1-more-lang-select,
+  .step4-instant-left,
+  .step4-mode-select,
+  .step4-instant-right,
+  .case-quick-meta-inputs,
+  .case-quick-select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .step4-instant-right .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  .school-diag-dialog .modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .school-diag-dialog .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .review-group-divider .tool-drawer-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 
