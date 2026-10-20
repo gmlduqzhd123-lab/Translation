@@ -5223,6 +5223,20 @@ function renderPublicCasesList() {
     const cancelDelBtn = card.querySelector('[data-role="cancel-card-delete"]');
     const delMsg = card.querySelector('[data-role="card-delete-msg"]');
 
+    // 게시글을 누르면 그 카드에만 우측 상단 ✕ 표시 (다시 누르면 숨김)
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('button, input, select, textarea, a, [data-role="card-delete-box"]')) return;
+      if (window.getSelection && String(window.getSelection()).length) return; // 글자 드래그 선택은 무시
+      const willShow = !card.classList.contains('is-delete-ready');
+      document.querySelectorAll('.case-simple-card.is-delete-ready').forEach((c) => {
+        c.classList.remove('is-delete-ready');
+        c.querySelector('[data-role="card-delete-box"]')?.classList.add('hidden');
+        const pw = c.querySelector('[data-role="card-delete-pw"]');
+        if (pw) pw.value = '';
+      });
+      if (willShow) card.classList.add('is-delete-ready');
+    });
+
     toggleDelBtn?.addEventListener('click', () => {
       if (!delBox) return;
       const willOpen = delBox.classList.contains('hidden');

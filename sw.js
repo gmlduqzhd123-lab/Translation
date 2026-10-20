@@ -1,5 +1,5 @@
 // 다국어 수업자료 변환기 오프라인 캐시 — 같은 주소의 다른 엽쌤 앱과 캐시 저장소를 같이 쓰므로 내 접두어 캐시만 지운다
-const CACHE = 'translation-v20-privacy1';
+const CACHE = 'translation-v21-x1';
 const CACHE_PREFIX = 'translation-v';
 const CORE = ['./', './index.html', './styles.css', './app.js', './vendor/jszip.min.js', './vendor/qrcode-generator.mjs', './src/student-qr.js',
   './src/document-processor.js', './src/school-glossary.js', './src/storage-service.js', './src/translator-service.js', './src/case-sharing-service.js', './src/teacher-toolkit.js', './src/sample-instant-cache.js',

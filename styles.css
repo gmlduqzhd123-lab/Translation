@@ -5039,3 +5039,19 @@ body {
   .ys-key { gap: 4px; }
   .brand-group { flex-basis: calc(100% - 146px); }
 }
+
+/* ==================== 활용 사례 카드 ✕: 게시글을 눌렀을 때만 우측 상단에 표시 ==================== */
+.case-simple-card { position: relative; cursor: pointer; }
+.case-simple-card .case-simple-card-top { padding-right: 34px; }
+.case-simple-card .case-card-delete-x-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  font-size: 0.95rem;
+  display: none;
+}
+.case-simple-card.is-delete-ready { border-color: #93c5fd; box-shadow: 0 0 0 2px #dbeafe; }
+.case-simple-card.is-delete-ready .case-card-delete-x-btn { display: inline-flex; }
+.case-simple-card .case-card-delete-box { cursor: default; }
