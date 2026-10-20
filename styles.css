@@ -4461,7 +4461,8 @@ body {
 }
 
 .case-quick-select,
-.case-quick-author {
+.case-quick-author,
+.case-quick-passcode {
   padding: 7px 11px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
@@ -4471,8 +4472,9 @@ body {
   color: #1e293b;
 }
 
-.case-quick-author {
-  width: 255px;
+.case-quick-author,
+.case-quick-passcode {
+  width: 150px;
 }
 
 .case-quick-body-row {
@@ -4498,7 +4500,8 @@ body {
 
 .case-quick-textarea:focus,
 .case-quick-select:focus,
-.case-quick-author:focus {
+.case-quick-author:focus,
+.case-quick-passcode:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
@@ -4588,7 +4591,8 @@ body {
   .case-quick-body-row {
     grid-template-columns: 1fr;
   }
-  .case-quick-author {
+  .case-quick-author,
+  .case-quick-passcode {
     width: 100%;
   }
   .case-quick-submit-btn {
@@ -4958,7 +4962,9 @@ body {
 }
 
 .case-evidence-summary-banner.hidden,
-.usage-stats-pill.hidden {
+.usage-stats-pill.hidden,
+.school-diag-trigger-btn.hidden,
+.storage-control-bar.hidden {
   display: none !important;
 }
 

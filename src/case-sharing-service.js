@@ -420,12 +420,27 @@ export async function fetchApprovedCases() {
   }
 }
 
+function normalizeAuthorPasscode(pw) {
+  const s = String(pw || '').trim();
+  if (!s) return '';
+  return s.length < 4 ? s.padEnd(4, '#') : s;
+}
+
 export async function submitLessonCase(formData) {
   try {
     const unifiedBody = (formData.lesson_goal ?? formData.lessonGoal ?? '').trim();
     const confirmedAll = Boolean(
       formData.confirmed_factual ?? formData.confirmedFactual ?? formData.confirmed_authentic
     );
+    const rawPasscode = String(formData.author_passcode ?? formData.authorPasscode ?? '').trim();
+    const normalizedPasscode = normalizeAuthorPasscode(rawPasscode);
+    if (rawPasscode && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(MY_CASE_PASSCODE_STORAGE_KEY, rawPasscode);
+      } catch {
+        // ignore
+      }
+    }
     const result = await callSupabaseRpc('submit_translation_case', {
       p_title: formData.title,
       p_used_date: formData.used_date ?? formData.usedDate ?? new Date().toISOString().slice(0, 10),
@@ -464,7 +479,7 @@ export async function submitLessonCase(formData) {
           formData.confirmed_copyright ??
           confirmedAll
       ),
-      p_author_passcode: formData.author_passcode ?? formData.authorPasscode
+      p_author_passcode: normalizedPasscode
     });
 
     if (result?.id) {
@@ -491,9 +506,9 @@ export async function fetchMyCases(arg1 = [], arg2 = '') {
     let cleanPass = '';
     if (Array.isArray(arg1)) {
       myIds = arg1;
-      cleanPass = String(arg2 ?? '').trim();
+      cleanPass = normalizeAuthorPasscode(arg2);
     } else if (typeof arg1 === 'string') {
-      cleanPass = arg1.trim();
+      cleanPass = normalizeAuthorPasscode(arg1);
       myIds = Array.isArray(arg2) ? arg2 : getSavedMyCaseIds();
     } else {
       myIds = getSavedMyCaseIds();
@@ -535,7 +550,7 @@ export async function resubmitLessonCase(caseId, authorPasscode, formData) {
     const unifiedBody = (formData.lesson_goal ?? formData.lessonGoal ?? '').trim();
     const result = await callSupabaseRpc('resubmit_translation_case', {
       p_case_id: caseId,
-      p_author_passcode: authorPasscode,
+      p_author_passcode: normalizeAuthorPasscode(authorPasscode),
       p_title: formData.title,
       p_used_date: formData.used_date ?? formData.usedDate ?? new Date().toISOString().slice(0, 10),
       p_school_grade:
@@ -583,7 +598,7 @@ export async function removeMyLessonCase(caseId, authorPasscode) {
   try {
     const ok = await callSupabaseRpc('remove_my_translation_case', {
       p_case_id: caseId,
-      p_author_passcode: authorPasscode
+      p_author_passcode: normalizeAuthorPasscode(authorPasscode)
     });
     return {
       ok: Boolean(ok),
@@ -605,20 +620,22 @@ export async function deletePublicCaseWithPassword(caseId, password) {
     return { ok: false, message: '비밀번호를 입력해 주세요.' };
   }
 
-  // 1. Check server admin password first (allows deleting both DB posts and built-in sample posts)
+  // 1. Check author passcode for user-submitted post first
+  const isSample = FALLBACK_SAMPLE_CASES.some((c) => c.id === caseId);
+  if (!isSample) {
+    const authorRes = await removeMyLessonCase(caseId, cleanPw);
+    if (authorRes.ok) {
+      rememberDeletedSampleCaseId(caseId);
+      return { ok: true, message: '게시글이 삭제되었습니다.' };
+    }
+  }
+
+  // 2. Also allow server admin password (for both user posts and built-in sample posts)
   const adminCheck = await verifyAdminPasswordOnServer(cleanPw);
   if (adminCheck.ok) {
-    const isSample = FALLBACK_SAMPLE_CASES.some((c) => c.id === caseId);
     if (!isSample) {
       await adminReviewCase(cleanPw, caseId, 'delete', '');
     }
-    rememberDeletedSampleCaseId(caseId);
-    return { ok: true, message: '게시글이 삭제되었습니다.' };
-  }
-
-  // 2. Check author passcode for user-submitted post
-  const authorRes = await removeMyLessonCase(caseId, cleanPw);
-  if (authorRes.ok) {
     rememberDeletedSampleCaseId(caseId);
     return { ok: true, message: '게시글이 삭제되었습니다.' };
   }

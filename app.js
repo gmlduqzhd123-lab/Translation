@@ -3,7 +3,7 @@ import {
   extractDocumentFromBuffer,
   buildTranslatedDocument,
   buildOutputFileName
-} from './src/document-processor.js?v=20261020-19';
+} from './src/document-processor.js?v=20261020-20';
 import {
   TARGET_LANGUAGES,
   getTargetLanguageMeta,
@@ -13,7 +13,7 @@ import {
   startReverseTranslatorCreation,
   translateSingleText,
   speakTextWithBrowserTTS
-} from './src/translator-service.js?v=20261020-19';
+} from './src/translator-service.js?v=20261020-20';
 import {
   getAllGlossaryEntries,
   loadCustomGlossary,
@@ -23,7 +23,7 @@ import {
   evaluateLengthOverflowRisk,
   evaluateTranslationAccuracyIssues,
   evaluateTranslationTrafficLight
-} from './src/school-glossary.js?v=20261020-19';
+} from './src/school-glossary.js?v=20261020-20';
 import {
   saveWorkSessionToBrowser,
   loadWorkSessionFromBrowser,
@@ -31,7 +31,7 @@ import {
   isAutoSaveEnabled,
   setAutoSaveEnabled,
   getLastStorageError
-} from './src/storage-service.js?v=20261020-19';
+} from './src/storage-service.js?v=20261020-20';
 import {
   fetchApprovedCases,
   submitLessonCase,
@@ -50,19 +50,19 @@ import {
   adminChangePassword,
   adminFetchCaseReports,
   adminResolveCaseReport
-} from './src/case-sharing-service.js?v=20261020-19';
+} from './src/case-sharing-service.js?v=20261020-20';
 import {
   CLASSROOM_COMMUNICATION_CARDS,
   SCHOOL_NOTICE_TEMPLATES,
   buildExternalAiTranslationPrompt,
   encodeStudentViewPayload,
   decodeStudentViewPayload
-} from './src/teacher-toolkit.js?v=20261020-19';
+} from './src/teacher-toolkit.js?v=20261020-20';
 import {
   lookupInstantSampleTranslation,
   isBuiltInSampleDocument,
   generateSchoolDictionaryDraft
-} from './src/sample-instant-cache.js?v=20261020-19';
+} from './src/sample-instant-cache.js?v=20261020-20';
 
 const PREF_LANG_STORAGE_KEY = 'multilingual_translator_pref_lang_v1';
 const PREF_RECENT_LANGS_STORAGE_KEY = 'multilingual_translator_recent_langs_v2';
@@ -5019,7 +5019,7 @@ function openCaseWritePanel(editItem = null) {
     }
     if (els.caseInputGoal) els.caseInputGoal.value = buildUnifiedCaseText(editItem);
     if (els.caseInputPasscode) {
-      els.caseInputPasscode.value = (els.myCasesPasscodeInput?.value || '').trim() || getOrCreateAutoCasePasscode();
+      els.caseInputPasscode.value = (els.myCasesPasscodeInput?.value || '').trim();
     }
     if (els.chkCaseFactual) els.chkCaseFactual.checked = true;
     els.caseWritePanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -5038,6 +5038,9 @@ function openCaseWritePanel(editItem = null) {
     if (els.caseInputLang) {
       els.caseInputLang.value = state.selectedLangKey || 'vi';
     }
+    if (els.caseInputPasscode) {
+      els.caseInputPasscode.value = '';
+    }
     if (els.chkCaseFactual) {
       els.chkCaseFactual.checked = true;
     }
@@ -5052,6 +5055,7 @@ async function handleSubmitCaseForm(e) {
 
   const editId = (els.caseEditId?.value || '').trim();
   const unifiedContent = (els.caseInputGoal?.value || '').trim();
+  const rawPasscode = (els.caseInputPasscode?.value || '').trim();
 
   if (!unifiedContent) {
     showCaseFormFeedback('error', '후기 내용을 한 줄 이상 입력해 주세요.');
@@ -5059,13 +5063,16 @@ async function handleSubmitCaseForm(e) {
     return;
   }
 
+  if (!rawPasscode) {
+    showCaseFormFeedback('error', '게시글 삭제·수정에 사용할 비밀번호를 입력해 주세요.');
+    els.caseInputPasscode?.focus();
+    return;
+  }
+
   const autoTitle =
     (els.caseInputTitle?.value || '').trim() ||
     unifiedContent.replace(/\s+/g, ' ').slice(0, 40) + (unifiedContent.length > 40 ? '…' : '');
-  const autoPasscode =
-    (els.caseInputPasscode?.value || '').trim() ||
-    (els.myCasesPasscodeInput?.value || '').trim() ||
-    getOrCreateAutoCasePasscode();
+  const autoPasscode = rawPasscode;
   const autoUsedDate =
     (els.caseInputDate?.value || '').trim() ||
     els.caseEditId?.dataset?.usedDate ||

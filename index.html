@@ -27,9 +27,9 @@
   <script src="./ys-install.js" defer></script>
   <script src="./ys-qr.js" defer></script>
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="./styles.css?v=20261020-19" />
+  <link rel="stylesheet" href="./styles.css?v=20261020-20" />
   <script src="./vendor/jszip.min.js" defer></script>
-  <script type="module" src="./app.js?v=20261020-19"></script>
+  <script type="module" src="./app.js?v=20261020-20"></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">본문으로 바로 건너뛰기</a>
@@ -108,7 +108,7 @@
           </button>
         </div>
 
-        <div class="storage-control-bar" role="group" aria-label="온디바이스 보안 및 학교 환경 진단">
+        <div class="storage-control-bar hidden" role="group" aria-label="온디바이스 보안 및 학교 환경 진단">
           <div id="usage-stats-pill" class="usage-stats-pill hidden" title="업로드 문서 외부 서버 전송 0 Byte · 브라우저 내장 온디바이스 AI 및 다문화 학교 표준사전 기반">
             <span>🔒 외부 전송 <strong>0 Byte</strong> (온디바이스 AI)</span>
             <span class="usage-stats-sep">·</span>
@@ -117,7 +117,7 @@
           <button
             type="button"
             id="btn-open-school-diag"
-            class="btn btn-outline btn-sm school-diag-trigger-btn"
+            class="btn btn-outline btn-sm school-diag-trigger-btn hidden"
             aria-haspopup="dialog"
             aria-controls="school-diag-modal"
             title="학교 보급 PC(Chrome·Edge·웨일) 및 교육청 교내망 방화벽 환경에서의 정상 작동 여부를 즉시 진단합니다"
@@ -268,8 +268,8 @@
         <!-- ==================== 하단 보조 링크 한 줄 (테두리 박스 없음) ==================== -->
         <div class="step1-footer-links-bar">
           <span>🔒 파일 외부 전송 없음 (100% 기기 내 처리)</span>
-          <span aria-hidden="true">·</span>
-          <button type="button" id="btn-open-school-diag-inline" class="step1-footer-link" aria-haspopup="dialog" aria-controls="school-diag-modal">
+          <span aria-hidden="true" class="hidden">·</span>
+          <button type="button" id="btn-open-school-diag-inline" class="step1-footer-link hidden" aria-haspopup="dialog" aria-controls="school-diag-modal">
             🏫 학교 PC·교내망 작동 확인
           </button>
           <span aria-hidden="true">·</span>
@@ -999,7 +999,6 @@
             <input type="hidden" id="case-input-title" value="" />
             <input type="hidden" id="case-input-grade" value="현장 교사" />
             <input type="hidden" id="case-input-subject" value="수업·학급 활용" />
-            <input type="hidden" id="case-input-passcode" value="" />
             <input type="checkbox" id="chk-case-factual" checked class="hidden" aria-hidden="true" />
 
             <div class="case-quick-top-row">
@@ -1040,6 +1039,15 @@
                   maxlength="30"
                   placeholder="작성자"
                   aria-label="작성자 별칭 (선택)"
+                />
+                <input
+                  type="password"
+                  id="case-input-passcode"
+                  class="case-quick-passcode"
+                  maxlength="20"
+                  placeholder="비밀번호"
+                  aria-label="삭제용 비밀번호"
+                  autocomplete="new-password"
                 />
               </div>
             </div>
