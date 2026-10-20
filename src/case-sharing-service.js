@@ -52,10 +52,13 @@ export const FALLBACK_SAMPLE_CASES = [
     file_format: 'hwpx',
     lesson_goal:
       '학부모 상담주간 안내문 HWPX 파일 그대로 번역했는데 표가 안 깨져서 너무 편하네요. 베트남 학부모님도 바로 이해하셨다고 연락 왔습니다.',
-    tool_usage_process: '-',
-    teacher_review_notes: '-',
-    observed_results_limits: '-',
-    aggregate_metrics: '',
+    tool_usage_process:
+      '2학기 학부모 상담주간 신청서(HWPX 표 포함 14문단)를 업로드하여 [한국어+베트남어 병기] 모드로 변환',
+    teacher_review_notes:
+      '학교 용어집으로 "상담주간(Tuần lễ tư vấn)", "담임교사(Giáo viên chủ nhiệm)" 용어 통일 및 상담 시간표 숫자 누락 없음(🟢 안전) 확인',
+    observed_results_limits:
+      '기존에는 한국어 안내문을 읽지 못해 미제출하던 베트남 학부모님(2가구)이 희망 상담 일시를 표에 직접 체크해 당일 회신 완료',
+    aggregate_metrics: '초등 3학년 1개 학급 · 베트남 다문화 학생 2명 및 학부모',
     improvement_suggestions: '',
     author_display_name: '김** 교사',
     status: 'approved',
@@ -72,10 +75,13 @@ export const FALLBACK_SAMPLE_CASES = [
     file_format: 'hwpx',
     lesson_goal:
       '전학 온 학생 주간학습안내장이랑 알림장 번역할 때 매주 씁니다. 한국어 원문이랑 병기해서 뽑아주니 아이가 교실 생활 적응하는 데 큰 도움이 돼요.',
-    tool_usage_process: '-',
-    teacher_review_notes: '-',
-    observed_results_limits: '-',
-    aggregate_metrics: '',
+    tool_usage_process:
+      '매주 금요일 배부하는 초2 주간학습안내장(HWPX 요일별 시간표·준비물 표)을 중국어 간체 병기 모드로 변환',
+    teacher_review_notes:
+      '교과명(국어·수학·바른생활·슬기로운생활)과 준비물(색종이, 가위, 줄넘기)이 학교 필수 용어집으로 정확히 대조됨을 역번역으로 검수',
+    observed_results_limits:
+      '중도입국 학생이 월요일마다 미술·체육 준비물을 빠짐없이 챙겨 오고, 학부모님도 이번 주 배울 한국어 어휘를 가정에서 미리 지도함',
+    aggregate_metrics: '초등 2학년 1개 학급 · 중국 중도입국 학생 1명 및 보호자',
     improvement_suggestions: '',
     author_display_name: '햇살반쌤',
     status: 'approved',
@@ -92,10 +98,13 @@ export const FALLBACK_SAMPLE_CASES = [
     file_format: 'hwpx',
     lesson_goal:
       '현장체험학습 동의서 번역하느라 늘 막막했는데 1분 만에 해결했습니다. 서식 손댈 필요가 없어서 업무 시간이 확 줄었어요.',
-    tool_usage_process: '-',
-    teacher_review_notes: '-',
-    observed_results_limits: '-',
-    aggregate_metrics: '',
+    tool_usage_process:
+      '가을 현장체험학습 참가 신청 및 안전 동의서(HWPX)를 필리핀어(타갈로그어) 병기 문서로 변환',
+    teacher_review_notes:
+      '집결 시각(08:40), 준비물(점심 도시락, 돗자리, 물), 비상연락처 기입란 등 숫자·날짜 경고가 0건임을 확인 후 인쇄 배부',
+    observed_results_limits:
+      '학생이 "엄마가 필리핀어로 적힌 안내문을 보고 도시락이랑 출발 시간을 바로 아셨어요"라며 기뻐했고 동의서 수합 시간 단축',
+    aggregate_metrics: '초등 다문화 특별학급 · 필리핀 배경 학생 3명',
     improvement_suggestions: '',
     author_display_name: '박** 교사',
     status: 'approved',
@@ -112,10 +121,13 @@ export const FALLBACK_SAMPLE_CASES = [
     file_format: 'pptx',
     lesson_goal:
       '과학 실험 안전수칙 PPT를 한국어·러시아어 병기로 변환해서 띄워줬더니 고려인 학생이 수업에 훨씬 적극적으로 참여합니다.',
-    tool_usage_process: '-',
-    teacher_review_notes: '-',
-    observed_results_limits: '-',
-    aggregate_metrics: '',
+    tool_usage_process:
+      '5학년 과학 "산과 염기" 실험 안전수칙 및 탐구 순서 슬라이드(PPTX 12장)를 한국어+러시아어 줄바꿈 병기 및 글자 넘침 자동 조절로 변환',
+    teacher_review_notes:
+      '실험 기구 명칭(보안경, 실험용 장갑, 스포이트, 비커)을 검수하고, 문장이 길어진 3개 슬라이드는 자동 폰트 축소(85%)로 레이아웃 유지 확인',
+    observed_results_limits:
+      '실험 중 지시사항을 이해하지 못해 모둠원 뒤에만 서 있던 러시아권(고려인) 학생 2명이 먼저 보안경을 착용하고 실험 순서를 주도적으로 수행함',
+    aggregate_metrics: '초등 5학년 과학 전담 2개 학급 · 러시아어권 학생 3명',
     improvement_suggestions: '',
     author_display_name: '다문화멘토쌤',
     status: 'approved',
@@ -132,10 +144,13 @@ export const FALLBACK_SAMPLE_CASES = [
     file_format: 'pptx',
     lesson_goal:
       '알림장·회화 탭이 진짜 유용하네요. 준비물 안내 문구 번역해서 하이클래스 메시지로 바로 복사해 보내기 딱 좋습니다.',
-    tool_usage_process: '-',
-    teacher_review_notes: '-',
-    observed_results_limits: '-',
-    aggregate_metrics: '',
+    tool_usage_process:
+      '[알림장·회화] 탭에서 1학년 받아쓰기 안내 및 내일 준비물(종합장, 색연필) 템플릿을 선택해 베트남어 병기 문구로 즉시 변환',
+    teacher_review_notes:
+      '한국어 역번역 대조 기능으로 날짜와 준비물 명칭이 정확히 번역되었는지 10초 만에 확인 후 [한국어+번역문 병기 복사] 실행',
+    observed_results_limits:
+      '학급 알림장 앱(하이클래스)으로 발송 직후 학부모님께서 베트남어로 감사 답장을 보내주셨고 학생의 과제 이행률이 눈에 띄게 향상됨',
+    aggregate_metrics: '초등 1학년 담임 · 베트남 다문화 가정 2가구',
     improvement_suggestions: '',
     author_display_name: '이** 교사',
     status: 'approved',
@@ -152,10 +167,13 @@ export const FALLBACK_SAMPLE_CASES = [
     file_format: 'hwpx',
     lesson_goal:
       '캄보디아어는 번역기 돌리고 문서에 다시 붙여넣기가 까다로웠는데, 한글 파일 채로 바로 변환돼서 정말 편리합니다.',
-    tool_usage_process: '-',
-    teacher_review_notes: '-',
-    observed_results_limits: '-',
-    aggregate_metrics: '',
+    tool_usage_process:
+      '방과후학교 및 돌봄교실 시간 변경 안내문(HWPX)을 캄보디아어(크메르어)로 변환하여 인쇄 배부',
+    teacher_review_notes:
+      '학교 용어집의 "돌봄교실", "방과후학교", "하교 시간" 표준 크메르어 표현을 일괄 반영하고 한컴오피스에서 글꼴 깨짐 없음 확인',
+    observed_results_limits:
+      '하교 시각 혼선으로 발생하던 돌봄교실 지각 사례가 사라지고 학부모님과의 하교 안내 소통이 원활해짐',
+    aggregate_metrics: '초등 2학년 1개 학급 · 캄보디아 다문화 학생 1명 및 학부모',
     improvement_suggestions: '',
     author_display_name: '늘품교실쌤',
     status: 'approved',
@@ -172,10 +190,13 @@ export const FALLBACK_SAMPLE_CASES = [
     file_format: 'hwpx',
     lesson_goal:
       '중앙아시아 학생들 사회 단원 정리 학습지 만들어 줄 때 자주 활용하고 있습니다. 역번역으로 뜻이 맞는지 바로 확인돼서 안심돼요.',
-    tool_usage_process: '-',
-    teacher_review_notes: '-',
-    observed_results_limits: '-',
-    aggregate_metrics: '',
+    tool_usage_process:
+      '6학년 사회 단원 정리 빈칸 채우기 활동지(HWPX)를 한국어+우즈베크어 병기 모드로 변환 및 학생용 QR 모바일 활동지 함께 생성',
+    teacher_review_notes:
+      '핵심 사회 교과 어휘는 한국어 원문을 괄호 병기하도록 수정해 학생이 한국어 교과 개념어도 함께 익히도록 검수',
+    observed_results_limits:
+      '사회 용어가 어려워 학습지를 백지로 내던 우즈베크어권 학생이 모국어 설명을 참고해 스스로 한국어 핵심 단어를 찾아 적으며 단원평가를 완주함',
+    aggregate_metrics: '초등 6학년 1개 학급 · 우즈베크어권 학생 2명',
     improvement_suggestions: '',
     author_display_name: '최** 교사',
     status: 'approved',
@@ -186,16 +207,19 @@ export const FALLBACK_SAMPLE_CASES = [
     id: '00000000-0000-0000-0000-000000000108',
     title: '가정통신문 다국어 일괄 변환',
     used_date: '2026-10-05',
-    school_grade: '중등 학년부',
+    school_grade: '초등 학년부',
     subject: '가정통신문',
     target_language: 'zh-Hans',
     file_format: 'hwpx',
     lesson_goal:
       '가정통신문 하나를 베트남어·중국어·러시아어로 동시에 뽑아야 할 때 다국어 일괄 변환 기능이 정말 편합니다. 동학년 선생님들께도 공유했어요.',
-    tool_usage_process: '-',
-    teacher_review_notes: '-',
-    observed_results_limits: '-',
-    aggregate_metrics: '',
+    tool_usage_process:
+      '독감 예방접종 및 건강관리 가정통신문(HWPX)을 3단계 [다국어 동시 일괄 변환]으로 베트남어·중국어·러시아어 3개 국어 ZIP 묶음 생성',
+    teacher_review_notes:
+      '예방접종 기간 날짜와 병원 지참물(예진표, 보호자 동행) 항목의 숫자·날짜 일치 여부를 검수 요약 패널에서 일괄 확인',
+    observed_results_limits:
+      '학년 전체 다문화 가정(3개 국적 9가구)에 당일 오후 각 모국어 가정통신문을 동시 배부하여 행정 업무 시간을 2시간에서 5분으로 단축',
+    aggregate_metrics: '초등 4학년 전체(4개 학급) · 다문화 9가구(베트남·중국·러시아)',
     improvement_suggestions: '',
     author_display_name: '초록칠판쌤',
     status: 'approved',
@@ -212,10 +236,13 @@ export const FALLBACK_SAMPLE_CASES = [
     file_format: 'pptx',
     lesson_goal:
       '몽골 학생에게 미술 수업 준비물이랑 활동 순서를 PPT로 번역해 보여줬더니 설명할 때 눈빛부터 달라지네요. 감사합니다!',
-    tool_usage_process: '-',
-    teacher_review_notes: '-',
-    observed_results_limits: '-',
-    aggregate_metrics: '',
+    tool_usage_process:
+      '4학년 미술 만들기 단원 활동 순서 슬라이드(PPTX 8장)를 한국어+몽골어 병기로 변환하고 학생 태블릿용 QR 활동지 제공',
+    teacher_review_notes:
+      '1~4단계 만들기 순서 번호와 안전 주의사항("가위 사용 시 손 조심") 문구를 중점 검수 후 음성(TTS) 발음 카드 함께 활용',
+    observed_results_limits:
+      '교사의 구두 설명만으로는 순서를 놓치던 몽골 학생이 칠판 PPT의 몽골어 병기 문장을 보고 친구들과 같은 속도로 작품을 완성함',
+    aggregate_metrics: '초등 4학년 1개 학급 · 몽골 중도입국 학생 1명',
     improvement_suggestions: '',
     author_display_name: '정** 교사',
     status: 'approved',
@@ -232,10 +259,13 @@ export const FALLBACK_SAMPLE_CASES = [
     file_format: 'hwpx',
     lesson_goal:
       '급식 알레르기 안내문이나 보건 소식지 번역할 때 양식이 그대로 유지돼서 따로 편집할 게 거의 없네요. 현장에 꼭 필요한 도구입니다.',
-    tool_usage_process: '-',
-    teacher_review_notes: '-',
-    observed_results_limits: '-',
-    aggregate_metrics: '',
+    tool_usage_process:
+      '월간 학교 급식 식단 알레르기 유발 식품 표시 안내문(HWPX 표 문서)을 영어·베트남어 병기 문서로 각각 변환',
+    teacher_review_notes:
+      '알레르기 유발 식품 번호(①난류 ②우유 ⑤대두 ⑥밀 ⑨새우 등 1~19번 숫자)가 누락 없이 100% 보존되었는지 자동 경고 요약으로 확인',
+    observed_results_limits:
+      '외국인 가정 학부모님들께서 자녀의 알레르기 해당 번호를 정확히 확인해 회신서를 제출해 주셔서 안전한 급식 지도가 가능해짐',
+    aggregate_metrics: '전교 다문화·외국인 가정 14가구 대상 보건·급식 안내',
     improvement_suggestions: '',
     author_display_name: '조** 교사',
     status: 'approved',

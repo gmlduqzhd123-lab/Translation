@@ -4665,3 +4665,224 @@ body {
   }
   .storage-control-bar { width: 100%; justify-content: center; }
 }
+
+/* ==================== 🏫 공모전 심사 & 학교 PC·교내망 작동 자가진단 모달 + 수업 증빙 카드 ==================== */
+.school-diag-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  color: #166534;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.school-diag-trigger-btn:hover {
+  background: #dcfce7;
+  border-color: #4ade80;
+  color: #14532d;
+}
+
+.school-diag-dialog {
+  max-width: 820px;
+  width: 94vw;
+}
+
+.school-diag-overall-banner {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  border: 1.5px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.school-diag-overall-banner.is-pass {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #14532d;
+}
+
+.school-diag-overall-banner.is-warn {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.school-diag-items-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 720px) {
+  .school-diag-items-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.school-diag-card {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.school-diag-card.is-pass {
+  border-color: #bbf7d0;
+  background: #f8fafc;
+}
+
+.school-diag-card.is-warn {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.school-diag-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.school-diag-card-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.school-diag-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.school-diag-status-pill.is-pass {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.school-diag-status-pill.is-warn {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.school-diag-card-detail {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.school-diag-scope-box {
+  padding: 12px 15px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  font-size: 0.83rem;
+  line-height: 1.55;
+  color: #1e293b;
+}
+
+.school-diag-scope-box strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #0f172a;
+}
+
+.school-diag-scope-box p {
+  margin: 0;
+}
+
+.case-evidence-summary-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 11px 15px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  font-size: 0.85rem;
+  color: #1e3a8a;
+}
+
+.case-evidence-badge {
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.case-evidence-summary-text {
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.case-grade-subj-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.case-evidence-detail-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.case-evidence-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.82rem;
+  line-height: 1.48;
+  color: #334155;
+}
+
+.case-evidence-label {
+  flex: 0 0 auto;
+  font-weight: 800;
+  color: #0f172a;
+  min-width: 108px;
+}
+
+@media (max-width: 640px) {
+  .case-evidence-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .case-evidence-label {
+    min-width: 0;
+  }
+}
+

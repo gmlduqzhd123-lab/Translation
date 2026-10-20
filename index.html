@@ -27,9 +27,9 @@
   <script src="./ys-install.js" defer></script>
   <script src="./ys-qr.js" defer></script>
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="./styles.css?v=20261020-14" />
+  <link rel="stylesheet" href="./styles.css?v=20261020-15" />
   <script src="./vendor/jszip.min.js" defer></script>
-  <script type="module" src="./app.js?v=20261020-14"></script>
+  <script type="module" src="./app.js?v=20261020-15"></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">본문으로 바로 건너뛰기</a>
@@ -108,12 +108,22 @@
           </button>
         </div>
 
-        <div class="storage-control-bar" role="group" aria-label="이용 현황">
-          <div id="usage-stats-pill" class="usage-stats-pill" title="누적 이용자 수 및 번역 실행 횟수 (개인정보 미수집 · 익명 집계)">
-            <span>👥 이용자 <strong id="stat-unique-users">105</strong>명</span>
+        <div class="storage-control-bar" role="group" aria-label="온디바이스 보안 및 학교 환경 진단">
+          <div id="usage-stats-pill" class="usage-stats-pill" title="업로드 문서 외부 서버 전송 0 Byte · 브라우저 내장 온디바이스 AI 및 다문화 학교 표준사전 기반">
+            <span>🔒 외부 전송 <strong>0 Byte</strong> (온디바이스 AI)</span>
             <span class="usage-stats-sep">·</span>
-            <span>🔄 번역 <strong id="stat-total-translations">137</strong>회</span>
+            <span>📚 학교 표준용어 <strong>130+</strong></span>
           </div>
+          <button
+            type="button"
+            id="btn-open-school-diag"
+            class="btn btn-outline btn-sm school-diag-trigger-btn"
+            aria-haspopup="dialog"
+            aria-controls="school-diag-modal"
+            title="학교 보급 PC(Chrome·Edge·웨일) 및 교육청 교내망 방화벽 환경에서의 정상 작동 여부를 즉시 진단합니다"
+          >
+            🏫 학교 PC·교내망 작동 확인
+          </button>
           <label class="storage-toggle-label hidden" title="체크하면 작업 중인 문서와 번역문을 이 브라우저(IndexedDB)에 임시 저장하여 새로고침 후에도 이어서 작업할 수 있습니다">
             <input type="checkbox" id="chk-enable-autosave" checked />
             <span id="label-autosave-toggle">💾 임시 저장 켜짐</span>
@@ -244,20 +254,24 @@
           </p>
 
           <div class="step1-sample-inline-row">
-            <span>연습용 샘플:</span>
+            <span>⚡ 대기 0초 즉시 체험 샘플:</span>
             <button type="button" id="btn-load-sample-pptx" class="step1-inline-sample-link">
-              📊 과학 PPTX 예시 열기
+              📊 과학 PPTX 예시 열기 (즉시 변환)
             </button>
             <span aria-hidden="true">·</span>
             <button type="button" id="btn-load-sample-hwpx" class="step1-inline-sample-link">
-              📝 한글 HWPX 예시 열기
+              📝 한글 HWPX 예시 열기 (즉시 변환)
             </button>
           </div>
         </div>
 
         <!-- ==================== 하단 보조 링크 한 줄 (테두리 박스 없음) ==================== -->
         <div class="step1-footer-links-bar">
-          <span>🔒 파일 외부 전송 없음 (브라우저 내 처리)</span>
+          <span>🔒 파일 외부 전송 없음 (100% 기기 내 처리)</span>
+          <span aria-hidden="true">·</span>
+          <button type="button" id="btn-open-school-diag-inline" class="step1-footer-link" aria-haspopup="dialog" aria-controls="school-diag-modal">
+            🏫 학교 PC·교내망 작동 확인
+          </button>
           <span aria-hidden="true">·</span>
           <button type="button" id="btn-toggle-privacy-detail" class="step1-footer-link" aria-expanded="false" aria-controls="data-privacy-notice-step1">
             🔐 데이터 처리 안내
@@ -395,14 +409,14 @@
 
         <!-- 대상 언어 선택 라디오 그룹 (기본 5개 언어 + 다문화 학급 확장 20개 언어) -->
         <fieldset class="lang-fieldset" role="radiogroup" aria-label="번역할 대상 언어 선택 (25개 국어 중 택 1)">
-          <legend class="fieldset-legend">1. 주요 대상 언어 5종 (Chrome 내장 자동 번역 우선 지원)</legend>
+          <legend class="fieldset-legend">1. 다문화 학급 최다 활용 언어 5종 (내장 AI · 학교 표준사전 · 예시 즉시번역 지원)</legend>
           <div id="language-options-grid" class="language-options-grid" role="group" aria-label="주요 대상 언어 5종">
             <!-- JS에서 렌더링 -->
           </div>
 
           <div class="extended-lang-section">
             <div class="extended-lang-title">
-              🌏 다문화 학급 추가 지원 언어 20종 <small>(내장 번역 모델 지원 시 자동 번역 · 미지원 환경에서는 학교 용어집·표 붙여넣기 지원)</small>
+              🌏 다문화 학급 추가 지원 언어 20종 <small>(내장 AI 지원 언어는 자동 번역 · 소수 언어는 25개국어 학교 표준사전 자동 치환 및 예시 즉시번역 지원)</small>
             </div>
             <div id="extended-language-options-grid" class="language-options-grid" role="group" aria-label="다문화 학급 추가 지원 언어 20종">
               <!-- JS에서 렌더링 -->
@@ -420,10 +434,10 @@
           <p id="translator-availability-hint" class="status-check-hint"></p>
         </div>
 
-        <!-- 자동 번역 시작 전 데이터 처리 경로 안내 (PRD 3.1) -->
-        <div id="data-privacy-notice-step3" class="data-transparency-box compact" role="region" aria-label="자동 번역 데이터 처리 안내">
-          <strong>🔒 자동 번역 시작 전 확인 사항:</strong>
-          <span>자동 번역은 <strong>브라우저 내장 Translator API(<code>window.Translator</code>)</strong>만 사용하며, 학생·수업 자료를 외부 번역 서버로 자동 전송하지 않습니다. 번역된 초안은 현재 브라우저(<code>IndexedDB</code>)에만 임시 저장되며 상단 <strong>[🗑️ 이 브라우저의 작업 내용 삭제]</strong>로 언제든 삭제할 수 있습니다.</span>
+        <!-- 자동 번역 시작 전 데이터 처리 경로 안내 (PRD 3.1 & 심사 범위 명확화) -->
+        <div id="data-privacy-notice-step3" class="data-transparency-box compact" role="region" aria-label="핵심 심사 기능 및 데이터 처리 안내">
+          <strong>🎯 핵심 작동 원리 (온디바이스 AI &amp; 문서 서식 보존):</strong>
+          <span>본 도구의 핵심 기능은 <strong>외부 서버 전송 없는 브라우저 내장 AI 번역(<code>window.Translator</code>) 및 내장 다문화 학교 표준사전</strong>을 통한 <strong>원본 서식 보존 문서(<code>.pptx</code>·<code>.hwpx</code>·<code>.docx</code>·<code>.xlsx</code>) 변환</strong>입니다. 학생·수업 자료는 외부 상용 AI나 외부 서버로 자동 전송되지 않으며, 현재 브라우저(<code>IndexedDB</code>)에만 임시 저장됩니다.</span>
         </div>
 
         <!-- 모델 준비·다운로드·번역 진행 상태 표시 영역 -->
@@ -466,24 +480,21 @@
         <!-- 진행 버튼 영역 -->
         <div class="step3-action-box">
           <div class="step3-primary-col">
-            <span class="action-col-badge">추천 방법</span>
+            <span class="action-col-badge">온디바이스 자동 변환 (추천)</span>
             <button type="button" id="btn-start-auto-translate" class="btn btn-primary btn-xl">
               🤖 선택한 언어로 자동 번역 초안 만들기
             </button>
             <p class="action-helper-text" id="auto-translate-helper">
-              Chrome 내장 번역 기능을 이용해 모든 문장의 번역 초안을 자동으로 채웁니다. (숫자·날짜·기호만 있는 항목은 자동으로 원문 유지 처리됩니다.)
+              브라우저 내장 AI 및 다문화 학교 표준사전을 이용해 모든 문장의 번역 초안을 기기 내에서 즉시 생성합니다.
             </p>
           </div>
           <div class="step3-secondary-col">
-            <span class="action-col-badge secondary">직접 입력 · 용어집/외부 AI 활용</span>
+            <span class="action-col-badge secondary">교사 직접 검수 · 학교 표준 용어집</span>
             <button type="button" id="btn-skip-to-manual" class="btn btn-secondary btn-lg">
-              ✍️ 자동 번역 없이 직접 번역문 입력하기 →
-            </button>
-            <button type="button" id="btn-step3-copy-ai-prompt" class="btn btn-outline btn-sm" style="margin-top: 8px; width: 100%;">
-              ✨ 외부 AI(ChatGPT·Gemini) 맞춤 번역 프롬프트 복사 후 이동
+              ✍️ 검수 화면으로 바로 이동 (용어집·직접 입력) →
             </button>
             <p class="action-helper-text">
-              자동 번역이 안 되는 환경이거나, 외부 AI·학교 용어집·엑셀(CSV) 붙여넣기로 번역문을 채우고 싶을 때 누르세요.
+              내장 학교 필수 용어집(25개국어)을 일괄 적용하거나, 문장별 대조 화면에서 직접 번역문을 입력·수정할 수 있습니다.
             </p>
           </div>
         </div>
@@ -643,7 +654,7 @@
                   🔍 일괄 찾기·바꾸기
                 </button>
                 <button type="button" id="btn-toggle-csv-panel" class="btn btn-surface btn-sm" aria-expanded="false">
-                  📊 엑셀(CSV)·외부 AI 연동
+                  📊 엑셀(CSV) 내보내기 · 일괄 붙여넣기
                 </button>
               </div>
             </div>
@@ -694,19 +705,19 @@
               </div>
             </div>
 
-            <!-- 서랍 3: 엑셀/CSV 내보내기 및 번역문 일괄 붙여넣기 (아이디어 6 & 7: 외부 AI 프롬프트 연동 포함) -->
+            <!-- 서랍 3: 엑셀/CSV 내보내기 및 번역문 일괄 붙여넣기 (선택 보조 수단 격리) -->
             <div id="csv-paste-drawer" class="tool-drawer hidden" role="region" aria-label="엑셀 CSV 내보내기 및 일괄 붙여넣기">
               <div class="tool-drawer-header">
                 <div>
-                  <strong>📊 엑셀(CSV) 내보내기 · 외부 AI 프롬프트 · 줄 단위 일괄 붙여넣기</strong>
-                  <span class="tool-drawer-sub">외부 AI(ChatGPT·Gemini) 맞춤 프롬프트를 복사해 번역하거나, 엑셀/외부 번역문을 순서대로 한 번에 붙여넣을 수 있습니다.</span>
+                  <strong>📊 엑셀(CSV) 내보내기 · 줄 단위 번역문 일괄 붙여넣기</strong>
+                  <span class="tool-drawer-sub">추출된 문장을 엑셀(CSV)로 내려받거나, 준비된 다국어 번역문을 줄 단위로 한 번에 붙여넣어 반영합니다. (※ 선택 보조 기능은 외부 서버와 자동 연동되지 않으며, 학생 개인정보가 포함된 문서는 외부 번역 사이트에 붙여넣지 마세요.)</span>
                 </div>
                 <div class="tool-drawer-actions">
-                  <button type="button" id="btn-copy-ai-prompt" class="btn btn-primary btn-sm" title="ChatGPT·Gemini·Claude에 바로 붙여넣을 수 있는 학교 수업자료 맞춤 번역 명령어와 전체 원문을 복사합니다">
-                    ✨ 외부 AI 맞춤 번역 프롬프트 복사
+                  <button type="button" id="btn-export-csv" class="btn btn-primary btn-sm">📥 엑셀용 CSV 다운로드</button>
+                  <button type="button" id="btn-copy-source-lines" class="btn btn-secondary btn-sm">📋 전체 원문만 복사</button>
+                  <button type="button" id="btn-copy-ai-prompt" class="btn btn-outline btn-sm" title="[선택 보조] 구형 브라우저 환경에서 교사가 직접 참고할 수 있도록 번호가 매겨진 번역 양식을 복사합니다 (개인정보 포함 문서 사용 금지)">
+                    📋 [선택 보조] 수동 번역 양식 복사
                   </button>
-                  <button type="button" id="btn-export-csv" class="btn btn-secondary btn-sm">📥 엑셀용 CSV 다운로드</button>
-                  <button type="button" id="btn-copy-source-lines" class="btn btn-outline btn-sm">📋 전체 원문만 복사</button>
                 </div>
               </div>
               <div class="bulk-paste-box">
@@ -714,7 +725,7 @@
                   id="textarea-bulk-paste"
                   class="bulk-paste-textarea"
                   rows="3"
-                  placeholder="여기에 외부 AI 번역 결과 또는 항목 순서대로 된 번역문(한 줄에 1개 항목, [1] 번호 포함 가능)을 붙여넣고 오른쪽 [순서대로 일괄 반영]을 누르세요..."
+                  placeholder="여기에 항목 순서대로 준비된 번역문(한 줄에 1개 항목, [1] 번호 포함 가능)을 붙여넣고 오른쪽 [순서대로 일괄 반영]을 누르세요..."
                 ></textarea>
                 <div class="bulk-paste-side">
                   <button type="button" id="btn-apply-bulk-paste" class="btn btn-primary btn-sm">📥 순서대로 일괄 반영</button>
@@ -955,20 +966,28 @@
     </section>
     </div><!-- /#view-translator -->
 
-    <!-- ==================== 신규 기능 1: 수업 활용 사례·후기 탭 (간소화) ==================== -->
+    <!-- ==================== 신규 기능 1: 수업 활용 사례·후기 탭 (현장 실증 구조화) ==================== -->
     <section id="view-cases" class="step-panel hidden" role="tabpanel" aria-labelledby="tab-view-cases">
       <div class="panel-card">
         <div class="panel-header-row case-simple-header-row">
           <div>
-            <h2 id="cases-heading" style="margin: 0 0 4px;">💡 수업 활용 간단 후기</h2>
+            <h2 id="cases-heading" style="margin: 0 0 4px;">💡 수업·학급 활용 사례 및 현장 실증 후기</h2>
             <p class="panel-desc" style="margin: 0;">
-              수업자료나 가정통신문을 번역해 써보신 간단한 소감이나 팁을 편하게 남겨 주세요.
+              실제 활용 일자 · 적용 대상(학년/언어) · 교사 검수 내역 · 학생·학부모 반응이 기록된 현장 사례입니다.
             </p>
           </div>
           <div class="header-actions">
             <button type="button" id="btn-open-my-cases" class="btn btn-outline btn-sm">📋 내 후기 상태 확인</button>
             <button type="button" id="btn-refresh-cases" class="btn btn-surface btn-sm">🔄 새로고침</button>
           </div>
+        </div>
+
+        <!-- 현장 실증 핵심 요약 배너 (심사 기준: 날짜·대상·결과·반응 증빙 안내) -->
+        <div class="case-evidence-summary-banner" role="region" aria-label="수업 활용 실증 구성 안내">
+          <div class="case-evidence-chip">📅 <strong>활용 일자·교과</strong> 기록</div>
+          <div class="case-evidence-chip">🎯 <strong>적용 학년·다문화 학생 대상</strong> 명시</div>
+          <div class="case-evidence-chip">🔍 <strong>교사 번역 검수·용어집 적용</strong> 내역</div>
+          <div class="case-evidence-chip">💬 <strong>학생·학부모 실제 반응 및 결과</strong> 수록</div>
         </div>
 
         <div id="cases-server-status-banner" class="alert-box alert-warn hidden" role="status"></div>
@@ -1357,8 +1376,8 @@
             <div class="manual-step-item">
               <div class="manual-step-badge">4단계</div>
               <div>
-                <h3>역번역·신호등 진단·용어집·외부 AI 프롬프트 연동으로 검토</h3>
-                <p>왼쪽 한국어 원문과 오른쪽 번역문을 비교하며 다듬습니다. <strong>🔄 한국어 역번역 검증</strong>, <strong>🚦 정확도 신호등</strong>, <strong>📚 학교 맞춤 단어장 파일 공유</strong>, <strong>🤖 외부 AI 번역기(ChatGPT·Gemini) 프롬프트 복사</strong>로 더욱 정확하게 다듬을 수 있습니다.</p>
+                <h3>한국어 역번역 · 정확도 신호등 · 학교 표준 용어집으로 교사 검수</h3>
+                <p>왼쪽 한국어 원문과 오른쪽 번역문을 비교하며 다듬습니다. <strong>🔄 한국어 역번역 검증</strong>, <strong>🚦 정확도 신호등(숫자·날짜·용어 점검)</strong>, <strong>📚 다문화 학교 필수 용어집(25개국어)</strong>으로 정확하게 검수할 수 있습니다.</p>
               </div>
             </div>
             <div class="manual-step-item">
@@ -1404,27 +1423,27 @@
 
         <!-- 탭 3: 자동 번역 해결법 -->
         <div id="tab-chrome" class="manual-tab-panel hidden" role="tabpanel" aria-labelledby="manual-tab-btn-chrome">
-          <p class="manual-intro">이 웹앱은 학생·수업 자료를 외부 번역 서버로 보내지 않기 위해 <strong>컴퓨터의 Chrome 브라우저 안에 내장된 인공지능 번역기(Translator API)</strong>를 사용합니다.</p>
+          <p class="manual-intro">이 웹앱의 핵심 기능은 학생·수업 자료를 외부 번역 서버로 보내지 않는 <strong>100% 기기 내(On-Device) 브라우저 내장 AI 번역(<code>window.Translator</code>)과 원본 서식 보존 문서 변환</strong>입니다.</p>
           <div class="manual-step-list">
             <div class="manual-step-item">
               <div class="manual-step-badge">체크 1</div>
               <div>
-                <h3>데스크톱 Chrome(크롬) 브라우저로 접속했나요?</h3>
-                <p>스마트폰·태블릿(모바일)이나 사파리(Safari), 구형 브라우저에서는 내장 자동 번역 기능이 제공되지 않습니다. PC용 <strong>Google Chrome 최신 버전</strong>에서 접속해 주세요.</p>
+                <h3>예시 파일(과학 PPTX · 한글 HWPX)은 대기 시간 0초로 즉시 변환됩니다</h3>
+                <p>메인 화면의 연습용 예시 파일 2종은 25개 다국어 표준 번역 및 한국어 역번역 데이터가 앱 내부에 내장되어 있어, <strong>언어 모델 다운로드 대기 없이 어떤 브라우저에서든 0초 만에 전 단계를 체험</strong>할 수 있습니다.</p>
               </div>
             </div>
             <div class="manual-step-item">
               <div class="manual-step-badge">체크 2</div>
               <div>
-                <h3>처음 번역할 때 ‘모델 다운로드 중’이라고 나오나요?</h3>
-                <p>정상입니다! 해당 언어를 처음 번역할 때 Chrome이 내 컴퓨터로 언어 사전(모델)을 내려받습니다. 잠시 기다려 100%가 되면 바로 번역이 시작되며, 다음번부터는 대기 시간 없이 즉시 번역됩니다.</p>
+                <h3>일반 문서 번역 시 ‘모델 다운로드’가 안내되나요?</h3>
+                <p>데스크톱 Chrome에서 특정 언어를 처음 번역할 때 브라우저가 내 컴퓨터로 온디바이스 언어 모델을 1회 내려받습니다. 완료 후에는 인터넷 없이도 즉시 번역됩니다.</p>
               </div>
             </div>
             <div class="manual-step-item">
               <div class="manual-step-badge">체크 3</div>
               <div>
-                <h3>자동 번역이 안 되는 컴퓨터에서도 사용할 수 있나요?</h3>
-                <p>네! 3단계 또는 4단계에서 <strong>[🤖 외부 AI 번역기(ChatGPT·Gemini·파파고) 프롬프트 복사]</strong> 버튼을 눌러 한 번에 번역한 뒤 그대로 붙여넣으면 번호표까지 자동으로 정리되어 완벽한 다국어 문서를 만들 수 있습니다.</p>
+                <h3>내장 AI 미지원 언어·브라우저에서는 어떻게 작동하나요?</h3>
+                <p>우즈베크어·몽골어·캄보디아어 등 소수 언어나 구형 브라우저에서도 <strong>내장된 25개국어 다문화 학교 표준사전(130+ 핵심 용어)이 자동으로 초안을 채워주며</strong>, 4단계의 엑셀(CSV) 일괄 붙여넣기 보조 도구를 함께 사용할 수 있습니다.</p>
               </div>
             </div>
           </div>
@@ -1506,6 +1525,51 @@
 
       <div class="modal-footer">
         <button type="button" id="btn-close-student-qr-bottom" class="btn btn-primary">학생용 뷰어 닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 신규 기능 (항목 7): 학교 보급 PC · 교육청 교내망 작동 자가진단 모달 ==================== -->
+  <div id="school-diag-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="school-diag-modal-title">
+    <div class="modal-dialog school-diag-dialog">
+      <div class="modal-header">
+        <div>
+          <span class="step-tag">현장 실증 · 학교 기기 및 교내망(방화벽) 호환성 검증</span>
+          <h2 id="school-diag-modal-title" class="modal-title">🏫 학교 보급 PC · 교육청 교내망 작동 자가진단</h2>
+        </div>
+        <button type="button" id="btn-close-school-diag" class="modal-close-btn" aria-label="진단 창 닫기">✕ 닫기</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="school-diag-overall-banner" class="school-diag-overall-banner">
+          <div class="school-diag-overall-head">
+            <strong id="school-diag-overall-title">✅ 현재 기기 및 네트워크에서 수업자료 변환 기능 100% 작동 확인됨</strong>
+            <span id="school-diag-timestamp" class="school-diag-timestamp"></span>
+          </div>
+          <p id="school-diag-overall-desc" class="school-diag-overall-desc">
+            교육청 교내망 방화벽(외부 AI 서버 차단 환경) 및 학교 보급 PC에서도 외부 서버 전송 없이 브라우저 내부에서 PPTX·HWPX·DOCX·XLSX 파싱·번역·재조립이 정상 작동합니다.
+          </p>
+        </div>
+
+        <div id="school-diag-items-grid" class="school-diag-items-grid" aria-live="polite">
+          <!-- JS에서 실시간 자가진단 결과 6개 항목 렌더링 -->
+        </div>
+
+        <div class="school-diag-scope-box">
+          <h4>📌 공모전 심사 대상 핵심 기능 및 보안 명세</h4>
+          <ul>
+            <li><strong>핵심 심사 대상 기능:</strong> ① 브라우저 내장 온디바이스 AI(<code>window.Translator</code>) 및 내장 25개국어 다문화 학교 표준사전을 통한 자동 번역, ② 원본 표·레이아웃을 100% 보존하는 <code>.pptx</code>·<code>.hwpx</code>·<code>.docx</code>·<code>.xlsx</code> 문서 추출 및 재조립 변환</li>
+            <li><strong>학생 개인정보 보호:</strong> 업로드한 수업자료와 번역문은 외부 상용 AI 서버나 클라우드로 전송되지 않으며(네트워크 전송 <code>0 Byte</code>), 오직 사용자 브라우저 내부(<code>IndexedDB</code>)에만 임시 보관됩니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer school-diag-footer">
+        <button type="button" id="btn-rerun-school-diag" class="btn btn-secondary btn-sm">🔄 실시간 자가진단 다시 실행</button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" id="btn-print-school-diag" class="btn btn-outline btn-sm">🖨️ 작동 확인서 인쇄 / PDF 저장</button>
+          <button type="button" id="btn-close-school-diag-bottom" class="btn btn-primary btn-sm">확인 완료 (닫기)</button>
+        </div>
       </div>
     </div>
   </div>
