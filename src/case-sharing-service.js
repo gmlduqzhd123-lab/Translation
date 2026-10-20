@@ -274,17 +274,25 @@ export const FALLBACK_SAMPLE_CASES = [
   }
 ];
 
-export function getOrCreateAutoCasePasscode() {
+// Remove only this app's obsolete plaintext password and analytics keys.
+// Case IDs, document sessions, preferences and other apps' data are preserved.
+for (const key of [
+  MY_CASE_PASSCODE_STORAGE_KEY,
+  'multilingual_translator_visitor_id_v1',
+  'multilingual_translator_usage_stats_cache_v2'
+]) {
   try {
-    if (typeof localStorage === 'undefined') return 'teacher2026';
-    let pw = localStorage.getItem(MY_CASE_PASSCODE_STORAGE_KEY);
-    if (!pw || pw.trim().length < 4) {
-      pw = 'tc-' + Math.random().toString(36).slice(2, 8);
-      localStorage.setItem(MY_CASE_PASSCODE_STORAGE_KEY, pw);
-    }
-    return pw;
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
   } catch {
-    return 'teacher2026';
+    // Browsers that block storage must still be able to use document conversion.
+  }
+}
+
+function requireCaseConfirmations(formData) {
+  if (formData.confirmed_factual !== true ||
+      formData.confirmed_no_pii !== true ||
+      formData.confirmed_public_rights !== true) {
+    throw new Error('실제 활용 사실, 개인정보 제외, 공개 권한·서버 전송 안내를 모두 직접 확인해 주세요.');
   }
 }
 
@@ -429,18 +437,10 @@ function normalizeAuthorPasscode(pw) {
 export async function submitLessonCase(formData) {
   try {
     const unifiedBody = (formData.lesson_goal ?? formData.lessonGoal ?? '').trim();
-    const confirmedAll = Boolean(
-      formData.confirmed_factual ?? formData.confirmedFactual ?? formData.confirmed_authentic
-    );
+    requireCaseConfirmations(formData);
     const rawPasscode = String(formData.author_passcode ?? formData.authorPasscode ?? '').trim();
+    if (!rawPasscode) throw new Error('작성자 비밀번호를 입력해 주세요.');
     const normalizedPasscode = normalizeAuthorPasscode(rawPasscode);
-    if (rawPasscode && typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem(MY_CASE_PASSCODE_STORAGE_KEY, rawPasscode);
-      } catch {
-        // ignore
-      }
-    }
     const result = await callSupabaseRpc('submit_translation_case', {
       p_title: formData.title,
       p_used_date: formData.used_date ?? formData.usedDate ?? new Date().toISOString().slice(0, 10),
@@ -469,16 +469,9 @@ export async function submitLessonCase(formData) {
         formData.improvement_suggestions ?? formData.improvementSuggestions ?? '',
       p_author_display_name:
         (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '김**',
-      p_confirmed_factual: confirmedAll,
-      p_confirmed_no_pii: Boolean(
-        formData.confirmed_no_pii ?? formData.confirmedNoPii ?? confirmedAll
-      ),
-      p_confirmed_public_rights: Boolean(
-        formData.confirmed_public_rights ??
-          formData.confirmedPublicRights ??
-          formData.confirmed_copyright ??
-          confirmedAll
-      ),
+      p_confirmed_factual: formData.confirmed_factual,
+      p_confirmed_no_pii: formData.confirmed_no_pii,
+      p_confirmed_public_rights: formData.confirmed_public_rights,
       p_author_passcode: normalizedPasscode
     });
 
@@ -547,6 +540,7 @@ export const fetchMySubmittedCases = fetchMyCases;
 
 export async function resubmitLessonCase(caseId, authorPasscode, formData) {
   try {
+    requireCaseConfirmations(formData);
     const unifiedBody = (formData.lesson_goal ?? formData.lessonGoal ?? '').trim();
     const result = await callSupabaseRpc('resubmit_translation_case', {
       p_case_id: caseId,
@@ -822,120 +816,4 @@ export async function adminChangePassword(currentPassword, newPassword) {
 }
 
 export const changeAdminPasswordOnServer = adminChangePassword;
-
-/* ==================== 익명 이용자 수 & 번역 이용 횟수 집계 서비스 ==================== */
-
-const STATS_SUPABASE_URL = 'https://oaavmecavooowuayjxjn.supabase.co';
-const STATS_SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hYXZtZWNhdm9vb3d1YXlqeGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NTE5OTAsImV4cCI6MjEwNjEyNzk5MH0.hRe-EAtxpqZLA61qa389aXjOIiFpsXXMdcj_JrJvgoI';
-
-const VISITOR_ID_STORAGE_KEY = 'multilingual_translator_visitor_id_v1';
-const LOCAL_STATS_CACHE_KEY = 'multilingual_translator_usage_stats_cache_v2';
-
-export function getOrCreateAnonymousVisitorId() {
-  try {
-    if (typeof localStorage === 'undefined') return 'anon-session';
-    let vid = localStorage.getItem(VISITOR_ID_STORAGE_KEY);
-    if (!vid || vid.trim().length < 6) {
-      const rand =
-        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-          ? crypto.randomUUID()
-          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-      vid = `usr-${rand}`;
-      localStorage.setItem(VISITOR_ID_STORAGE_KEY, vid);
-    }
-    return vid;
-  } catch {
-    return 'anon-session';
-  }
-}
-
-function getCachedUsageStats() {
-  try {
-    if (typeof localStorage === 'undefined') return { unique_users: 105, total_translations: 137 };
-    const raw = localStorage.getItem(LOCAL_STATS_CACHE_KEY);
-    if (!raw) return { unique_users: 105, total_translations: 137 };
-    const parsed = JSON.parse(raw);
-    return {
-      unique_users: Math.max(105, Number(parsed?.unique_users) || 105),
-      total_translations: Math.max(137, Number(parsed?.total_translations) || 137),
-      doc_translations: Math.max(98, Number(parsed?.doc_translations) || 98),
-      notice_translations: Math.max(39, Number(parsed?.notice_translations) || 39)
-    };
-  } catch {
-    return { unique_users: 105, total_translations: 137 };
-  }
-}
-
-function saveCachedUsageStats(stats) {
-  try {
-    if (typeof localStorage === 'undefined' || !stats) return;
-    localStorage.setItem(LOCAL_STATS_CACHE_KEY, JSON.stringify(stats));
-  } catch {
-    // ignore storage quota errors
-  }
-}
-
-async function callStatsRpc(rpcName, params = {}) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
-  try {
-    const res = await fetch(`${STATS_SUPABASE_URL}/rest/v1/rpc/${rpcName}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: STATS_SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${STATS_SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify(params),
-      signal: controller.signal
-    });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-    return await res.json();
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-export async function registerVisitorAndFetchStats() {
-  const visitorId = getOrCreateAnonymousVisitorId();
-  try {
-    const data = await callStatsRpc('register_translation_visitor', {
-      p_visitor_id: visitorId
-    });
-    if (data && typeof data === 'object') {
-      saveCachedUsageStats(data);
-      return data;
-    }
-  } catch {
-    // Fallback to local cache if offline
-  }
-  return getCachedUsageStats();
-}
-
-export async function recordTranslationUsageEvent(eventType = 'document') {
-  const visitorId = getOrCreateAnonymousVisitorId();
-  try {
-    const data = await callStatsRpc('record_translation_event', {
-      p_visitor_id: visitorId,
-      p_event_type: eventType
-    });
-    if (data && typeof data === 'object') {
-      saveCachedUsageStats(data);
-      return data;
-    }
-  } catch {
-    // Offline fallback: increment cached count locally
-    const cached = getCachedUsageStats();
-    const updated = {
-      ...cached,
-      total_translations: (cached.total_translations || 0) + 1
-    };
-    saveCachedUsageStats(updated);
-    return updated;
-  }
-  return getCachedUsageStats();
-}
 

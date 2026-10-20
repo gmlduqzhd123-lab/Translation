@@ -5024,3 +5024,10 @@ body {
 }
 
 
+
+/* Explicit case attestations: visible and unchecked for every submission. */
+.case-consent-group { display: grid; gap: 10px; margin: 14px 0 8px; padding: 14px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 10px; }
+.case-consent-group legend { font-weight: 700; padding: 0 4px; }
+.case-consent-group label { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.5; }
+.case-consent-group input { flex: 0 0 auto; margin-top: 4px; }
+.student-qr-img { width: 280px; height: auto; max-width: 100%; image-rendering: pixelated; }

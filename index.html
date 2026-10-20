@@ -27,9 +27,9 @@
   <script src="./ys-install.js" defer></script>
   <script src="./ys-qr.js" defer></script>
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="./styles.css?v=20261020-20" />
+  <link rel="stylesheet" href="./styles.css?v=20261020-privacy1" />
   <script src="./vendor/jszip.min.js" defer></script>
-  <script type="module" src="./app.js?v=20261020-20"></script>
+  <script type="module" src="./app.js?v=20261020-privacy1"></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">본문으로 바로 건너뛰기</a>
@@ -109,8 +109,8 @@
         </div>
 
         <div class="storage-control-bar hidden" role="group" aria-label="온디바이스 보안 및 학교 환경 진단">
-          <div id="usage-stats-pill" class="usage-stats-pill hidden" title="업로드 문서 외부 서버 전송 0 Byte · 브라우저 내장 온디바이스 AI 및 다문화 학교 표준사전 기반">
-            <span>🔒 외부 전송 <strong>0 Byte</strong> (온디바이스 AI)</span>
+          <div id="usage-stats-pill" class="usage-stats-pill hidden" title="문서 변환은 기기 내 처리 · 브라우저 내장 온디바이스 AI 및 다문화 학교 표준사전 기반">
+            <span>🔒 문서 변환 <strong>기기 내 처리</strong></span>
             <span class="usage-stats-sep">·</span>
             <span>📚 학교 표준용어 <strong>130+</strong></span>
           </div>
@@ -294,7 +294,8 @@
           </div>
           <ul class="data-transparency-list">
             <li><strong>브라우저 임시 저장:</strong> 작업 중 실수로 창이 닫혀도 이어서 작업할 수 있도록 원본 파일과 번역 상태가 <strong>현재 브라우저 내부 저장소(IndexedDB)에만 임시 저장</strong>됩니다. 상단 <strong>[💾 임시 저장]</strong> 체크를 해제해 언제든 끌 수 있습니다.</li>
-            <li><strong>외부 서버 전송 없음:</strong> 업로드한 수업자료(<code>.pptx</code>·<code>.hwpx</code>·<code>.docx</code>·<code>.xlsx</code>)와 번역문은 <strong>외부 서버로 전송되지 않으며</strong>, 자동 번역은 브라우저 내장 온디바이스 API(<code>window.Translator</code>)로만 수행됩니다.</li>
+            <li><strong>문서 변환:</strong> 파일 추출·자동 번역·파일 생성은 기기 안에서 처리하며 외부 번역 API로 자동 전송하지 않습니다. 자동 번역은 브라우저 내장 온디바이스 API(<code>window.Translator</code>)를 사용합니다.</li>
+            <li><strong>선택 기능의 데이터 처리:</strong> 학생 QR은 기기에서 생성하지만 링크 자체에 문서명·원문·번역문 일부가 포함되어 링크를 받은 누구나 읽을 수 있습니다. 개인정보가 없는 자료만 공유하세요. 발음 듣기는 브라우저·OS가 선택한 음성 서비스에 따라 문장을 외부로 전송할 수 있습니다. 사례 제출은 별도 안내와 확인 후 기존 Supabase 서버로 전송됩니다. 방문 식별자와 이용 이벤트는 수집하지 않습니다.</li>
             <li><strong>작업 내용 삭제:</strong> 상단 <strong>[🗑️ 작업 내용 삭제]</strong> 버튼을 누르면 즉시 삭제됩니다. 공용 PC에서는 작업 종료 시 삭제해 주세요.</li>
           </ul>
         </div>
@@ -437,7 +438,7 @@
         <!-- 자동 번역 시작 전 데이터 처리 경로 안내 (PRD 3.1 & 심사 범위 명확화) -->
         <div id="data-privacy-notice-step3" class="data-transparency-box compact" role="region" aria-label="핵심 심사 기능 및 데이터 처리 안내">
           <strong>🎯 핵심 작동 원리 (온디바이스 AI &amp; 문서 서식 보존):</strong>
-          <span>본 도구의 핵심 기능은 <strong>외부 서버 전송 없는 브라우저 내장 AI 번역(<code>window.Translator</code>) 및 내장 다문화 학교 표준사전</strong>을 통한 <strong>원본 서식 보존 문서(<code>.pptx</code>·<code>.hwpx</code>·<code>.docx</code>·<code>.xlsx</code>) 변환</strong>입니다. 학생·수업 자료는 외부 상용 AI나 외부 서버로 자동 전송되지 않으며, 현재 브라우저(<code>IndexedDB</code>)에만 임시 저장됩니다.</span>
+          <span>본 도구의 핵심 기능은 <strong>외부 서버 전송 없는 브라우저 내장 AI 번역(<code>window.Translator</code>) 및 내장 다문화 학교 표준사전</strong>을 통한 <strong>원본 서식 보존 문서(<code>.pptx</code>·<code>.hwpx</code>·<code>.docx</code>·<code>.xlsx</code>) 변환</strong>입니다. 문서 변환 데이터는 현재 브라우저(<code>IndexedDB</code>)에 임시 저장할 수 있습니다. 별도 선택 기능인 사례 제출·공유 링크·발음 듣기의 데이터 처리 안내도 확인해 주세요.</span>
         </div>
 
         <!-- 모델 준비·다운로드·번역 진행 상태 표시 영역 -->
@@ -999,7 +1000,6 @@
             <input type="hidden" id="case-input-title" value="" />
             <input type="hidden" id="case-input-grade" value="현장 교사" />
             <input type="hidden" id="case-input-subject" value="수업·학급 활용" />
-            <input type="checkbox" id="chk-case-factual" checked class="hidden" aria-hidden="true" />
 
             <div class="case-quick-top-row">
               <strong id="case-form-title" class="case-quick-title">✏️ 간단 후기 남기기</strong>
@@ -1067,8 +1067,14 @@
               </div>
             </div>
 
-            <p class="case-quick-hint">
-              ※ 학생 개인정보를 제외한 간단 후기를 남겨 주시면 관리자 확인 후 아래 목록에 게시됩니다.
+            <fieldset class="case-consent-group">
+              <legend>제출할 때마다 직접 확인해 주세요 (모두 필수)</legend>
+              <label><input type="checkbox" id="chk-case-factual" required /> 실제로 활용한 경험을 사실대로 작성했습니다.</label>
+              <label><input type="checkbox" id="chk-case-nopii" required /> 학생·학부모 등의 이름, 연락처, 사진, 개별 학습·평가 정보 등 개인정보를 넣지 않았습니다.</label>
+              <label><input type="checkbox" id="chk-case-rights" required /> 이 내용을 공개할 권한이 있으며, 아래 서버 전송·공개 안내를 읽고 동의합니다.</label>
+            </fieldset>
+            <p class="case-quick-hint" id="case-data-notice">
+              후기 본문·별칭·선택 언어·제출일·삭제·수정용 비밀번호(신규 제출 시 확인 항목 포함)를 기존 사례 공유 서버(Supabase, tjrrtgdhtjdkofwqnxnz.supabase.co)에 HTTPS로 전송합니다. 관리자 검토 후 후기·별칭·언어·활용일이 공개됩니다. 업로드한 문서 파일은 보내지 않습니다. 비밀번호는 앱의 브라우저 저장소에 저장하지 않으니 별도로 기억해 주세요. 새로고침 후 내 후기 확인에는 비밀번호를 다시 입력해야 합니다.
             </p>
             <div id="case-submit-feedback" class="alert-box hidden" role="status" aria-live="polite" style="margin-top: 8px;"></div>
           </form>
@@ -1084,8 +1090,8 @@
             <button type="button" id="btn-close-my-cases" class="btn btn-outline btn-sm">닫기 ✕</button>
           </div>
 
-          <div class="my-cases-lookup-bar hidden">
-            <input type="password" id="my-cases-passcode-input" class="drawer-input" placeholder="비밀번호 입력" />
+          <div class="my-cases-lookup-bar">
+            <input type="password" id="my-cases-passcode-input" class="drawer-input" placeholder="등록 시 비밀번호 입력" aria-label="내 후기 확인 비밀번호" autocomplete="off" />
             <button type="button" id="btn-lookup-my-cases" class="btn btn-secondary btn-sm">🔍 조회</button>
           </div>
 
@@ -1505,7 +1511,8 @@
           </div>
           <div class="student-qr-share-info">
             <h4>🔗 학생 태블릿·스마트폰으로 활동지 공유하기</h4>
-            <p class="muted-hint">학생이 태블릿·스마트폰 카메라로 왼쪽 QR 코드를 찍거나, 아래 공유 링크를 학급 게시판(클래스팅·구글 클래스룸·하이톡)에 올려 주면 학생 기기에서 <strong>문장별 발음 듣기(🔊)가 포함된 다국어 활동지</strong>가 바로 열립니다.</p>
+            <p class="muted-hint">QR은 이 기기에서만 생성합니다. 링크가 길면 QR 대신 링크 복사를 이용하세요. 학생이 태블릿·스마트폰 카메라로 왼쪽 QR 코드를 찍거나, 아래 공유 링크를 학급 게시판(클래스팅·구글 클래스룸·하이톡)에 올려 주면 학생 기기에서 <strong>문장별 발음 듣기(🔊)가 포함된 다국어 활동지</strong>가 바로 열립니다.</p>
+            <p class="muted-hint">⚠️ 링크에는 문서명(60자)과 앞 25개 문장의 원문(각 160자)·번역문(각 220자) 일부가 포함됩니다. 암호화가 아니므로 링크를 가진 누구나 읽을 수 있습니다. 개인정보가 없는 자료만 공유하세요. 발음 듣기는 브라우저·OS 음성 서비스에 따라 문장을 외부로 전송할 수 있습니다.</p>
             <div class="find-replace-controls" style="margin-top: 8px;">
               <input type="text" id="input-student-share-url" class="drawer-input" readonly aria-label="학생용 다국어 활동지 공유 링크" />
               <button type="button" id="btn-copy-student-share-url" class="btn btn-primary btn-sm">📋 학생용 링크 복사</button>
@@ -1517,6 +1524,7 @@
 
         <!-- 학생용 인터랙티브 다국어 읽기+듣기 카드 리스트 -->
         <div id="student-reader-view-section" class="student-reader-section">
+          <p class="muted-hint">발음 듣기는 브라우저·OS 음성 서비스에 따라 문장을 외부로 전송할 수 있습니다. 개인정보나 민감한 내용에는 사용하지 마세요.</p>
           <div class="student-reader-header">
             <div>
               <strong id="student-reader-doc-title">수업자료 활동지</strong>
@@ -1567,7 +1575,7 @@
           <h4>📌 공모전 심사 대상 핵심 기능 및 보안 명세</h4>
           <ul>
             <li><strong>핵심 심사 대상 기능:</strong> ① 브라우저 내장 온디바이스 AI(<code>window.Translator</code>) 및 내장 25개국어 다문화 학교 표준사전을 통한 자동 번역, ② 원본 표·레이아웃을 100% 보존하는 <code>.pptx</code>·<code>.hwpx</code>·<code>.docx</code>·<code>.xlsx</code> 문서 추출 및 재조립 변환</li>
-            <li><strong>학생 개인정보 보호:</strong> 업로드한 수업자료와 번역문은 외부 상용 AI 서버나 클라우드로 전송되지 않으며(네트워크 전송 <code>0 Byte</code>), 오직 사용자 브라우저 내부(<code>IndexedDB</code>)에만 임시 보관됩니다.</li>
+            <li><strong>데이터 처리 범위:</strong> 파일 추출·온디바이스 번역·파일 생성은 기기 안에서 처리합니다. 학생 공유 링크에는 문서 내용 일부가 포함됩니다. 사례 제출은 확인 후 기존 Supabase 서버로 전송되며, 발음 듣기는 브라우저·OS 음성 서비스에 따라 네트워크를 사용할 수 있습니다.</li>
           </ul>
         </div>
       </div>
@@ -1584,7 +1592,7 @@
 
   <footer class="app-footer">
     <div class="container footer-inner">
-      <p>다국어 수업자료 변환기 · 선생님을 위한 간편 수업자료 번역 도구 · 모든 문서 처리는 브라우저 내부에서만 안전하게 이루어집니다.</p>
+      <p>다국어 수업자료 변환기 · 선생님을 위한 간편 수업자료 번역 도구 · 문서 변환은 기기 내 처리. 사례 제출·링크 공유·발음 듣기는 별도 데이터 처리 안내를 확인하세요.</p>
       <p class="ys-credit">© 2026 엽쌤. All rights reserved. · <a href="https://gmlduqzhd123-lab.github.io/YScode/" target="_blank" rel="noopener">엽쌤의 다른 앱 보기 →</a></p>
     </div>
   </footer>

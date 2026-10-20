@@ -1,7 +1,7 @@
 // 다국어 수업자료 변환기 오프라인 캐시 — 같은 주소의 다른 엽쌤 앱과 캐시 저장소를 같이 쓰므로 내 접두어 캐시만 지운다
-const CACHE = 'translation-v19';
+const CACHE = 'translation-v20-privacy1';
 const CACHE_PREFIX = 'translation-v';
-const CORE = ['./', './index.html', './styles.css', './app.js', './vendor/jszip.min.js',
+const CORE = ['./', './index.html', './styles.css', './app.js', './vendor/jszip.min.js', './vendor/qrcode-generator.mjs', './src/student-qr.js',
   './src/document-processor.js', './src/school-glossary.js', './src/storage-service.js', './src/translator-service.js', './src/case-sharing-service.js', './src/teacher-toolkit.js', './src/sample-instant-cache.js',
   './samples/sample-science-lesson.pptx', './samples/sample-science-activity.hwpx',
   './manifest.webmanifest', './ys-install.js', './ys-qr.js', './qr.svg',
@@ -12,5 +12,5 @@ self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
   e.respondWith(fetch(req).then(res => { if (res.ok) { const c = res.clone(); caches.open(CACHE).then(x => x.put(req, c)); } return res; })
-    .catch(() => caches.match(req).then(hit => hit || (req.mode === 'navigate' ? caches.match('./index.html') : undefined))));
+    .catch(() => caches.open(CACHE).then(cache => cache.match(req, { ignoreSearch: true }).then(hit => hit || (req.mode === 'navigate' ? cache.match('./index.html') : undefined)))));
 });

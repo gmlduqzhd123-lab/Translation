@@ -3,7 +3,7 @@ import {
   extractDocumentFromBuffer,
   buildTranslatedDocument,
   buildOutputFileName
-} from './src/document-processor.js?v=20261020-20';
+} from './src/document-processor.js?v=20261020-privacy1';
 import {
   TARGET_LANGUAGES,
   getTargetLanguageMeta,
@@ -13,7 +13,7 @@ import {
   startReverseTranslatorCreation,
   translateSingleText,
   speakTextWithBrowserTTS
-} from './src/translator-service.js?v=20261020-20';
+} from './src/translator-service.js?v=20261020-privacy1';
 import {
   getAllGlossaryEntries,
   loadCustomGlossary,
@@ -23,7 +23,7 @@ import {
   evaluateLengthOverflowRisk,
   evaluateTranslationAccuracyIssues,
   evaluateTranslationTrafficLight
-} from './src/school-glossary.js?v=20261020-20';
+} from './src/school-glossary.js?v=20261020-privacy1';
 import {
   saveWorkSessionToBrowser,
   loadWorkSessionFromBrowser,
@@ -31,7 +31,7 @@ import {
   isAutoSaveEnabled,
   setAutoSaveEnabled,
   getLastStorageError
-} from './src/storage-service.js?v=20261020-20';
+} from './src/storage-service.js?v=20261020-privacy1';
 import {
   fetchApprovedCases,
   submitLessonCase,
@@ -41,28 +41,27 @@ import {
   deletePublicCaseWithPassword,
   reportLessonCase,
   getSavedMyCaseIds,
-  getOrCreateAutoCasePasscode,
-  registerVisitorAndFetchStats,
-  recordTranslationUsageEvent,
   verifyAdminPasswordOnServer,
   adminFetchAllCases,
   adminReviewCase,
   adminChangePassword,
   adminFetchCaseReports,
   adminResolveCaseReport
-} from './src/case-sharing-service.js?v=20261020-20';
+} from './src/case-sharing-service.js?v=20261020-privacy1';
 import {
   CLASSROOM_COMMUNICATION_CARDS,
   SCHOOL_NOTICE_TEMPLATES,
   buildExternalAiTranslationPrompt,
   encodeStudentViewPayload,
   decodeStudentViewPayload
-} from './src/teacher-toolkit.js?v=20261020-20';
+} from './src/teacher-toolkit.js?v=20261020-privacy1';
 import {
   lookupInstantSampleTranslation,
   isBuiltInSampleDocument,
   generateSchoolDictionaryDraft
-} from './src/sample-instant-cache.js?v=20261020-20';
+} from './src/sample-instant-cache.js?v=20261020-privacy1';
+
+import { createStudentQrDataUrl } from './src/student-qr.js?v=20261020-privacy1';
 
 const PREF_LANG_STORAGE_KEY = 'multilingual_translator_pref_lang_v1';
 const PREF_RECENT_LANGS_STORAGE_KEY = 'multilingual_translator_recent_langs_v2';
@@ -432,8 +431,6 @@ function cacheElements() {
   els.adminActionFeedback = document.getElementById('admin-action-feedback');
   els.adminCasesList = document.getElementById('admin-cases-list');
   els.adminReportsList = document.getElementById('admin-reports-list');
-  els.statUniqueUsers = document.getElementById('stat-unique-users');
-  els.statTotalTranslations = document.getElementById('stat-total-translations');
 }
 
 function init() {
@@ -449,29 +446,6 @@ function init() {
   refreshAllLanguageSupport();
   checkRestorableSession();
   handleInitialUrlRouting();
-  initUsageCounterStats();
-}
-
-function renderUsageStatsBadge(stats) {
-  if (!stats) return;
-  const usersCount = Math.max(105, Number(stats.unique_users) || 105);
-  const transCount = Math.max(137, Number(stats.total_translations) || 137);
-  if (els.statUniqueUsers) {
-    els.statUniqueUsers.textContent = usersCount.toLocaleString('ko-KR');
-  }
-  if (els.statTotalTranslations) {
-    els.statTotalTranslations.textContent = transCount.toLocaleString('ko-KR');
-  }
-}
-
-async function initUsageCounterStats() {
-  const stats = await registerVisitorAndFetchStats();
-  renderUsageStatsBadge(stats);
-}
-
-async function bumpTranslationUsageCounter(eventType = 'document') {
-  const stats = await recordTranslationUsageEvent(eventType);
-  renderUsageStatsBadge(stats);
 }
 
 function getSavedRecentLanguages() {
@@ -1016,11 +990,11 @@ async function runSchoolEnvironmentDiagnostics() {
       detail: '별도 설치나 관리자 권한 없이 학교 보급 PC 기본 브라우저에서 즉시 실행됩니다.'
     },
     {
-      badge: '외부 전송 0 Byte (PASS)',
+      badge: '문서 변환: 기기 내 처리',
       badgeClass: 'badge-available',
-      title: '2. 교육청 교내망(방화벽) 호환 · 무전송 보안',
-      summary: '문서·번역 데이터 외부 서버 전송 0건 (100% 기기 내 처리)',
-      detail: '외부 상용 AI 서버가 차단된 교육청 교내망에서도 전 과정이 차단 없이 작동합니다.'
+      title: '2. 문서 변환 데이터 처리 범위',
+      summary: '파일 추출·온디바이스 번역·파일 생성은 브라우저에서 처리',
+      detail: '사례 제출은 별도 서버를 사용합니다. 음성 듣기는 기기·브라우저 음성 서비스에 따라 네트워크를 사용할 수 있습니다.'
     },
     {
       badge: zipEngineOk ? `정상 작동 (${zipLatencyMs}ms · PASS)` : '점검 필요',
@@ -2281,7 +2255,6 @@ async function handleStartAutoTranslate() {
   scheduleAutoSave();
 
   if (successCount > 0) {
-    bumpTranslationUsageCounter('document');
   }
 
   checkLanguagePairSupport(langKey).then((updated) => {
@@ -4392,10 +4365,6 @@ async function handleRunMultiLangZip() {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
 
-    if (generatedFilesCount > 0) {
-      bumpTranslationUsageCounter('document');
-    }
-
     if (els.multiLangBatchStatus) {
       els.multiLangBatchStatus.textContent = `✓ 총 ${generatedFilesCount}개 국어 수업자료가 담긴 [${zipFileName}] 다운로드가 완료되었습니다!`;
     }
@@ -4432,18 +4401,16 @@ function handleOpenStudentQrModal() {
   if (els.inputStudentShareUrl) {
     els.inputStudentShareUrl.value = shareUrl;
   }
+  // QR encoding happens entirely on this device. Never send the worksheet URL to a QR service.
+  const qr = createStudentQrDataUrl(shareUrl);
   if (els.imgStudentShareQr) {
-    els.imgStudentShareQr.onerror = () => {
-      els.imgStudentShareQr.onerror = null;
-      els.imgStudentShareQr.src = './qr.svg';
-    };
-    // QR servers usually handle up to ~2000 chars cleanly; if URL is very long, use base app URL + hash up to safe limit
-    const qrTargetUrl = shareUrl.length <= 1800 ? shareUrl : baseUrl;
-    els.imgStudentShareQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(qrTargetUrl)}`;
+    els.imgStudentShareQr.removeAttribute('src');
+    els.imgStudentShareQr.classList.toggle('hidden', !qr.dataUrl);
+    if (qr.dataUrl) els.imgStudentShareQr.src = qr.dataUrl;
   }
-  if (els.studentShareFeedback) {
-    els.studentShareFeedback.textContent = '';
-  }
+  const qrCaption = document.querySelector('.student-qr-caption');
+  if (qrCaption) qrCaption.textContent = qr.dataUrl ? '📱 카메라로 스캔' : 'QR 생성 생략';
+  if (els.studentShareFeedback) els.studentShareFeedback.textContent = qr.message;
 
   openStudentReaderFromPayload(
     {
@@ -4776,7 +4743,6 @@ async function handleToolkitTranslate() {
       }
     }
 
-    bumpTranslationUsageCounter('notice');
 
     if (els.toolkitFeedbackMsg) {
       els.toolkitFeedbackMsg.textContent = `✓ ${langMeta.label} 번역 완료!`;
@@ -4938,6 +4904,13 @@ function bindCaseSharingEvents() {
   });
 
   els.caseSubmitForm?.addEventListener('submit', handleSubmitCaseForm);
+  // Changing the content invalidates previous attestations, including after a failed request.
+  els.caseSubmitForm?.addEventListener('input', (event) => {
+    if ([els.chkCaseFactual, els.chkCaseNopii, els.chkCaseRights].includes(event.target)) return;
+    [els.chkCaseFactual, els.chkCaseNopii, els.chkCaseRights].forEach((checkbox) => {
+      if (checkbox) checkbox.checked = false;
+    });
+  });
 
   // Public filter events
   els.filterCaseLang?.addEventListener('change', renderPublicCasesList);
@@ -4999,6 +4972,9 @@ function renderCaseBodySectionsHtml(item) {
 function openCaseWritePanel(editItem = null) {
   if (!els.caseWritePanel || !els.caseSubmitForm) return;
   els.caseSubmitFeedback?.classList.add('hidden');
+  [els.chkCaseFactual, els.chkCaseNopii, els.chkCaseRights].forEach((checkbox) => {
+    if (checkbox) checkbox.checked = false;
+  });
 
   if (editItem) {
     if (els.caseFormTitle) els.caseFormTitle.textContent = '✏️ 내 후기 수정하기';
@@ -5021,7 +4997,6 @@ function openCaseWritePanel(editItem = null) {
     if (els.caseInputPasscode) {
       els.caseInputPasscode.value = (els.myCasesPasscodeInput?.value || '').trim();
     }
-    if (els.chkCaseFactual) els.chkCaseFactual.checked = true;
     els.caseWritePanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
     els.caseInputGoal?.focus();
   } else {
@@ -5040,9 +5015,6 @@ function openCaseWritePanel(editItem = null) {
     }
     if (els.caseInputPasscode) {
       els.caseInputPasscode.value = '';
-    }
-    if (els.chkCaseFactual) {
-      els.chkCaseFactual.checked = true;
     }
   }
 
@@ -5066,6 +5038,13 @@ async function handleSubmitCaseForm(e) {
   if (!rawPasscode) {
     showCaseFormFeedback('error', '게시글 삭제·수정에 사용할 비밀번호를 입력해 주세요.');
     els.caseInputPasscode?.focus();
+    return;
+  }
+
+  const confirmations = [els.chkCaseFactual, els.chkCaseNopii, els.chkCaseRights];
+  if (confirmations.some((checkbox) => !checkbox?.checked)) {
+    showCaseFormFeedback('error', '실제 활용 사실, 개인정보 제외, 공개 권한·서버 전송 안내를 모두 확인하고 직접 체크해 주세요.');
+    confirmations.find((checkbox) => !checkbox?.checked)?.focus();
     return;
   }
 
@@ -5098,9 +5077,9 @@ async function handleSubmitCaseForm(e) {
     aggregate_metrics: '',
     improvement_suggestions: '',
     author_passcode: autoPasscode,
-    confirmed_factual: true,
-    confirmed_no_pii: true,
-    confirmed_public_rights: true
+    confirmed_factual: els.chkCaseFactual.checked,
+    confirmed_no_pii: els.chkCaseNopii.checked,
+    confirmed_public_rights: els.chkCaseRights.checked
   };
 
   // Client-side PII pattern check (phone number / resident registration pattern)
@@ -5124,9 +5103,7 @@ async function handleSubmitCaseForm(e) {
       return;
     }
 
-    if (els.myCasesPasscodeInput) {
-      els.myCasesPasscodeInput.value = payload.author_passcode;
-    }
+    if (els.myCasesPasscodeInput) els.myCasesPasscodeInput.value = '';
 
     openCaseWritePanel(null);
     showCaseFormFeedback(
@@ -5303,7 +5280,7 @@ function renderPublicCasesList() {
 async function loadAndRenderMyCases() {
   if (!els.myCasesList) return;
   const savedIds = getSavedMyCaseIds();
-  const passcode = (els.myCasesPasscodeInput?.value || '').trim() || getOrCreateAutoCasePasscode();
+  const passcode = (els.myCasesPasscodeInput?.value || '').trim();
   if (els.myCasesPasscodeInput && !els.myCasesPasscodeInput.value) {
     els.myCasesPasscodeInput.value = passcode;
   }
@@ -5311,6 +5288,12 @@ async function loadAndRenderMyCases() {
   if (savedIds.length === 0) {
     els.myCasesList.innerHTML =
       '<div class="cases-empty-state">아직 이 브라우저에서 등록한 후기가 없습니다. 위 입력창에서 간단 후기를 남겨 보세요!</div>';
+    return;
+  }
+
+  if (!passcode) {
+    els.myCasesList.innerHTML = '<div class="cases-empty-state">등록할 때 정한 비밀번호를 입력해 주세요. 비밀번호는 이 브라우저에 저장하지 않습니다.</div>';
+    els.myCasesPasscodeInput?.focus();
     return;
   }
 
@@ -5359,7 +5342,7 @@ async function loadAndRenderMyCases() {
     });
 
     card.querySelector('[data-role="delete-my-case-btn"]')?.addEventListener('click', async () => {
-      const pw = (els.myCasesPasscodeInput?.value || '').trim() || getOrCreateAutoCasePasscode();
+      const pw = (els.myCasesPasscodeInput?.value || '').trim();
       const fb = card.querySelector('[data-role="my-case-feedback"]');
       const delRes = await removeMyLessonCase(item.id, pw);
       if (!delRes.ok) {
