@@ -4957,3 +4957,64 @@ body {
   }
 }
 
+.case-evidence-summary-banner.hidden,
+.usage-stats-pill.hidden {
+  display: none !important;
+}
+
+.case-card-delete-x-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.case-card-delete-x-btn:hover,
+.case-card-delete-x-btn:focus-visible {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.case-card-delete-box {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+}
+
+.case-card-delete-box.hidden {
+  display: none !important;
+}
+
+.case-card-delete-pw {
+  width: 150px;
+  max-width: 100%;
+  padding: 5px 10px;
+  font-size: 0.84rem;
+}
+
+.case-card-delete-msg {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+

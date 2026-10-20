@@ -3,7 +3,7 @@ import {
   extractDocumentFromBuffer,
   buildTranslatedDocument,
   buildOutputFileName
-} from './src/document-processor.js';
+} from './src/document-processor.js?v=20261020-19';
 import {
   TARGET_LANGUAGES,
   getTargetLanguageMeta,
@@ -13,7 +13,7 @@ import {
   startReverseTranslatorCreation,
   translateSingleText,
   speakTextWithBrowserTTS
-} from './src/translator-service.js?v=20261020-5';
+} from './src/translator-service.js?v=20261020-19';
 import {
   getAllGlossaryEntries,
   loadCustomGlossary,
@@ -23,7 +23,7 @@ import {
   evaluateLengthOverflowRisk,
   evaluateTranslationAccuracyIssues,
   evaluateTranslationTrafficLight
-} from './src/school-glossary.js';
+} from './src/school-glossary.js?v=20261020-19';
 import {
   saveWorkSessionToBrowser,
   loadWorkSessionFromBrowser,
@@ -31,13 +31,14 @@ import {
   isAutoSaveEnabled,
   setAutoSaveEnabled,
   getLastStorageError
-} from './src/storage-service.js';
+} from './src/storage-service.js?v=20261020-19';
 import {
   fetchApprovedCases,
   submitLessonCase,
   fetchMyCases,
   resubmitLessonCase,
   removeMyLessonCase,
+  deletePublicCaseWithPassword,
   reportLessonCase,
   getSavedMyCaseIds,
   getOrCreateAutoCasePasscode,
@@ -49,19 +50,19 @@ import {
   adminChangePassword,
   adminFetchCaseReports,
   adminResolveCaseReport
-} from './src/case-sharing-service.js?v=20261020-15';
+} from './src/case-sharing-service.js?v=20261020-19';
 import {
   CLASSROOM_COMMUNICATION_CARDS,
   SCHOOL_NOTICE_TEMPLATES,
   buildExternalAiTranslationPrompt,
   encodeStudentViewPayload,
   decodeStudentViewPayload
-} from './src/teacher-toolkit.js';
+} from './src/teacher-toolkit.js?v=20261020-19';
 import {
   lookupInstantSampleTranslation,
   isBuiltInSampleDocument,
   generateSchoolDictionaryDraft
-} from './src/sample-instant-cache.js?v=20261020-15';
+} from './src/sample-instant-cache.js?v=20261020-19';
 
 const PREF_LANG_STORAGE_KEY = 'multilingual_translator_pref_lang_v1';
 const PREF_RECENT_LANGS_STORAGE_KEY = 'multilingual_translator_recent_langs_v2';
@@ -621,7 +622,35 @@ function checkMobileBanner() {
 
 /* ==================== MAIN WORKSPACE NAVIGATION & URL DEEP LINK ==================== */
 
+function clearTransientPageNotices() {
+  if (els.caseSubmitFeedback) {
+    els.caseSubmitFeedback.classList.add('hidden');
+    els.caseSubmitFeedback.innerHTML = '';
+  }
+  if (els.adminActionFeedback) {
+    els.adminActionFeedback.classList.add('hidden');
+    els.adminActionFeedback.innerHTML = '';
+  }
+  if (els.adminAuthMsg) {
+    els.adminAuthMsg.textContent = '';
+  }
+  if (els.adminPwChangeFeedback) {
+    els.adminPwChangeFeedback.textContent = '';
+  }
+  if (els.toolkitFeedbackMsg) {
+    els.toolkitFeedbackMsg.textContent = '';
+  }
+  if (els.downloadSuccessMsg) {
+    els.downloadSuccessMsg.classList.add('hidden');
+    els.downloadSuccessMsg.textContent = '';
+  }
+  if (els.downloadErrorBox) {
+    els.downloadErrorBox.classList.add('hidden');
+  }
+}
+
 function switchMainView(viewName) {
+  clearTransientPageNotices();
   state.activeMainView = viewName;
   els.mainViewTabs.forEach((tab) => {
     const isTarget = tab.getAttribute('data-view-target') === viewName;
@@ -4926,7 +4955,14 @@ function bindCaseSharingEvents() {
   });
 
   els.btnRefreshCases?.addEventListener('click', () => {
+    clearTransientPageNotices();
     loadAndRenderPublicCases();
+  });
+
+  els.caseInputGoal?.addEventListener('focus', () => {
+    if (els.caseSubmitFeedback && !els.caseSubmitFeedback.classList.contains('hidden')) {
+      els.caseSubmitFeedback.classList.add('hidden');
+    }
   });
 }
 
@@ -4957,45 +4993,7 @@ function formatTeacherAuthorDisplay(rawName) {
 
 function renderCaseBodySectionsHtml(item) {
   const goalText = (item?.lesson_goal || item?.title || '').trim();
-  const procText = (item?.tool_usage_process || '').trim();
-  const revText = (item?.teacher_review_notes || '').trim();
-  const resText = (item?.observed_results_limits || '').trim();
-  const targetInfo = (item?.aggregate_metrics || '').trim();
-
-  const hasStructuredEvidence =
-    (targetInfo && targetInfo !== '-') ||
-    (revText && revText !== '-' && revText !== goalText) ||
-    (resText && resText !== '-' && resText !== goalText);
-
-  if (!hasStructuredEvidence) {
-    return `<p class="case-simple-review-text">${escapeHtml(goalText)}</p>`;
-  }
-
-  return `
-    <p class="case-simple-review-text">${escapeHtml(goalText)}</p>
-    <div class="case-evidence-detail-box" aria-label="수업 활용 실증 세부 내역">
-      ${
-        targetInfo && targetInfo !== '-'
-          ? `<div class="case-evidence-row"><span class="case-evidence-label">🎯 적용 대상</span><span class="case-evidence-val">${escapeHtml(targetInfo)}</span></div>`
-          : ''
-      }
-      ${
-        procText && procText !== '-' && procText !== goalText
-          ? `<div class="case-evidence-row"><span class="case-evidence-label">📄 활용 자료</span><span class="case-evidence-val">${escapeHtml(procText)}</span></div>`
-          : ''
-      }
-      ${
-        revText && revText !== '-' && revText !== goalText
-          ? `<div class="case-evidence-row"><span class="case-evidence-label">🔍 교사 검수</span><span class="case-evidence-val">${escapeHtml(revText)}</span></div>`
-          : ''
-      }
-      ${
-        resText && resText !== '-' && resText !== goalText
-          ? `<div class="case-evidence-row"><span class="case-evidence-label">💬 학생·학부모 반응</span><span class="case-evidence-val">${escapeHtml(resText)}</span></div>`
-          : ''
-      }
-    </div>
-  `;
+  return `<p class="case-simple-review-text">${escapeHtml(goalText)}</p>`;
 }
 
 function openCaseWritePanel(editItem = null) {
@@ -5208,33 +5206,80 @@ function renderPublicCasesList() {
           <span class="case-simple-author">${escapeHtml(formatTeacherAuthorDisplay(item.author_display_name))}</span>
           <span class="case-simple-date">· 📅 ${escapeHtml(item.used_date || '-')}</span>
         </div>
+        <button
+          type="button"
+          class="case-card-delete-x-btn"
+          data-role="toggle-card-delete"
+          title="게시글 삭제"
+          aria-label="게시글 삭제"
+        >✕</button>
+      </div>
+
+      <div class="case-card-delete-box hidden" data-role="card-delete-box">
+        <input
+          type="password"
+          class="drawer-input case-card-delete-pw"
+          data-role="card-delete-pw"
+          placeholder="비밀번호 입력"
+          aria-label="게시글 삭제 비밀번호 입력"
+        />
+        <button type="button" class="btn btn-danger btn-sm" data-role="confirm-card-delete">삭제</button>
+        <button type="button" class="btn btn-outline btn-sm" data-role="cancel-card-delete">취소</button>
+        <span class="case-card-delete-msg" data-role="card-delete-msg" aria-live="polite"></span>
       </div>
 
       ${renderCaseBodySectionsHtml(item)}
 
     `;
 
-    const toggleReportBtn = card.querySelector('[data-role="toggle-report-box"]');
-    const reportDrawer = card.querySelector('[data-role="report-drawer"]');
-    toggleReportBtn?.addEventListener('click', () => {
-      reportDrawer?.classList.toggle('hidden');
+    const toggleDelBtn = card.querySelector('[data-role="toggle-card-delete"]');
+    const delBox = card.querySelector('[data-role="card-delete-box"]');
+    const delPwInput = card.querySelector('[data-role="card-delete-pw"]');
+    const confirmDelBtn = card.querySelector('[data-role="confirm-card-delete"]');
+    const cancelDelBtn = card.querySelector('[data-role="cancel-card-delete"]');
+    const delMsg = card.querySelector('[data-role="card-delete-msg"]');
+
+    toggleDelBtn?.addEventListener('click', () => {
+      if (!delBox) return;
+      const willOpen = delBox.classList.contains('hidden');
+      delBox.classList.toggle('hidden', !willOpen);
+      if (delMsg) delMsg.textContent = '';
+      if (willOpen) {
+        delPwInput?.focus();
+      } else if (delPwInput) {
+        delPwInput.value = '';
+      }
     });
 
-    const submitReportBtn = card.querySelector('[data-role="submit-report-btn"]');
-    submitReportBtn?.addEventListener('click', async () => {
-      const reqType = card.querySelector('[data-role="report-type"]')?.value || 'report';
-      const reason = card.querySelector('[data-role="report-reason"]')?.value || '';
-      const fb = card.querySelector('[data-role="report-feedback"]');
-      submitReportBtn.disabled = true;
-      const res = await reportLessonCase({
-        caseId: item.id,
-        requestType: reqType,
-        reason,
-        contactInfo: ''
-      });
-      submitReportBtn.disabled = false;
-      if (fb) {
-        fb.textContent = res.message || (res.ok ? '접수되었습니다.' : '접수 실패');
+    cancelDelBtn?.addEventListener('click', () => {
+      delBox?.classList.add('hidden');
+      if (delPwInput) delPwInput.value = '';
+      if (delMsg) delMsg.textContent = '';
+    });
+
+    const runDeletePost = async () => {
+      const pw = (delPwInput?.value || '').trim();
+      if (!pw) {
+        if (delMsg) delMsg.textContent = '비밀번호를 입력해 주세요.';
+        delPwInput?.focus();
+        return;
+      }
+      if (confirmDelBtn) confirmDelBtn.disabled = true;
+      if (delMsg) delMsg.textContent = '확인 중...';
+      const res = await deletePublicCaseWithPassword(item.id, pw);
+      if (confirmDelBtn) confirmDelBtn.disabled = false;
+      if (!res.ok) {
+        if (delMsg) delMsg.textContent = res.message || '비밀번호가 일치하지 않습니다.';
+        return;
+      }
+      await loadAndRenderPublicCases();
+    };
+
+    confirmDelBtn?.addEventListener('click', runDeletePost);
+    delPwInput?.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        runDeletePost();
       }
     });
 
@@ -5341,6 +5386,7 @@ function bindAdminEvents() {
 
   els.adminFilterBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
+      clearTransientPageNotices();
       state.adminActiveFilter = btn.getAttribute('data-admin-filter') || 'all';
       els.adminFilterBtns.forEach((b) => b.classList.toggle('active', b === btn));
       renderAdminDashboardLists();
@@ -5348,8 +5394,15 @@ function bindAdminEvents() {
   });
 
   els.btnAdminRefresh?.addEventListener('click', () => {
+    clearTransientPageNotices();
     if (state.adminAuthenticated) {
       loadAndRenderAdminDashboard();
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      clearTransientPageNotices();
     }
   });
 

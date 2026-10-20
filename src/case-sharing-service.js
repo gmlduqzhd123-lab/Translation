@@ -361,18 +361,47 @@ export function clearSavedMyCaseIds() {
   }
 }
 
+const DELETED_SAMPLE_CASE_IDS_KEY = 'multilingual_translator_deleted_sample_cases_v1';
+
+function getDeletedSampleCaseIds() {
+  try {
+    if (typeof localStorage === 'undefined') return [];
+    const raw = localStorage.getItem(DELETED_SAMPLE_CASE_IDS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberDeletedSampleCaseId(caseId) {
+  try {
+    if (typeof localStorage === 'undefined' || !caseId) return;
+    const current = getDeletedSampleCaseIds();
+    if (!current.includes(caseId)) {
+      current.push(caseId);
+      localStorage.setItem(DELETED_SAMPLE_CASE_IDS_KEY, JSON.stringify(current));
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export async function fetchApprovedCases() {
+  const deletedIds = getDeletedSampleCaseIds();
+  const activeSamples = FALLBACK_SAMPLE_CASES.filter((c) => !deletedIds.includes(c.id));
   try {
     const rows = await callSupabaseRpc('get_approved_translation_cases', {});
     const userSubmittedRows = Array.isArray(rows)
       ? rows.filter(
           (r) =>
             !r.is_sample &&
+            !deletedIds.includes(r.id) &&
             !String(r.title || '').includes('[예시]') &&
             !String(r.author_display_name || '').includes('예시')
         )
       : [];
-    const list = [...userSubmittedRows, ...FALLBACK_SAMPLE_CASES];
+    const list = [...userSubmittedRows, ...activeSamples];
     return {
       items: list,
       cases: list,
@@ -382,8 +411,8 @@ export async function fetchApprovedCases() {
     };
   } catch {
     return {
-      items: FALLBACK_SAMPLE_CASES,
-      cases: FALLBACK_SAMPLE_CASES,
+      items: activeSamples,
+      cases: activeSamples,
       isOfflineFallback: false,
       offline: false,
       errorMessage: null
@@ -568,6 +597,36 @@ export async function removeMyLessonCase(caseId, authorPasscode) {
       message: err?.message || '삭제 중 오류가 발생했습니다.'
     };
   }
+}
+
+export async function deletePublicCaseWithPassword(caseId, password) {
+  const cleanPw = String(password || '').trim();
+  if (!cleanPw) {
+    return { ok: false, message: '비밀번호를 입력해 주세요.' };
+  }
+
+  // 1. Check server admin password first (allows deleting both DB posts and built-in sample posts)
+  const adminCheck = await verifyAdminPasswordOnServer(cleanPw);
+  if (adminCheck.ok) {
+    const isSample = FALLBACK_SAMPLE_CASES.some((c) => c.id === caseId);
+    if (!isSample) {
+      await adminReviewCase(cleanPw, caseId, 'delete', '');
+    }
+    rememberDeletedSampleCaseId(caseId);
+    return { ok: true, message: '게시글이 삭제되었습니다.' };
+  }
+
+  // 2. Check author passcode for user-submitted post
+  const authorRes = await removeMyLessonCase(caseId, cleanPw);
+  if (authorRes.ok) {
+    rememberDeletedSampleCaseId(caseId);
+    return { ok: true, message: '게시글이 삭제되었습니다.' };
+  }
+
+  return {
+    ok: false,
+    message: '비밀번호가 일치하지 않습니다.'
+  };
 }
 
 export async function reportLessonCase(arg1, requestType = 'report', reason = '', requesterContact = '') {
