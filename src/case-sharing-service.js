@@ -60,7 +60,7 @@ export const FALLBACK_SAMPLE_CASES = [
       '기존에는 한국어 안내문을 읽지 못해 미제출하던 베트남 학부모님(2가구)이 희망 상담 일시를 표에 직접 체크해 당일 회신 완료',
     aggregate_metrics: '초등 3학년 1개 학급 · 베트남 다문화 학생 2명 및 학부모',
     improvement_suggestions: '',
-    author_display_name: '김** 교사',
+    author_display_name: '김**',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-18T09:00:00Z'
@@ -83,7 +83,7 @@ export const FALLBACK_SAMPLE_CASES = [
       '중도입국 학생이 월요일마다 미술·체육 준비물을 빠짐없이 챙겨 오고, 학부모님도 이번 주 배울 한국어 어휘를 가정에서 미리 지도함',
     aggregate_metrics: '초등 2학년 1개 학급 · 중국 중도입국 학생 1명 및 보호자',
     improvement_suggestions: '',
-    author_display_name: '햇살반쌤',
+    author_display_name: '이**',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-17T09:00:00Z'
@@ -106,7 +106,7 @@ export const FALLBACK_SAMPLE_CASES = [
       '학생이 "엄마가 필리핀어로 적힌 안내문을 보고 도시락이랑 출발 시간을 바로 아셨어요"라며 기뻐했고 동의서 수합 시간 단축',
     aggregate_metrics: '초등 다문화 특별학급 · 필리핀 배경 학생 3명',
     improvement_suggestions: '',
-    author_display_name: '박** 교사',
+    author_display_name: '박**',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-15T09:00:00Z'
@@ -129,7 +129,7 @@ export const FALLBACK_SAMPLE_CASES = [
       '실험 중 지시사항을 이해하지 못해 모둠원 뒤에만 서 있던 러시아권(고려인) 학생 2명이 먼저 보안경을 착용하고 실험 순서를 주도적으로 수행함',
     aggregate_metrics: '초등 5학년 과학 전담 2개 학급 · 러시아어권 학생 3명',
     improvement_suggestions: '',
-    author_display_name: '다문화멘토쌤',
+    author_display_name: '최**',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-14T09:00:00Z'
@@ -152,7 +152,7 @@ export const FALLBACK_SAMPLE_CASES = [
       '학급 알림장 앱(하이클래스)으로 발송 직후 학부모님께서 베트남어로 감사 답장을 보내주셨고 학생의 과제 이행률이 눈에 띄게 향상됨',
     aggregate_metrics: '초등 1학년 담임 · 베트남 다문화 가정 2가구',
     improvement_suggestions: '',
-    author_display_name: '이** 교사',
+    author_display_name: '정**',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-12T09:00:00Z'
@@ -175,7 +175,7 @@ export const FALLBACK_SAMPLE_CASES = [
       '하교 시각 혼선으로 발생하던 돌봄교실 지각 사례가 사라지고 학부모님과의 하교 안내 소통이 원활해짐',
     aggregate_metrics: '초등 2학년 1개 학급 · 캄보디아 다문화 학생 1명 및 학부모',
     improvement_suggestions: '',
-    author_display_name: '늘품교실쌤',
+    author_display_name: '강**',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-10T09:00:00Z'
@@ -198,7 +198,7 @@ export const FALLBACK_SAMPLE_CASES = [
       '사회 용어가 어려워 학습지를 백지로 내던 우즈베크어권 학생이 모국어 설명을 참고해 스스로 한국어 핵심 단어를 찾아 적으며 단원평가를 완주함',
     aggregate_metrics: '초등 6학년 1개 학급 · 우즈베크어권 학생 2명',
     improvement_suggestions: '',
-    author_display_name: '최** 교사',
+    author_display_name: '조**',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-08T09:00:00Z'
@@ -221,7 +221,7 @@ export const FALLBACK_SAMPLE_CASES = [
       '학년 전체 다문화 가정(3개 국적 9가구)에 당일 오후 각 모국어 가정통신문을 동시 배부하여 행정 업무 시간을 2시간에서 5분으로 단축',
     aggregate_metrics: '초등 4학년 전체(4개 학급) · 다문화 9가구(베트남·중국·러시아)',
     improvement_suggestions: '',
-    author_display_name: '초록칠판쌤',
+    author_display_name: '윤**',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-05T09:00:00Z'
@@ -244,7 +244,7 @@ export const FALLBACK_SAMPLE_CASES = [
       '교사의 구두 설명만으로는 순서를 놓치던 몽골 학생이 칠판 PPT의 몽골어 병기 문장을 보고 친구들과 같은 속도로 작품을 완성함',
     aggregate_metrics: '초등 4학년 1개 학급 · 몽골 중도입국 학생 1명',
     improvement_suggestions: '',
-    author_display_name: '정** 교사',
+    author_display_name: '장**',
     status: 'approved',
     is_sample: false,
     created_at: '2026-10-02T09:00:00Z'
@@ -267,7 +267,7 @@ export const FALLBACK_SAMPLE_CASES = [
       '외국인 가정 학부모님들께서 자녀의 알레르기 해당 번호를 정확히 확인해 회신서를 제출해 주셔서 안전한 급식 지도가 가능해짐',
     aggregate_metrics: '전교 다문화·외국인 가정 14가구 대상 보건·급식 안내',
     improvement_suggestions: '',
-    author_display_name: '조** 교사',
+    author_display_name: '임**',
     status: 'approved',
     is_sample: false,
     created_at: '2026-09-29T09:00:00Z'
@@ -424,7 +424,7 @@ export async function submitLessonCase(formData) {
       p_improvement_suggestions:
         formData.improvement_suggestions ?? formData.improvementSuggestions ?? '',
       p_author_display_name:
-        (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '김** 교사',
+        (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '김**',
       p_confirmed_factual: confirmedAll,
       p_confirmed_no_pii: Boolean(
         formData.confirmed_no_pii ?? formData.confirmedNoPii ?? confirmedAll
@@ -533,7 +533,7 @@ export async function resubmitLessonCase(caseId, authorPasscode, formData) {
       p_improvement_suggestions:
         formData.improvement_suggestions ?? formData.improvementSuggestions ?? '',
       p_author_display_name:
-        (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '김** 교사'
+        (formData.author_display_name ?? formData.authorDisplayName ?? '').trim() || '김**'
     });
     const status = result?.status || 'pending';
     return {

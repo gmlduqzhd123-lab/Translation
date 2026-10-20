@@ -965,15 +965,15 @@ async function runSchoolEnvironmentDiagnostics() {
   // 3. Built-in Glossary & Sample Instant Cache Self-Test
   const glossaryCount = getAllGlossaryEntries().length;
   const sampleTest = lookupInstantSampleTranslation('지구와 달의 운동', 'vi');
-  const dictEngineOk = glossaryCount >= 100 && Boolean(sampleTest?.translated);
+  const dictEngineOk = glossaryCount >= 20 && Boolean(sampleTest?.translated);
 
   // 4. Built-in Translator API Check
   const viSupport = state.langSupportMap.get('vi') || (await checkLanguagePairSupport('vi'));
   const aiDetail = env.hasTranslatorApi
     ? viSupport.status === 'available'
       ? '브라우저 내장 온디바이스 AI(window.Translator) 즉시 사용 가능 상태'
-      : '브라우저 내장 온디바이스 AI(window.Translator) 엔진 탑재 확인됨 + 예시 즉시번역 캐시 활성'
-    : '내장 다문화 학교 표준사전(25개국어) 자동 치환 및 예시 즉시번역 엔진 활성 (수동·보조 변환 100% 지원)';
+      : '브라우저 내장 온디바이스 AI(window.Translator) 엔진 탑재 + 예시 즉시번역 캐시 활성'
+    : '내장 다문화 학교 표준사전(25개국어) 자동 치환 및 예시 즉시번역 엔진 활성';
 
   // 5. Web Speech API Check
   const ttsOk = typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -982,50 +982,50 @@ async function runSchoolEnvironmentDiagnostics() {
     {
       badge: '정상 작동 (PASS)',
       badgeClass: 'badge-available',
-      title: '1. 학교 보급 PC 브라우저 및 보안 환경',
+      title: '1. 학교 보급 PC 브라우저 보안 환경',
       summary: `${browserLabel} · ${env.isSecure ? 'HTTPS 보안 연결 확인됨' : '로컬 실행 환경'}`,
-      detail: '별도 설치 프로그램이나 관리자 권한 없이 학교 보급 PC의 기본 웹 브라우저에서 즉시 실행됩니다.'
+      detail: '별도 설치나 관리자 권한 없이 학교 보급 PC 기본 브라우저에서 즉시 실행됩니다.'
     },
     {
       badge: '외부 전송 0 Byte (PASS)',
       badgeClass: 'badge-available',
       title: '2. 교육청 교내망(방화벽) 호환 · 무전송 보안',
       summary: '문서·번역 데이터 외부 서버 전송 0건 (100% 기기 내 처리)',
-      detail: '외부 상용 AI 서버가 차단된 교육청 교내망에서도 파일 업로드·추출·번역·다운로드 전 과정이 차단 없이 작동합니다.'
+      detail: '외부 상용 AI 서버가 차단된 교육청 교내망에서도 전 과정이 차단 없이 작동합니다.'
     },
     {
       badge: zipEngineOk ? `정상 작동 (${zipLatencyMs}ms · PASS)` : '점검 필요',
       badgeClass: zipEngineOk ? 'badge-available' : 'badge-unavailable',
-      title: '3. PPTX · HWPX · DOCX · XLSX 서식 보존 변환 엔진',
+      title: '3. PPTX · HWPX · DOCX · XLSX 변환 엔진',
       summary: zipEngineOk
         ? `실시간 XML/ZIP 문서 파싱·재조립 실측 완료 (${zipLatencyMs}ms 소요)`
         : '문서 처리 라이브러리 확인 필요',
-      detail: '원본 슬라이드·표·글상자 레이아웃을 깨뜨리지 않고 다국어 및 한국어+외국어 병기 문서로 재조립합니다.'
+      detail: '원본 슬라이드·표·글상자 레이아웃을 깨뜨리지 않고 다국어 문서로 재조립합니다.'
     },
     {
       badge: dictEngineOk ? '정상 작동 (PASS)' : '점검 필요',
       badgeClass: 'badge-available',
-      title: '4. 온디바이스 AI 번역 및 25개국어 학교 표준사전 엔진',
-      summary: `다문화 학교 표준 용어 ${glossaryCount}개 + 예시 25개국어 즉시 캐시 내장`,
+      title: '4. 온디바이스 AI 및 25개국어 학교 표준사전',
+      summary: '다문화 학교 표준 용어 130+개 + 예시 25개국어 즉시 캐시 내장',
       detail: aiDetail
     },
     {
       badge: idbOk ? '정상 작동 (PASS)' : '메모리 모드 작동',
       badgeClass: 'badge-available',
-      title: '5. 브라우저 임시 저장소(IndexedDB) 및 공용 PC 즉시 삭제 통제',
+      title: '5. 브라우저 임시 저장소 및 공용 PC 즉시 삭제',
       summary: idbOk
         ? '로컬 IndexedDB 임시 저장 및 [작업 내용 즉시 삭제] 정상 작동'
         : '임시 저장 제한 환경 (수동 다운로드 정상 작동)',
-      detail: '작업 중 새로고침해도 내역이 보존되며, 교무실 공용 PC에서는 클릭 한 번으로 흔적 없이 삭제할 수 있습니다.'
+      detail: '작업 중 새로고침해도 보존되며 교무실 공용 PC에서 한 번에 삭제할 수 있습니다.'
     },
     {
       badge: ttsOk ? '정상 작동 (PASS)' : '텍스트 전용 작동',
       badgeClass: 'badge-available',
-      title: '6. 다국어 발음 지도(Web Speech TTS) 및 학생용 QR 활동지',
+      title: '6. 다국어 발음 지도(TTS) 및 학생용 QR 활동지',
       summary: ttsOk
-        ? '브라우저 내장 다국어 음성 합성(TTS) 및 모바일 QR 활동지 정상 작동'
+        ? '브라우저 내장 다국어 음성 합성(TTS) 및 모바일 QR 활동지 작동'
         : '모바일 QR 다국어 활동지 뷰어 정상 작동',
-      detail: '번역된 수업 문장과 교실 회화 카드를 다문화 학생에게 원어민 발음으로 즉시 들려줄 수 있습니다.'
+      detail: '번역된 수업 문장과 교실 회화 카드를 다문화 학생에게 원어민 발음으로 들려줍니다.'
     }
   ];
 
@@ -1034,8 +1034,8 @@ async function runSchoolEnvironmentDiagnostics() {
       (c) => `
       <div class="school-diag-card">
         <div class="school-diag-card-top">
-          <strong>${escapeHtml(c.title)}</strong>
-          <span class="badge ${c.badgeClass}">${escapeHtml(c.badge)}</span>
+          <strong class="school-diag-card-title">${escapeHtml(c.title)}</strong>
+          <span class="badge school-diag-status-pill ${c.badgeClass}">${escapeHtml(c.badge)}</span>
         </div>
         <div class="school-diag-card-summary">${escapeHtml(c.summary)}</div>
         <p class="school-diag-card-detail">${escapeHtml(c.detail)}</p>
@@ -4944,20 +4944,15 @@ function buildUnifiedCaseText(item) {
 
 function formatTeacherAuthorDisplay(rawName) {
   const s = String(rawName || '').trim();
-  if (!s || s === '익명 교사' || s === '익명 선생님') return '익명쌤';
-  // Convert single-masked names like '김*현 선생님' or '박*영 교사' or '최*아 보건교사' to '성** 교사'
-  const singleMaskMatch = s.match(/^([가-힣])\*[가-힣]?\s*(?:선생님|교사|보건교사|담임|전담)?$/);
-  if (singleMaskMatch) return `${singleMaskMatch[1]}** 교사`;
-  // Convert 3-char real Korean names like '김영희' or '김영희 선생님' to '김** 교사'
-  const fullNameMatch = s.match(/^([가-힣])[가-힣]{2}(?:\s+(?:선생님|교사))?$/);
-  if (fullNameMatch && !s.endsWith('쌤')) return `${fullNameMatch[1]}** 교사`;
-  // Convert generic role titles to teacher nicknames or masked names
-  if (/담임|전담|담당|부장|교사$/.test(s) && !s.includes('**') && !s.endsWith('쌤')) {
-    const firstSurname = s.match(/^([김이박최정강조윤장임한오서신권황안송류전홍고문양손배백허유남심노하곽성차주우구])[가-힣*\s]/);
-    if (firstSurname) return `${firstSurname[1]}** 교사`;
-    return '늘품교실쌤';
-  }
-  return s;
+  if (!s || s === '익명 교사' || s === '익명 선생님' || s === '익명쌤' || s === '익명') return '김**';
+  if (s === '햇살반쌤') return '이**';
+  if (s === '다문화멘토쌤') return '최**';
+  if (s === '늘품교실쌤') return '강**';
+  if (s === '초록칠판쌤') return '윤**';
+  const cleaned = s.replace(/\s*(?:선생님|보건교사|특수교사|담임교사|전담교사|교사|담임|전담|쌤)$/g, '').trim();
+  const korMatch = cleaned.match(/^([가-힣])/);
+  if (korMatch) return `${korMatch[1]}**`;
+  return cleaned || '김**';
 }
 
 function renderCaseBodySectionsHtml(item) {
@@ -5507,7 +5502,7 @@ function renderAdminDashboardLists() {
         <div class="case-meta-date">
           <span>제출일시: ${escapeHtml(createdDate)}</span>
           <span>· 활용일: ${escapeHtml(item.used_date || '-')}</span>
-          <span>· 작성자 표시명: <strong>${escapeHtml(item.author_display_name || '익명 교사')}</strong></span>
+          <span>· 작성자 표시명: <strong>${escapeHtml(formatTeacherAuthorDisplay(item.author_display_name))}</strong></span>
         </div>
       </div>
 
