@@ -753,6 +753,7 @@ async function handleClearBrowserStorage(resetCurrentScreen = false) {
   if (resetCurrentScreen || state.currentStep > 1) {
     state.hasUnsavedWork = false;
     state.parsedDoc = null;
+    state.isSampleDoc = false;
     state.translatedLangKey = null;
     state.itemStates.clear();
     state.collapsedGroups.clear();
@@ -802,6 +803,7 @@ async function handleRestoreSession() {
   try {
     const parsed = await extractDocumentFromBuffer(saved.fileName, saved.originalBuffer);
     state.parsedDoc = parsed;
+    state.isSampleDoc = isBuiltInSampleDocument(parsed);
     state.selectedLangKey = saved.selectedLangKey || 'en';
     state.translatedLangKey = saved.translatedLangKey || saved.selectedLangKey || 'en';
     if (saved.outputMode) {
@@ -1302,6 +1304,7 @@ function bindEvents() {
     if (state.translatedLangKey && state.translatedLangKey !== state.selectedLangKey) {
       resetItemStatesForLanguageChange();
     }
+    populateInstantSampleOrGlossaryDrafts(state.selectedLangKey);
     state.translatedLangKey = state.selectedLangKey;
     scheduleAutoSave();
     unlockAndGoToStep(4);
@@ -1536,6 +1539,7 @@ function unlockAndGoToStep(stepNum) {
 function goToStep(stepNum) {
   if (stepNum >= 4 && state.translatedLangKey && state.translatedLangKey !== state.selectedLangKey) {
     resetItemStatesForLanguageChange();
+    populateInstantSampleOrGlossaryDrafts(state.selectedLangKey);
     state.translatedLangKey = state.selectedLangKey;
     scheduleAutoSave();
   }
@@ -2044,9 +2048,8 @@ async function handleStartAutoTranslate() {
   };
   const resolvedCode = supportInfo.resolvedCode || langMeta.candidates[0];
 
-  // Item 1 & 2: If this is a built-in sample document and native AI is not immediately 'available',
-  // or if the language is handled by the built-in school dictionary, complete in 0ms without blocking!
-  if (state.isSampleDoc && (!supportInfo.supported || supportInfo.status !== 'available')) {
+  // Item 1 & 2: If this is a built-in sample document, complete in 0ms using the verified 25-language cache!
+  if (state.isSampleDoc) {
     if (state.translatedLangKey && state.translatedLangKey !== langKey) {
       resetItemStatesForLanguageChange();
     }
@@ -4249,14 +4252,16 @@ async function handleRunMultiLangZip() {
           translationsMap[item.id] = st && st.finalText.trim() ? st.finalText : item.sourceText;
         }
       } else {
-        // Try creating Chrome built-in translator if supported, otherwise apply school glossary + bilingual/source fallback
+        // Try creating Chrome built-in translator if supported (and not a pre-cached sample doc)
         let translator = null;
-        const supportInfo = state.langSupportMap.get(langKey) || (await checkLanguagePairSupport(langKey));
-        if (supportInfo && supportInfo.supported) {
-          try {
-            translator = await startTranslatorCreation(supportInfo.resolvedCode || langMeta.candidates[0]);
-          } catch {
-            translator = null;
+        if (!state.isSampleDoc) {
+          const supportInfo = state.langSupportMap.get(langKey) || (await checkLanguagePairSupport(langKey));
+          if (supportInfo && supportInfo.supported) {
+            try {
+              translator = await startTranslatorCreation(supportInfo.resolvedCode || langMeta.candidates[0]);
+            } catch {
+              translator = null;
+            }
           }
         }
 
@@ -4271,8 +4276,8 @@ async function handleRunMultiLangZip() {
 
           // 1) Check built-in sample instant cache first
           const instantSampleHit = lookupInstantSampleTranslation(item.sourceText, langKey);
-          if (instantSampleHit && instantSampleHit.text) {
-            translationsMap[item.id] = instantSampleHit.text;
+          if (instantSampleHit && instantSampleHit.translated) {
+            translationsMap[item.id] = instantSampleHit.translated;
             continue;
           }
 
@@ -4302,15 +4307,17 @@ async function handleRunMultiLangZip() {
             }
           } else {
             // Check school dictionary draft or partial glossary hints
-            const matches = findMatchingGlossaryTerms(item.sourceText, langKey, '');
-            const dictDraft = generateSchoolDictionaryDraft(item.sourceText, langKey, matches, entries);
-            if (dictDraft && dictDraft.text) {
-              translationsMap[item.id] = dictDraft.text;
-            } else if (matches.length > 0) {
-              const hints = matches.map((m) => `${m.ko}:${m.target}`).join(', ');
-              translationsMap[item.id] = `${item.sourceText} (${hints})`;
+            const dictDraft = generateSchoolDictionaryDraft(item.sourceText, langKey, entries);
+            if (dictDraft && dictDraft.matchedCount > 0 && dictDraft.translated) {
+              translationsMap[item.id] = dictDraft.translated;
             } else {
-              translationsMap[item.id] = item.sourceText;
+              const matches = findMatchingGlossaryTerms(item.sourceText, langKey, '');
+              if (matches.length > 0) {
+                const hints = matches.map((m) => `${m.ko}:${m.target}`).join(', ');
+                translationsMap[item.id] = `${item.sourceText} (${hints})`;
+              } else {
+                translationsMap[item.id] = item.sourceText;
+              }
             }
           }
         }
@@ -4746,17 +4753,20 @@ async function handleToolkitTranslate() {
       els.toolkitFeedbackMsg.textContent = `✓ ${langMeta.label} 번역 완료!`;
     }
   } catch {
-    // Fallback: apply matching school glossary terms so teacher still gets helpful terms + prompt copy
+    // Fallback: apply matching school glossary terms so teacher still gets helpful terms
+    const entries = getAllGlossaryEntries();
+    const dictDraft = generateSchoolDictionaryDraft(koText, langKey, entries);
     const matches = findMatchingGlossaryTerms(koText, langKey, '');
     const glossaryHint =
       matches.length > 0
         ? `\n\n[학교 표준 용어 참고]\n` + matches.map((m) => `• ${m.ko} ➔ ${m.target}`).join('\n')
         : '';
+    const baseOut = dictDraft && dictDraft.matchedCount > 0 ? dictDraft.translated : koText;
     if (els.textareaToolkitTarget) {
-      els.textareaToolkitTarget.value = `${koText}${glossaryHint}`;
+      els.textareaToolkitTarget.value = `${baseOut}${glossaryHint}`;
     }
     if (els.toolkitFeedbackMsg) {
-      els.toolkitFeedbackMsg.textContent = `ℹ️ 현재 브라우저에서 ${langMeta.label} 자동 번역 모델이 지원되지 않아 학교 표준 용어 힌트를 표시했습니다.`;
+      els.toolkitFeedbackMsg.textContent = `ℹ️ 현재 브라우저에서 ${langMeta.label} 내장 AI 모델 대신 학교 표준 용어 사전을 적용했습니다.`;
     }
   } finally {
     if (els.btnToolkitTranslate) els.btnToolkitTranslate.disabled = false;

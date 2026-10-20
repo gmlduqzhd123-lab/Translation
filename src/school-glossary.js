@@ -659,15 +659,16 @@ export function getAllGlossaryEntries() {
 
 function isGlossaryTermApplied(lowerTrans, targetTerm) {
   if (!lowerTrans || !targetTerm) return false;
-  const fullTarget = String(targetTerm).toLowerCase().trim();
+  const normTrans = String(lowerTrans).toLowerCase().replace(/[’‘`]/g, "'");
+  const fullTarget = String(targetTerm).toLowerCase().replace(/[’‘`]/g, "'").trim();
   if (!fullTarget) return false;
-  if (lowerTrans.includes(fullTarget)) return true;
+  if (normTrans.includes(fullTarget)) return true;
 
   const variants = fullTarget
     .split(/[\/()（）]/)
     .map((part) => part.trim())
     .filter((part) => part.length >= 2 || /[\u4E00-\u9FFF\u3040-\u30FF]/.test(part));
-  return variants.some((v) => lowerTrans.includes(v));
+  return variants.some((v) => normTrans.includes(v));
 }
 
 function normalizeNumeralsToAscii(str) {
